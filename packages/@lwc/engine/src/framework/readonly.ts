@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: MIT
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/MIT
  */
-import assert from '../../shared/assert';
-import { reactiveMembrane } from '../membrane';
+import assert from '../shared/assert';
+import { reactiveMembrane } from './membrane';
 
 /**
  * EXPERIMENTAL: This function allows you to create a reactive readonly
  * membrane around any object value. This API is subject to change or
  * being removed.
  */
-export default function readonly(obj: any): any {
+export function readonly(obj: any): any {
     if (process.env.NODE_ENV !== 'production') {
         // TODO: #1292 - Remove the readonly decorator
         if (arguments.length !== 1) {
