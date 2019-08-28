@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/MIT
  */
-import { isUndefined, ArrayPush, forEach } from '../shared/language';
+import { isUndefined, ArrayIndexOf } from '../shared/language';
 import { guid } from './utils';
 import { WireAdapterConstructor, ContextValue, getAdapterToken, setAdapterToken } from './wiring';
 
@@ -21,6 +21,11 @@ interface WireContextEvent extends CustomEvent {
     detail: WireContextInternalProtocolCallback;
 }
 
+interface ContextProviderOptions {
+    consumerConnectedCallback: (consumer: ContextConsumer) => void;
+    consumerDisconnectedCallback?: (consumer: ContextConsumer) => void;
+}
+
 // this is lwc internal implementation
 export function createContextProvider(adapter: WireAdapterConstructor) {
     let adapterContextToken = getAdapterToken(adapter);
@@ -29,9 +34,13 @@ export function createContextProvider(adapter: WireAdapterConstructor) {
     }
     adapterContextToken = guid();
     setAdapterToken(adapter, adapterContextToken);
-    return (elm: EventTarget) => {
-        const connectQueue = [];
-        const disconnectQueue = [];
+    const providers = [];
+    return (elm: EventTarget, options: ContextProviderOptions) => {
+        if (ArrayIndexOf.call(providers, elm) !== 0) {
+            throw new Error(`Adapter was already installed on ${elm}.`);
+        }
+        // TODO: what if the same contextualizer is installed twice on the same elm?
+        const { consumerConnectedCallback, consumerDisconnectedCallback } = options;
         elm.addEventListener(adapterContextToken as string, (evt: WireContextEvent) => {
             const { detail } = evt;
             const consumer: ContextConsumer = {
@@ -40,17 +49,11 @@ export function createContextProvider(adapter: WireAdapterConstructor) {
                 },
             };
             const disconnectCallback = () => {
-                forEach.call(disconnectQueue, callback => callback(consumer));
+                if (!isUndefined(consumerDisconnectedCallback)) {
+                    consumerDisconnectedCallback(consumer);
+                }
             };
-            forEach.call(connectQueue, callback => callback(consumer));
+            consumerConnectedCallback(consumer);
         });
-        return {
-            onConsumerConnected(callback: (consumer: ContextConsumer) => void) {
-                ArrayPush.call(connectQueue, callback);
-            },
-            onConsumerDisconnected(callback: (consumer: ContextConsumer) => void) {
-                ArrayPush.call(disconnectQueue, callback);
-            },
-        };
     };
 }
