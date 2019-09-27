@@ -53,6 +53,7 @@ export function createContextProvider(adapter: WireAdapterConstructor) {
                 }
             };
             consumerConnectedCallback(consumer);
+            evt.stopImmediatePropagation();
         });
     };
 }
