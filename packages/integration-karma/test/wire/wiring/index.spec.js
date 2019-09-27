@@ -6,6 +6,8 @@ import { EchoWireAdapter } from 'x/echoAdapter';
 import BroadcastConsumer from 'x/broadcastConsumer';
 import { BroadcastAdapter } from 'x/broadcastAdapter';
 
+import InheritedMethods from 'x/inheritedMethods';
+
 const ComponentClass = AdapterConsumer;
 const AdapterId = EchoWireAdapter;
 
@@ -207,5 +209,23 @@ describe('wired methods', () => {
             const actual = elm.getWiredMethodArgument();
             expect(actual).toBe('expected value');
         });
+    });
+
+    it('should support method override', () => {
+        const spy = [];
+        EchoWireAdapter.setSpy(spy);
+        const elm = createElement('x-inherited-methods', { is: InheritedMethods });
+        document.body.appendChild(elm);
+
+        const calls = filterCalls(spy, 'update');
+        const getCallByName = name => {
+            return calls.filter(call => name === call.args[0].name)[0];
+        };
+
+        expect(calls.length).toBe(3);
+
+        expect(getCallByName('overriddenInChild').args[0].child).toBe(true);
+        expect(getCallByName('childMethod').args[0].child).toBe(true);
+        expect(getCallByName('parentMethod').args[0].parent).toBe(true);
     });
 });
