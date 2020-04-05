@@ -51,6 +51,10 @@ import { getComponentTag } from '../shared/format';
 import { buildCustomElementConstructor } from './wc';
 import { HTMLElementConstructor } from './base-bridge-element';
 
+// PHIL
+import { useLightDom } from './utils'
+
+
 /**
  * This operation is called with a descriptor of an standard html property
  * that a Custom Element can support (including AOM properties), which
@@ -289,7 +293,9 @@ function BaseLightningElementConstructor(this: LightningElement) {
         delegatesFocus: !!ctor.delegatesFocus,
         '$$lwc-synthetic-mode$$': true,
     };
-    const cmpRoot = elm.attachShadow(shadowRootOptions);
+    // PHIL
+    //const cmpRoot = elm.attachShadow(shadowRootOptions);
+    const cmpRoot = (useLightDom ? elm : elm.attachShadow(shadowRootOptions)) as ShadowRoot;
     // linking elm, shadow root and component with the VM
     associateVM(component, vm);
     associateVM(cmpRoot, vm);

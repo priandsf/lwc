@@ -43,4 +43,6 @@ export function addCallbackToNextTick(callback: Callback) {
     ArrayPush.call(nextTickCallbackQueue, callback);
 }
 
-export const useSyntheticShadow = hasOwnProperty.call(Element.prototype, '$shadowToken$');
+// PHIL: added light DOM
+export const useLightDom = (window as any).LWC_LIGHTDOM;
+export const useSyntheticShadow = useLightDom || hasOwnProperty.call(Element.prototype, '$shadowToken$');

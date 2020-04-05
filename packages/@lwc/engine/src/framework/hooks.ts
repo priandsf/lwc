@@ -5,7 +5,10 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/MIT
  */
 import { assert, isArray, isNull, isTrue, isUndefined } from '@lwc/shared';
-import { EmptyArray, useSyntheticShadow } from './utils';
+// PHIL: added light dom
+import { EmptyArray, useSyntheticShadow, useLightDom } from './utils';
+// Added by PHIL for the synthetic DOM handling
+import { setAttribute, removeAttribute } from '../env/element';
 import {
     rerenderVM,
     createVM,
@@ -32,10 +35,30 @@ const noop = () => void 0;
 
 function observeElementChildNodes(elm: Element) {
     (elm as any).$domManual$ = true;
+
+}
+
+// PHIL
+// Borrowed from synthetic shadow
+const ShadowTokenPrivateKey = '$$ShadowTokenKey$$';
+function setSyntheticShadowToken(elm: Element, shadowToken: string | undefined) {
+    const oldShadowToken = (elm as any)[ShadowTokenPrivateKey];
+    if (!isUndefined(oldShadowToken) && oldShadowToken !== shadowToken) {
+        removeAttribute.call(elm, oldShadowToken);
+    }
+    if (!isUndefined(shadowToken)) {
+        setAttribute.call(elm, shadowToken, '');
+    }
+    (elm as any)[ShadowTokenPrivateKey] = shadowToken;
 }
 
 function setElementShadowToken(elm: Element, token: string | undefined) {
-    (elm as any).$shadowToken$ = token;
+    // PHIL
+    if(useLightDom) {
+        setSyntheticShadowToken(elm,token);
+    } else {
+        (elm as any).$shadowToken$ = token;
+    }
 }
 
 export function updateNodeHook(oldVnode: VNode, vnode: VNode) {
