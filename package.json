@@ -75,7 +75,7 @@
     "packages/integration-karma",
     "packages/integration-tests",
     "packages/perf-benchmarks",
-    "packages/"
+    "packages/sample-app"
   ],
   "engines": {
     "node": ">=10"
