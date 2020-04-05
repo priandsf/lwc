@@ -2,7 +2,13 @@
 
 This demo is a POC shows the same application using slots and scopes, using different modes: native shadow dom, synthetic shadow and light dom.
 
-The check-in code is configured to use the light dom. To switch to a different mode:
+To run the sample-app:  
+```sh
+cd packages/sample-app
+yarn start
+```
+
+The sample-app checked-in code is configured to use the light dom. To switch to a different mode:
 
 - Using native shadow DOM
   in template.html, comment `window.LWC_LIGHTDOM = true`
