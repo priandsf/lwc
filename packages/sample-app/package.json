@@ -35,8 +35,8 @@
         "yarn": ">=1.9.4"
     },
     "scripts": {
-        "build": "cross-env rollup -c ./scripts/rollup.config.js",
+        "make": "cross-env rollup -c ./scripts/rollup.config.js",
         "serve": "node index.js",
-        "start": "concurrently --kill-others \"yarn build --watch\" \"yarn serve\""
+        "start": "concurrently --kill-others \"yarn make --watch\" \"yarn serve\""
     }
 }
