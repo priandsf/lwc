@@ -4,8 +4,10 @@
  * SPDX-License-Identifier: MIT
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/MIT
  */
-import { assert, isArray, isNull, isTrue, isUndefined } from '@lwc/shared';
-import { EmptyArray } from './utils';
+import { assert, isArray, isNull, isTrue, isUndefined } from '@lwc/shared';// PHIL: added light dom
+
+// Added by PHIL for the synthetic DOM handling
+import { EmptyArray, useLightDom } from './utils';
 import {
     rerenderVM,
     createVM,
@@ -34,8 +36,32 @@ function observeElementChildNodes(elm: Element) {
     (elm as any).$domManual$ = true;
 }
 
+// PHIL
+// Borrowed from synthetic shadow
+// WARN: this might not work anymore when synthetic shadow is loaded as it overloads
+// setAttribute & removeAttribute in its own module. Prior to the engine refactoring, this
+// was in core so available to this code.
+const ShadowTokenPrivateKey = '$$ShadowTokenKey$$';
+function setSyntheticShadowToken(elm: Element, shadowToken: string | undefined) {
+    const oldShadowToken = (elm as any)[ShadowTokenPrivateKey];
+    if (!isUndefined(oldShadowToken) && oldShadowToken !== shadowToken) {
+        //removeAttribute.call(elm, oldShadowToken);
+        elm.removeAttribute(oldShadowToken);
+    }
+    if (!isUndefined(shadowToken)) {
+        //setAttribute.call(elm, shadowToken, '');
+        elm.setAttribute(shadowToken as any, '');
+    }
+    (elm as any)[ShadowTokenPrivateKey] = shadowToken;
+}
+
 function setElementShadowToken(elm: Element, token: string | undefined) {
-    (elm as any).$shadowToken$ = token;
+    // PHIL
+    if(useLightDom(elm)) {
+        setSyntheticShadowToken(elm,token);
+    } else {
+        (elm as any).$shadowToken$ = token;
+    }
 }
 
 export function updateNodeHook(oldVnode: VNode, vnode: VNode) {

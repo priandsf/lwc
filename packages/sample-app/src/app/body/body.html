@@ -1,0 +1,21 @@
+<template>
+    <h1>Slot examples</h1>
+    <h2>Use light DOM</h2>
+    <app-layout>
+        <div slot='top'>
+            <app-counter1></app-counter1>
+        </div>
+        <div slot='bottom'>
+            <app-counter2></app-counter2>
+        </div>
+    </app-layout>
+    <h2>Use Shadow DOM</h2>
+    <app-layout>
+        <div slot='top'>
+            <app-counter1s></app-counter1s>
+        </div>
+        <div slot='bottom'>
+            <app-counter2s></app-counter2s>
+        </div>
+    </app-layout>
+</template>
