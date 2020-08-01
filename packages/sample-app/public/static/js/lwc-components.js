@@ -7315,7 +7315,7 @@
       key: 3
     }, [api_element("b", {
       key: 0
-    }, [api_text("Red Shawdow:")]), api_element("span", {
+    }, [api_text("Red Shadow:")]), api_element("span", {
       classMap: {
         "counter": true
       },
@@ -7581,7 +7581,7 @@
     } = $ctx;
     return [api_element("h1", {
       key: 0
-    }, [api_text("Light DOM example")]), api_element("button", {
+    }, [api_text("Light DOM example")]), api_text("Show/Add Components:"), api_element("button", {
       attrs: {
         "type": "button"
       },
