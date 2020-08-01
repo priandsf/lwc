@@ -36,7 +36,7 @@
         "yarn": ">=1.9.4"
     },
     "scripts": {
-        "make": "cross-env rollup -c ./scripts/rollup.config.js",
+        "make": "cross-env rollup -c ./scripts/rollup.config.js & cross-env rollup -c ./scripts/rollup.config.synthetic.js",
         "serve": "node index.js",
         "start": "concurrently --kill-others \"yarn make --watch\" \"yarn serve\"",
         "deploy-static": "gh-pages -d public -u priand@salesforce.com -r git@git.soma.salesforce.com:priand/pages-lwc-lightdom.git -m \"LWC static site\" && yarn static-url",

@@ -2,6 +2,4309 @@
   'use strict';
 
   /* proxy-compat-disable */
+  function invariant(value, msg) {
+    if (!value) {
+      throw new Error(`Invariant Violation: ${msg}`);
+    }
+  }
+
+  function isTrue(value, msg) {
+    if (!value) {
+      throw new Error(`Assert Violation: ${msg}`);
+    }
+  }
+
+  function isFalse(value, msg) {
+    if (value) {
+      throw new Error(`Assert Violation: ${msg}`);
+    }
+  }
+
+  function fail(msg) {
+    throw new Error(msg);
+  }
+
+  var assert = Object.freeze({
+    __proto__: null,
+    invariant: invariant,
+    isTrue: isTrue,
+    isFalse: isFalse,
+    fail: fail
+  });
+  const {
+    assign,
+    create,
+    defineProperties,
+    defineProperty,
+    freeze,
+    getOwnPropertyDescriptor,
+    getOwnPropertyNames,
+    getPrototypeOf,
+    hasOwnProperty,
+    isFrozen,
+    keys,
+    seal,
+    setPrototypeOf
+  } = Object;
+  const {
+    isArray
+  } = Array;
+  const {
+    filter: ArrayFilter,
+    find: ArrayFind,
+    indexOf: ArrayIndexOf,
+    join: ArrayJoin,
+    map: ArrayMap,
+    push: ArrayPush,
+    reduce: ArrayReduce,
+    reverse: ArrayReverse,
+    slice: ArraySlice,
+    splice: ArraySplice,
+    unshift: ArrayUnshift,
+    forEach
+  } = Array.prototype;
+  const {
+    charCodeAt: StringCharCodeAt,
+    replace: StringReplace,
+    slice: StringSlice,
+    toLowerCase: StringToLowerCase
+  } = String.prototype;
+
+  function isUndefined(obj) {
+    return obj === undefined;
+  }
+
+  function isNull(obj) {
+    return obj === null;
+  }
+
+  function isTrue$1(obj) {
+    return obj === true;
+  }
+
+  function isFalse$1(obj) {
+    return obj === false;
+  }
+
+  function isFunction(obj) {
+    return typeof obj === 'function';
+  }
+
+  function isObject(obj) {
+    return typeof obj === 'object';
+  }
+
+  const OtS = {}.toString;
+
+  function toString(obj) {
+    if (obj && obj.toString) {
+      if (isArray(obj)) {
+        return ArrayJoin.call(ArrayMap.call(obj, toString), ',');
+      }
+
+      return obj.toString();
+    } else if (typeof obj === 'object') {
+      return OtS.call(obj);
+    } else {
+      return obj + emptyString;
+    }
+  }
+
+  function getPropertyDescriptor(o, p) {
+    do {
+      const d = getOwnPropertyDescriptor(o, p);
+
+      if (!isUndefined(d)) {
+        return d;
+      }
+
+      o = getPrototypeOf(o);
+    } while (o !== null);
+  }
+
+  const emptyString = '';
+  const AriaPropertyNames = ['ariaActiveDescendant', 'ariaAtomic', 'ariaAutoComplete', 'ariaBusy', 'ariaChecked', 'ariaColCount', 'ariaColIndex', 'ariaColSpan', 'ariaControls', 'ariaCurrent', 'ariaDescribedBy', 'ariaDetails', 'ariaDisabled', 'ariaErrorMessage', 'ariaExpanded', 'ariaFlowTo', 'ariaHasPopup', 'ariaHidden', 'ariaInvalid', 'ariaKeyShortcuts', 'ariaLabel', 'ariaLabelledBy', 'ariaLevel', 'ariaLive', 'ariaModal', 'ariaMultiLine', 'ariaMultiSelectable', 'ariaOrientation', 'ariaOwns', 'ariaPlaceholder', 'ariaPosInSet', 'ariaPressed', 'ariaReadOnly', 'ariaRelevant', 'ariaRequired', 'ariaRoleDescription', 'ariaRowCount', 'ariaRowIndex', 'ariaRowSpan', 'ariaSelected', 'ariaSetSize', 'ariaSort', 'ariaValueMax', 'ariaValueMin', 'ariaValueNow', 'ariaValueText', 'role'];
+  const AttrNameToPropNameMap = create(null);
+  const PropNameToAttrNameMap = create(null);
+  forEach.call(AriaPropertyNames, propName => {
+    const attrName = StringToLowerCase.call(StringReplace.call(propName, /^aria/, 'aria-'));
+    AttrNameToPropNameMap[attrName] = propName;
+    PropNameToAttrNameMap[propName] = attrName;
+  });
+
+  const _globalThis = function () {
+    if (typeof globalThis === 'object') {
+      return globalThis;
+    }
+
+    let _globalThis;
+
+    try {
+      Object.defineProperty(Object.prototype, '__magic__', {
+        get: function () {
+          return this;
+        },
+        configurable: true
+      });
+      _globalThis = __magic__;
+      delete Object.prototype.__magic__;
+    } catch (ex) {} finally {
+      if (typeof _globalThis === 'undefined') {
+        _globalThis = window;
+      }
+    }
+
+    return _globalThis;
+  }();
+
+  const hasNativeSymbolsSupport = Symbol('x').toString() === 'Symbol(x)';
+
+  function createHiddenField(key, namespace) {
+    return hasNativeSymbolsSupport ? Symbol(key) : `$$lwc-${namespace}-${key}$$`;
+  }
+
+  const hiddenFieldsMap = new WeakMap();
+
+  function setHiddenField(o, field, value) {
+    let valuesByField = hiddenFieldsMap.get(o);
+
+    if (isUndefined(valuesByField)) {
+      valuesByField = create(null);
+      hiddenFieldsMap.set(o, valuesByField);
+    }
+
+    valuesByField[field] = value;
+  }
+
+  function getHiddenField(o, field) {
+    const valuesByField = hiddenFieldsMap.get(o);
+
+    if (!isUndefined(valuesByField)) {
+      return valuesByField[field];
+    }
+  }
+
+  const HTML_ATTRIBUTES_TO_PROPERTY = {
+    accesskey: 'accessKey',
+    readonly: 'readOnly',
+    tabindex: 'tabIndex',
+    bgcolor: 'bgColor',
+    colspan: 'colSpan',
+    rowspan: 'rowSpan',
+    contenteditable: 'contentEditable',
+    crossorigin: 'crossOrigin',
+    datetime: 'dateTime',
+    formaction: 'formAction',
+    ismap: 'isMap',
+    maxlength: 'maxLength',
+    minlength: 'minLength',
+    novalidate: 'noValidate',
+    usemap: 'useMap',
+    for: 'htmlFor'
+  };
+  keys(HTML_ATTRIBUTES_TO_PROPERTY).forEach(attrName => {});
+  const {
+    DOCUMENT_POSITION_CONTAINED_BY,
+    DOCUMENT_POSITION_CONTAINS,
+    DOCUMENT_POSITION_PRECEDING,
+    DOCUMENT_POSITION_FOLLOWING,
+    ELEMENT_NODE,
+    TEXT_NODE,
+    CDATA_SECTION_NODE,
+    PROCESSING_INSTRUCTION_NODE,
+    COMMENT_NODE,
+    DOCUMENT_FRAGMENT_NODE
+  } = Node;
+  const {
+    appendChild,
+    cloneNode,
+    compareDocumentPosition,
+    insertBefore,
+    removeChild,
+    replaceChild,
+    hasChildNodes
+  } = Node.prototype;
+  const {
+    contains
+  } = HTMLElement.prototype;
+  const firstChildGetter = getOwnPropertyDescriptor(Node.prototype, 'firstChild').get;
+  const lastChildGetter = getOwnPropertyDescriptor(Node.prototype, 'lastChild').get;
+  const textContentGetter = getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
+  const parentNodeGetter = getOwnPropertyDescriptor(Node.prototype, 'parentNode').get;
+  const ownerDocumentGetter = getOwnPropertyDescriptor(Node.prototype, 'ownerDocument').get;
+  const parentElementGetter = hasOwnProperty.call(Node.prototype, 'parentElement') ? getOwnPropertyDescriptor(Node.prototype, 'parentElement').get : getOwnPropertyDescriptor(HTMLElement.prototype, 'parentElement').get;
+  const textContextSetter = getOwnPropertyDescriptor(Node.prototype, 'textContent').set;
+  const childNodesGetter = hasOwnProperty.call(Node.prototype, 'childNodes') ? getOwnPropertyDescriptor(Node.prototype, 'childNodes').get : getOwnPropertyDescriptor(HTMLElement.prototype, 'childNodes').get;
+  const isConnected = hasOwnProperty.call(Node.prototype, 'isConnected') ? getOwnPropertyDescriptor(Node.prototype, 'isConnected').get : function () {
+    const doc = ownerDocumentGetter.call(this);
+    return doc === null || (compareDocumentPosition.call(doc, this) & DOCUMENT_POSITION_CONTAINED_BY) !== 0;
+  };
+  const {
+    addEventListener,
+    getAttribute,
+    getBoundingClientRect,
+    getElementsByTagName,
+    getElementsByTagNameNS,
+    hasAttribute,
+    querySelector,
+    querySelectorAll,
+    removeAttribute,
+    removeEventListener,
+    setAttribute
+  } = Element.prototype;
+  const attachShadow = hasOwnProperty.call(Element.prototype, 'attachShadow') ? Element.prototype.attachShadow : () => {
+    throw new TypeError('attachShadow() is not supported in current browser. Load the @lwc/synthetic-shadow polyfill and use Lightning Web Components');
+  };
+  const childElementCountGetter = getOwnPropertyDescriptor(Element.prototype, 'childElementCount').get;
+  const firstElementChildGetter = getOwnPropertyDescriptor(Element.prototype, 'firstElementChild').get;
+  const lastElementChildGetter = getOwnPropertyDescriptor(Element.prototype, 'lastElementChild').get;
+  const innerHTMLDescriptor = hasOwnProperty.call(Element.prototype, 'innerHTML') ? getOwnPropertyDescriptor(Element.prototype, 'innerHTML') : getOwnPropertyDescriptor(HTMLElement.prototype, 'innerHTML');
+  const innerHTMLGetter = innerHTMLDescriptor.get;
+  const innerHTMLSetter = innerHTMLDescriptor.set;
+  const outerHTMLDescriptor = hasOwnProperty.call(Element.prototype, 'outerHTML') ? getOwnPropertyDescriptor(Element.prototype, 'outerHTML') : getOwnPropertyDescriptor(HTMLElement.prototype, 'outerHTML');
+  const outerHTMLGetter = outerHTMLDescriptor.get;
+  const outerHTMLSetter = outerHTMLDescriptor.set;
+  const tagNameGetter = getOwnPropertyDescriptor(Element.prototype, 'tagName').get;
+  const tabIndexDescriptor = getOwnPropertyDescriptor(HTMLElement.prototype, 'tabIndex');
+  const tabIndexGetter = tabIndexDescriptor.get;
+  const tabIndexSetter = tabIndexDescriptor.set;
+  const matches = hasOwnProperty.call(Element.prototype, 'matches') ? Element.prototype.matches : Element.prototype.msMatchesSelector;
+  const childrenGetter = hasOwnProperty.call(Element.prototype, 'children') ? getOwnPropertyDescriptor(Element.prototype, 'children').get : getOwnPropertyDescriptor(HTMLElement.prototype, 'children').get;
+  const {
+    getElementsByClassName
+  } = HTMLElement.prototype;
+  const shadowRootGetter = hasOwnProperty.call(Element.prototype, 'shadowRoot') ? getOwnPropertyDescriptor(Element.prototype, 'shadowRoot').get : () => null;
+  let assignedNodes, assignedElements;
+
+  if (typeof HTMLSlotElement !== 'undefined') {
+    assignedNodes = HTMLSlotElement.prototype.assignedNodes;
+    assignedElements = HTMLSlotElement.prototype.assignedElements;
+  } else {
+    assignedNodes = () => {
+      throw new TypeError("assignedNodes() is not supported in current browser. Load the @lwc/synthetic-shadow polyfill to start using <slot> elements in your Lightning Web Component's template");
+    };
+
+    assignedElements = () => {
+      throw new TypeError("assignedElements() is not supported in current browser. Load the @lwc/synthetic-shadow polyfill to start using <slot> elements in your Lightning Web Component's template");
+    };
+  }
+
+  const dispatchEvent = 'EventTarget' in window ? EventTarget.prototype.dispatchEvent : Node.prototype.dispatchEvent;
+  const eventTargetGetter = getOwnPropertyDescriptor(Event.prototype, 'target').get;
+  const eventCurrentTargetGetter = getOwnPropertyDescriptor(Event.prototype, 'currentTarget').get;
+  const focusEventRelatedTargetGetter = getOwnPropertyDescriptor(FocusEvent.prototype, 'relatedTarget').get;
+  const DocumentPrototypeActiveElement = getOwnPropertyDescriptor(Document.prototype, 'activeElement').get;
+  const elementFromPoint = hasOwnProperty.call(Document.prototype, 'elementFromPoint') ? Document.prototype.elementFromPoint : Document.prototype.msElementFromPoint;
+  const defaultViewGetter = getOwnPropertyDescriptor(Document.prototype, 'defaultView').get;
+  const {
+    createComment,
+    querySelectorAll: querySelectorAll$1,
+    getElementById,
+    getElementsByClassName: getElementsByClassName$1,
+    getElementsByTagName: getElementsByTagName$1,
+    getElementsByTagNameNS: getElementsByTagNameNS$1
+  } = Document.prototype;
+  const {
+    getElementsByName
+  } = HTMLDocument.prototype;
+  const {
+    addEventListener: windowAddEventListener,
+    removeEventListener: windowRemoveEventListener
+  } = window;
+  const MO = MutationObserver;
+  const MutationObserverObserve = MO.prototype.observe;
+
+  function detect() {
+    return typeof HTMLSlotElement === 'undefined';
+  }
+
+  const {
+    createElement
+  } = Document.prototype;
+  const CHAR_S = 115;
+  const CHAR_L = 108;
+  const CHAR_O = 111;
+  const CHAR_T = 116;
+
+  function apply() {
+    class HTMLSlotElement {}
+
+    setPrototypeOf(HTMLSlotElement, HTMLElement.constructor);
+    setPrototypeOf(HTMLSlotElement.prototype, HTMLElement.prototype);
+    Window.prototype.HTMLSlotElement = HTMLSlotElement;
+    defineProperty(Document.prototype, 'createElement', {
+      value: function (tagName, _options) {
+        const elm = createElement.apply(this, ArraySlice.call(arguments));
+
+        if (tagName.length === 4 && StringCharCodeAt.call(tagName, 0) === CHAR_S && StringCharCodeAt.call(tagName, 1) === CHAR_L && StringCharCodeAt.call(tagName, 2) === CHAR_O && StringCharCodeAt.call(tagName, 3) === CHAR_T) {
+          setPrototypeOf(elm, HTMLSlotElement.prototype);
+        }
+
+        return elm;
+      }
+    });
+  }
+
+  if (detect()) {
+    apply();
+  }
+
+  const {
+    assign: assign$1,
+    create: create$1,
+    defineProperties: defineProperties$1,
+    defineProperty: defineProperty$1,
+    freeze: freeze$1,
+    getOwnPropertyDescriptor: getOwnPropertyDescriptor$1,
+    getOwnPropertyNames: getOwnPropertyNames$1,
+    getPrototypeOf: getPrototypeOf$1,
+    hasOwnProperty: hasOwnProperty$1,
+    isFrozen: isFrozen$1,
+    keys: keys$1,
+    seal: seal$1,
+    setPrototypeOf: setPrototypeOf$1
+  } = Object;
+  const {
+    filter: ArrayFilter$1,
+    find: ArrayFind$1,
+    indexOf: ArrayIndexOf$1,
+    join: ArrayJoin$1,
+    map: ArrayMap$1,
+    push: ArrayPush$1,
+    reduce: ArrayReduce$1,
+    reverse: ArrayReverse$1,
+    slice: ArraySlice$1,
+    splice: ArraySplice$1,
+    unshift: ArrayUnshift$1,
+    forEach: forEach$1
+  } = Array.prototype;
+  const {
+    charCodeAt: StringCharCodeAt$1,
+    replace: StringReplace$1,
+    slice: StringSlice$1,
+    toLowerCase: StringToLowerCase$1
+  } = String.prototype;
+  const AriaPropertyNames$1 = ['ariaActiveDescendant', 'ariaAtomic', 'ariaAutoComplete', 'ariaBusy', 'ariaChecked', 'ariaColCount', 'ariaColIndex', 'ariaColSpan', 'ariaControls', 'ariaCurrent', 'ariaDescribedBy', 'ariaDetails', 'ariaDisabled', 'ariaErrorMessage', 'ariaExpanded', 'ariaFlowTo', 'ariaHasPopup', 'ariaHidden', 'ariaInvalid', 'ariaKeyShortcuts', 'ariaLabel', 'ariaLabelledBy', 'ariaLevel', 'ariaLive', 'ariaModal', 'ariaMultiLine', 'ariaMultiSelectable', 'ariaOrientation', 'ariaOwns', 'ariaPlaceholder', 'ariaPosInSet', 'ariaPressed', 'ariaReadOnly', 'ariaRelevant', 'ariaRequired', 'ariaRoleDescription', 'ariaRowCount', 'ariaRowIndex', 'ariaRowSpan', 'ariaSelected', 'ariaSetSize', 'ariaSort', 'ariaValueMax', 'ariaValueMin', 'ariaValueNow', 'ariaValueText', 'role'];
+  const AttrNameToPropNameMap$1 = create$1(null);
+  const PropNameToAttrNameMap$1 = create$1(null);
+  forEach$1.call(AriaPropertyNames$1, propName => {
+    const attrName = StringToLowerCase$1.call(StringReplace$1.call(propName, /^aria/, 'aria-'));
+    AttrNameToPropNameMap$1[attrName] = propName;
+    PropNameToAttrNameMap$1[propName] = attrName;
+  });
+
+  const _globalThis$1 = function () {
+    if (typeof globalThis === 'object') {
+      return globalThis;
+    }
+
+    let _globalThis;
+
+    try {
+      Object.defineProperty(Object.prototype, '__magic__', {
+        get: function () {
+          return this;
+        },
+        configurable: true
+      });
+      _globalThis = __magic__;
+      delete Object.prototype.__magic__;
+    } catch (ex) {} finally {
+      if (typeof _globalThis === 'undefined') {
+        _globalThis = window;
+      }
+    }
+
+    return _globalThis;
+  }();
+
+  const hasNativeSymbolsSupport$1 = Symbol('x').toString() === 'Symbol(x)';
+  const HTML_ATTRIBUTES_TO_PROPERTY$1 = {
+    accesskey: 'accessKey',
+    readonly: 'readOnly',
+    tabindex: 'tabIndex',
+    bgcolor: 'bgColor',
+    colspan: 'colSpan',
+    rowspan: 'rowSpan',
+    contenteditable: 'contentEditable',
+    crossorigin: 'crossOrigin',
+    datetime: 'dateTime',
+    formaction: 'formAction',
+    ismap: 'isMap',
+    maxlength: 'maxLength',
+    minlength: 'minLength',
+    novalidate: 'noValidate',
+    usemap: 'useMap',
+    for: 'htmlFor'
+  };
+  keys$1(HTML_ATTRIBUTES_TO_PROPERTY$1).forEach(attrName => {});
+
+  if (!_globalThis$1.lwcRuntimeFlags) {
+    Object.defineProperty(_globalThis$1, 'lwcRuntimeFlags', {
+      value: create$1(null)
+    });
+  }
+
+  const runtimeFlags = _globalThis$1.lwcRuntimeFlags;
+
+  function getOwnerDocument(node) {
+    const doc = ownerDocumentGetter.call(node);
+    return doc === null ? node : doc;
+  }
+
+  function getOwnerWindow(node) {
+    const doc = getOwnerDocument(node);
+    const win = defaultViewGetter.call(doc);
+
+    if (win === null) {
+      throw new TypeError();
+    }
+
+    return win;
+  }
+
+  let skipGlobalPatching;
+
+  function isGlobalPatchingSkipped(node) {
+    if (isUndefined(skipGlobalPatching)) {
+      const ownerDocument = getOwnerDocument(node);
+      skipGlobalPatching = ownerDocument.body && getAttribute.call(ownerDocument.body, 'data-global-patching-bypass') === 'temporary-bypass';
+    }
+
+    return isTrue$1(skipGlobalPatching);
+  }
+
+  function arrayFromCollection(collection) {
+    const size = collection.length;
+    const cloned = [];
+
+    if (size > 0) {
+      for (let i = 0; i < size; i++) {
+        cloned[i] = collection[i];
+      }
+    }
+
+    return cloned;
+  }
+
+  function pathComposer(startNode, composed) {
+    const composedPath = [];
+    let current = startNode;
+    const startRoot = startNode instanceof Window ? startNode : startNode.getRootNode();
+
+    while (!isNull(current)) {
+      composedPath.push(current);
+      let assignedSlot = null;
+
+      if (current instanceof Element) {
+        assignedSlot = current.assignedSlot;
+      }
+
+      if (!isNull(assignedSlot)) {
+        current = assignedSlot;
+      } else if (current instanceof ShadowRoot && (composed || current !== startRoot)) {
+        current = current.host;
+      } else {
+        current = current.parentNode;
+      }
+    }
+
+    let doc;
+
+    if (startNode instanceof Window) {
+      doc = startNode.document;
+    } else {
+      doc = getOwnerDocument(startNode);
+    }
+
+    if (composedPath[composedPath.length - 1] === doc) {
+      composedPath.push(window);
+    }
+
+    return composedPath;
+  }
+
+  function retarget(refNode, path) {
+    if (isNull(refNode)) {
+      return null;
+    }
+
+    const refNodePath = pathComposer(refNode, true);
+    const p$ = path;
+
+    for (let i = 0, ancestor, lastRoot, root, rootIdx; i < p$.length; i++) {
+      ancestor = p$[i];
+      root = ancestor instanceof Window ? ancestor : ancestor.getRootNode();
+
+      if (root !== lastRoot) {
+        rootIdx = refNodePath.indexOf(root);
+        lastRoot = root;
+      }
+
+      if (!(root instanceof SyntheticShadowRoot) || !isUndefined(rootIdx) && rootIdx > -1) {
+        return ancestor;
+      }
+    }
+
+    return null;
+  }
+
+  var EventListenerContext;
+
+  (function (EventListenerContext) {
+    EventListenerContext[EventListenerContext["CUSTOM_ELEMENT_LISTENER"] = 1] = "CUSTOM_ELEMENT_LISTENER";
+    EventListenerContext[EventListenerContext["SHADOW_ROOT_LISTENER"] = 2] = "SHADOW_ROOT_LISTENER";
+  })(EventListenerContext || (EventListenerContext = {}));
+
+  const eventToContextMap = new WeakMap();
+
+  function isChildNode(root, node) {
+    return !!(compareDocumentPosition.call(root, node) & DOCUMENT_POSITION_CONTAINED_BY);
+  }
+
+  const GET_ROOT_NODE_CONFIG_FALSE = {
+    composed: false
+  };
+
+  function getRootNodeHost(node, options) {
+    let rootNode = node.getRootNode(options);
+
+    if ('mode' in rootNode && 'delegatesFocus' in rootNode) {
+      rootNode = getHost(rootNode);
+    }
+
+    return rootNode;
+  }
+
+  function targetGetter() {
+    const originalCurrentTarget = eventCurrentTargetGetter.call(this);
+    const originalTarget = eventTargetGetter.call(this);
+    const composedPath = pathComposer(originalTarget, this.composed);
+    const doc = getOwnerDocument(originalTarget);
+
+    if (!(originalCurrentTarget instanceof Node)) {
+      if (isNull(originalCurrentTarget) && isUndefined(getNodeOwnerKey(originalTarget))) {
+        return originalTarget;
+      }
+
+      return retarget(doc, composedPath);
+    } else if (originalCurrentTarget === doc || originalCurrentTarget === doc.body) {
+      if (isUndefined(getNodeOwnerKey(originalTarget))) {
+        return originalTarget;
+      }
+
+      return retarget(doc, composedPath);
+    }
+
+    const eventContext = eventToContextMap.get(this);
+    const currentTarget = eventContext === EventListenerContext.SHADOW_ROOT_LISTENER ? getShadowRoot(originalCurrentTarget) : originalCurrentTarget;
+    return retarget(currentTarget, composedPath);
+  }
+
+  function composedPathValue() {
+    const originalTarget = eventTargetGetter.call(this);
+    const originalCurrentTarget = eventCurrentTargetGetter.call(this);
+    return isNull(originalCurrentTarget) ? [] : pathComposer(originalTarget, this.composed);
+  }
+
+  function patchEvent(event) {
+    if (eventToContextMap.has(event)) {
+      return;
+    }
+
+    defineProperties(event, {
+      target: {
+        get: targetGetter,
+        enumerable: true,
+        configurable: true
+      },
+      composedPath: {
+        value: composedPathValue,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      },
+      srcElement: {
+        get: targetGetter,
+        enumerable: true,
+        configurable: true
+      },
+      path: {
+        get: composedPathValue,
+        enumerable: true,
+        configurable: true
+      }
+    });
+    const originalRelatedTargetDescriptor = getPropertyDescriptor(event, 'relatedTarget');
+
+    if (!isUndefined(originalRelatedTargetDescriptor)) {
+      const relatedTargetGetter = originalRelatedTargetDescriptor.get;
+      defineProperty(event, 'relatedTarget', {
+        get() {
+          const eventContext = eventToContextMap.get(this);
+          const originalCurrentTarget = eventCurrentTargetGetter.call(this);
+          const relatedTarget = relatedTargetGetter.call(this);
+
+          if (isNull(relatedTarget)) {
+            return null;
+          }
+
+          const currentTarget = eventContext === EventListenerContext.SHADOW_ROOT_LISTENER ? getShadowRoot(originalCurrentTarget) : originalCurrentTarget;
+          return retarget(currentTarget, pathComposer(relatedTarget, true));
+        },
+
+        enumerable: true,
+        configurable: true
+      });
+    }
+
+    eventToContextMap.set(event, 0);
+  }
+
+  const customElementToWrappedListeners = new WeakMap();
+
+  function getEventMap(elm) {
+    let listenerInfo = customElementToWrappedListeners.get(elm);
+
+    if (isUndefined(listenerInfo)) {
+      listenerInfo = create(null);
+      customElementToWrappedListeners.set(elm, listenerInfo);
+    }
+
+    return listenerInfo;
+  }
+
+  const shadowRootEventListenerMap = new WeakMap();
+
+  function getWrappedShadowRootListener(sr, listener) {
+    if (!isFunction(listener)) {
+      throw new TypeError();
+    }
+
+    let shadowRootWrappedListener = shadowRootEventListenerMap.get(listener);
+
+    if (isUndefined(shadowRootWrappedListener)) {
+      shadowRootWrappedListener = function (event) {
+        const {
+          composed
+        } = event;
+        const target = eventTargetGetter.call(event);
+        const currentTarget = eventCurrentTargetGetter.call(event);
+
+        if (target !== currentTarget) {
+          const rootNode = getRootNodeHost(target, {
+            composed
+          });
+
+          if (isChildNode(rootNode, currentTarget) || composed === false && rootNode === currentTarget) {
+            listener.call(sr, event);
+          }
+        }
+      };
+
+      shadowRootWrappedListener.placement = EventListenerContext.SHADOW_ROOT_LISTENER;
+
+      {
+        shadowRootWrappedListener.original = listener;
+      }
+
+      shadowRootEventListenerMap.set(listener, shadowRootWrappedListener);
+    }
+
+    return shadowRootWrappedListener;
+  }
+
+  const customElementEventListenerMap = new WeakMap();
+
+  function getWrappedCustomElementListener(elm, listener) {
+    if (!isFunction(listener)) {
+      throw new TypeError();
+    }
+
+    let customElementWrappedListener = customElementEventListenerMap.get(listener);
+
+    if (isUndefined(customElementWrappedListener)) {
+      customElementWrappedListener = function (event) {
+        if (isValidEventForCustomElement(event)) {
+          listener.call(elm, event);
+        }
+      };
+
+      customElementWrappedListener.placement = EventListenerContext.CUSTOM_ELEMENT_LISTENER;
+
+      {
+        customElementWrappedListener.original = listener;
+      }
+
+      customElementEventListenerMap.set(listener, customElementWrappedListener);
+    }
+
+    return customElementWrappedListener;
+  }
+
+  function domListener(evt) {
+    patchEvent(evt);
+    let immediatePropagationStopped = false;
+    let propagationStopped = false;
+    const {
+      type,
+      stopImmediatePropagation,
+      stopPropagation
+    } = evt;
+    const currentTarget = eventCurrentTargetGetter.call(evt);
+    const listenerMap = getEventMap(currentTarget);
+    const listeners = listenerMap[type];
+    defineProperty(evt, 'stopImmediatePropagation', {
+      value() {
+        immediatePropagationStopped = true;
+        stopImmediatePropagation.call(evt);
+      },
+
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
+    defineProperty(evt, 'stopPropagation', {
+      value() {
+        propagationStopped = true;
+        stopPropagation.call(evt);
+      },
+
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
+    const bookkeeping = ArraySlice.call(listeners);
+
+    function invokeListenersByPlacement(placement) {
+      forEach.call(bookkeeping, listener => {
+        if (isFalse$1(immediatePropagationStopped) && listener.placement === placement) {
+          if (ArrayIndexOf.call(listeners, listener) !== -1) {
+            listener.call(undefined, evt);
+          }
+        }
+      });
+    }
+
+    eventToContextMap.set(evt, EventListenerContext.SHADOW_ROOT_LISTENER);
+    invokeListenersByPlacement(EventListenerContext.SHADOW_ROOT_LISTENER);
+
+    if (isFalse$1(immediatePropagationStopped) && isFalse$1(propagationStopped)) {
+      eventToContextMap.set(evt, EventListenerContext.CUSTOM_ELEMENT_LISTENER);
+      invokeListenersByPlacement(EventListenerContext.CUSTOM_ELEMENT_LISTENER);
+    }
+
+    eventToContextMap.set(evt, 0);
+  }
+
+  function attachDOMListener(elm, type, wrappedListener) {
+    const listenerMap = getEventMap(elm);
+    let cmpEventHandlers = listenerMap[type];
+
+    if (isUndefined(cmpEventHandlers)) {
+      cmpEventHandlers = listenerMap[type] = [];
+    }
+
+    if (cmpEventHandlers.length === 0) {
+      addEventListener.call(elm, type, domListener);
+    }
+
+    ArrayPush.call(cmpEventHandlers, wrappedListener);
+  }
+
+  function detachDOMListener(elm, type, wrappedListener) {
+    const listenerMap = getEventMap(elm);
+    let p;
+    let listeners;
+
+    if (!isUndefined(listeners = listenerMap[type]) && (p = ArrayIndexOf.call(listeners, wrappedListener)) !== -1) {
+      ArraySplice.call(listeners, p, 1);
+
+      if (listeners.length === 0) {
+        removeEventListener.call(elm, type, domListener);
+      }
+    }
+  }
+
+  function isValidEventForCustomElement(event) {
+    const target = eventTargetGetter.call(event);
+    const currentTarget = eventCurrentTargetGetter.call(event);
+    const {
+      composed
+    } = event;
+    return composed === true || target === currentTarget || isChildNode(getRootNodeHost(target, GET_ROOT_NODE_CONFIG_FALSE), currentTarget);
+  }
+
+  function addCustomElementEventListener(elm, type, listener, _options) {
+    {
+      if (!isFunction(listener)) {
+        throw new TypeError(`Invalid second argument for Element.addEventListener() in ${toString(elm)} for event "${type}". Expected an EventListener but received ${listener}.`);
+      }
+    }
+
+    const wrappedListener = getWrappedCustomElementListener(elm, listener);
+    attachDOMListener(elm, type, wrappedListener);
+  }
+
+  function removeCustomElementEventListener(elm, type, listener, _options) {
+    const wrappedListener = getWrappedCustomElementListener(elm, listener);
+    detachDOMListener(elm, type, wrappedListener);
+  }
+
+  function addShadowRootEventListener(sr, type, listener, _options) {
+    {
+      if (!isFunction(listener)) {
+        throw new TypeError(`Invalid second argument for ShadowRoot.addEventListener() in ${toString(sr)} for event "${type}". Expected an EventListener but received ${listener}.`);
+      }
+    }
+
+    const elm = getHost(sr);
+    const wrappedListener = getWrappedShadowRootListener(sr, listener);
+    attachDOMListener(elm, type, wrappedListener);
+  }
+
+  function removeShadowRootEventListener(sr, type, listener, _options) {
+    const elm = getHost(sr);
+    const wrappedListener = getWrappedShadowRootListener(sr, listener);
+    detachDOMListener(elm, type, wrappedListener);
+  }
+
+  function getTextContent(node) {
+    switch (node.nodeType) {
+      case ELEMENT_NODE:
+        {
+          const childNodes = getFilteredChildNodes(node);
+          let content = '';
+
+          for (let i = 0, len = childNodes.length; i < len; i += 1) {
+            const currentNode = childNodes[i];
+
+            if (currentNode.nodeType !== COMMENT_NODE) {
+              content += getTextContent(currentNode);
+            }
+          }
+
+          return content;
+        }
+
+      default:
+        return node.nodeValue;
+    }
+  }
+
+  const Items = createHiddenField('StaticNodeListItems', 'synthetic-shadow');
+
+  function StaticNodeList() {
+    throw new TypeError('Illegal constructor');
+  }
+
+  StaticNodeList.prototype = create(NodeList.prototype, {
+    constructor: {
+      writable: true,
+      configurable: true,
+      value: StaticNodeList
+    },
+    item: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value(index) {
+        return this[index];
+      }
+
+    },
+    length: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        return getHiddenField(this, Items).length;
+      }
+
+    },
+    forEach: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value(cb, thisArg) {
+        forEach.call(getHiddenField(this, Items), cb, thisArg);
+      }
+
+    },
+    entries: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value() {
+        return ArrayMap.call(getHiddenField(this, Items), (v, i) => [i, v]);
+      }
+
+    },
+    keys: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value() {
+        return ArrayMap.call(getHiddenField(this, Items), (_v, i) => i);
+      }
+
+    },
+    values: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value() {
+        return getHiddenField(this, Items);
+      }
+
+    },
+    [Symbol.iterator]: {
+      writable: true,
+      configurable: true,
+
+      value() {
+        let nextIndex = 0;
+        return {
+          next: () => {
+            const items = getHiddenField(this, Items);
+            return nextIndex < items.length ? {
+              value: items[nextIndex++],
+              done: false
+            } : {
+              done: true
+            };
+          }
+        };
+      }
+
+    },
+    [Symbol.toStringTag]: {
+      configurable: true,
+
+      get() {
+        return 'NodeList';
+      }
+
+    },
+    toString: {
+      writable: true,
+      configurable: true,
+
+      value() {
+        return '[object NodeList]';
+      }
+
+    }
+  });
+  setPrototypeOf(StaticNodeList, NodeList);
+
+  function createStaticNodeList(items) {
+    const nodeList = create(StaticNodeList.prototype);
+    setHiddenField(nodeList, Items, items);
+    forEach.call(items, (item, index) => {
+      defineProperty(nodeList, index, {
+        value: item,
+        enumerable: true,
+        configurable: true
+      });
+    });
+    return nodeList;
+  }
+
+  const Items$1 = createHiddenField('StaticHTMLCollectionItems', 'synthetic-shadow');
+
+  function StaticHTMLCollection() {
+    throw new TypeError('Illegal constructor');
+  }
+
+  StaticHTMLCollection.prototype = create(HTMLCollection.prototype, {
+    constructor: {
+      writable: true,
+      configurable: true,
+      value: StaticHTMLCollection
+    },
+    item: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value(index) {
+        return this[index];
+      }
+
+    },
+    length: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        return getHiddenField(this, Items$1).length;
+      }
+
+    },
+    namedItem: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value(name) {
+        if (name === '') {
+          return null;
+        }
+
+        const items = getHiddenField(this, Items$1);
+
+        for (let i = 0, len = items.length; i < len; i++) {
+          const item = items[len];
+
+          if (name === getAttribute.call(item, 'id') || name === getAttribute.call(item, 'name')) {
+            return item;
+          }
+        }
+
+        return null;
+      }
+
+    },
+    forEach: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value(cb, thisArg) {
+        forEach.call(getHiddenField(this, Items$1), cb, thisArg);
+      }
+
+    },
+    entries: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value() {
+        return ArrayMap.call(getHiddenField(this, Items$1), (v, i) => [i, v]);
+      }
+
+    },
+    keys: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value() {
+        return ArrayMap.call(getHiddenField(this, Items$1), (v, i) => i);
+      }
+
+    },
+    values: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value() {
+        return getHiddenField(this, Items$1);
+      }
+
+    },
+    [Symbol.iterator]: {
+      writable: true,
+      configurable: true,
+
+      value() {
+        let nextIndex = 0;
+        return {
+          next: () => {
+            const items = getHiddenField(this, Items$1);
+            return nextIndex < items.length ? {
+              value: items[nextIndex++],
+              done: false
+            } : {
+              done: true
+            };
+          }
+        };
+      }
+
+    },
+    [Symbol.toStringTag]: {
+      configurable: true,
+
+      get() {
+        return 'HTMLCollection';
+      }
+
+    },
+    toString: {
+      writable: true,
+      configurable: true,
+
+      value() {
+        return '[object HTMLCollection]';
+      }
+
+    }
+  });
+  setPrototypeOf(StaticHTMLCollection, HTMLCollection);
+
+  function createStaticHTMLCollection(items) {
+    const collection = create(StaticHTMLCollection.prototype);
+    setHiddenField(collection, Items$1, items);
+    forEach.call(items, (item, index) => {
+      defineProperty(collection, index, {
+        value: item,
+        enumerable: true,
+        configurable: true
+      });
+    });
+    return collection;
+  }
+
+  function getInnerHTML(node) {
+    let s = '';
+    const childNodes = getFilteredChildNodes(node);
+
+    for (let i = 0, len = childNodes.length; i < len; i += 1) {
+      s += getOuterHTML(childNodes[i]);
+    }
+
+    return s;
+  }
+
+  const escapeAttrRegExp = /[&\u00A0"]/g;
+  const escapeDataRegExp = /[&\u00A0<>]/g;
+  const {
+    replace,
+    toLowerCase
+  } = String.prototype;
+
+  function escapeReplace(c) {
+    switch (c) {
+      case '&':
+        return '&amp;';
+
+      case '<':
+        return '&lt;';
+
+      case '>':
+        return '&gt;';
+
+      case '"':
+        return '&quot;';
+
+      case '\u00A0':
+        return '&nbsp;';
+
+      default:
+        return '';
+    }
+  }
+
+  function escapeAttr(s) {
+    return replace.call(s, escapeAttrRegExp, escapeReplace);
+  }
+
+  function escapeData(s) {
+    return replace.call(s, escapeDataRegExp, escapeReplace);
+  }
+
+  const voidElements = new Set(['AREA', 'BASE', 'BR', 'COL', 'COMMAND', 'EMBED', 'HR', 'IMG', 'INPUT', 'KEYGEN', 'LINK', 'META', 'PARAM', 'SOURCE', 'TRACK', 'WBR']);
+  const plaintextParents = new Set(['STYLE', 'SCRIPT', 'XMP', 'IFRAME', 'NOEMBED', 'NOFRAMES', 'PLAINTEXT', 'NOSCRIPT']);
+
+  function getOuterHTML(node) {
+    switch (node.nodeType) {
+      case ELEMENT_NODE:
+        {
+          const {
+            attributes: attrs
+          } = node;
+          const tagName = tagNameGetter.call(node);
+          let s = '<' + toLowerCase.call(tagName);
+
+          for (let i = 0, attr; attr = attrs[i]; i++) {
+            s += ' ' + attr.name + '="' + escapeAttr(attr.value) + '"';
+          }
+
+          s += '>';
+
+          if (voidElements.has(tagName)) {
+            return s;
+          }
+
+          return s + getInnerHTML(node) + '</' + toLowerCase.call(tagName) + '>';
+        }
+
+      case TEXT_NODE:
+        {
+          const {
+            data,
+            parentNode
+          } = node;
+
+          if (parentNode instanceof Element && plaintextParents.has(tagNameGetter.call(parentNode))) {
+            return data;
+          }
+
+          return escapeData(data);
+        }
+
+      case CDATA_SECTION_NODE:
+        {
+          return `<!CDATA[[${node.data}]]>`;
+        }
+
+      case PROCESSING_INSTRUCTION_NODE:
+        {
+          return `<?${node.target} ${node.data}?>`;
+        }
+
+      case COMMENT_NODE:
+        {
+          return `<!--${node.data}-->`;
+        }
+
+      default:
+        {
+          return '';
+        }
+    }
+  }
+
+  const InternalSlot = createHiddenField('shadowRecord', 'synthetic-shadow');
+  const {
+    createDocumentFragment
+  } = document;
+
+  function getInternalSlot(root) {
+    const record = getHiddenField(root, InternalSlot);
+
+    if (isUndefined(record)) {
+      throw new TypeError();
+    }
+
+    return record;
+  }
+
+  const ShadowRootResolverKey = '$shadowResolver$';
+  const ShadowResolverPrivateKey = '$$ShadowResolverKey$$';
+  defineProperty(Node.prototype, ShadowRootResolverKey, {
+    set(fn) {
+      this[ShadowResolverPrivateKey] = fn;
+      setNodeOwnerKey(this, fn.nodeKey);
+    },
+
+    get() {
+      return this[ShadowResolverPrivateKey];
+    },
+
+    configurable: true,
+    enumerable: true
+  });
+
+  function getShadowRootResolver(node) {
+    return node[ShadowRootResolverKey];
+  }
+
+  function setShadowRootResolver(node, fn) {
+    node[ShadowRootResolverKey] = fn;
+  }
+
+  function isDelegatingFocus(host) {
+    return getInternalSlot(host).delegatesFocus;
+  }
+
+  function getHost(root) {
+    return getInternalSlot(root).host;
+  }
+
+  function getShadowRoot(elm) {
+    return getInternalSlot(elm).shadowRoot;
+  }
+
+  function isHostElement(elm) {
+    return !isUndefined(getHiddenField(elm, InternalSlot));
+  }
+
+  let uid = 0;
+
+  function attachShadow$1(elm, options) {
+    if (!isUndefined(getHiddenField(elm, InternalSlot))) {
+      throw new Error(`Failed to execute 'attachShadow' on 'Element': Shadow root cannot be created on a host which already hosts a shadow tree.`);
+    }
+
+    const {
+      mode,
+      delegatesFocus
+    } = options;
+    const doc = getOwnerDocument(elm);
+    const sr = createDocumentFragment.call(doc);
+    const record = {
+      mode,
+      delegatesFocus: !!delegatesFocus,
+      host: elm,
+      shadowRoot: sr
+    };
+    setHiddenField(sr, InternalSlot, record);
+    setHiddenField(elm, InternalSlot, record);
+
+    const shadowResolver = () => sr;
+
+    const x = shadowResolver.nodeKey = uid++;
+    setNodeKey(elm, x);
+    setShadowRootResolver(sr, shadowResolver);
+    setPrototypeOf(sr, SyntheticShadowRoot.prototype);
+    return sr;
+  }
+
+  const SyntheticShadowRootDescriptors = {
+    constructor: {
+      writable: true,
+      configurable: true,
+      value: SyntheticShadowRoot
+    },
+    toString: {
+      writable: true,
+      configurable: true,
+
+      value() {
+        return `[object ShadowRoot]`;
+      }
+
+    }
+  };
+  const ShadowRootDescriptors = {
+    activeElement: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        const host = getHost(this);
+        const doc = getOwnerDocument(host);
+        const activeElement = DocumentPrototypeActiveElement.call(doc);
+
+        if (isNull(activeElement)) {
+          return activeElement;
+        }
+
+        if ((compareDocumentPosition.call(host, activeElement) & DOCUMENT_POSITION_CONTAINED_BY) === 0) {
+          return null;
+        }
+
+        let node = activeElement;
+
+        while (!isNodeOwnedBy(host, node)) {
+          node = parentElementGetter.call(node);
+        }
+
+        if (isSlotElement(node)) {
+          return null;
+        }
+
+        return node;
+      }
+
+    },
+    delegatesFocus: {
+      configurable: true,
+
+      get() {
+        return getInternalSlot(this).delegatesFocus;
+      }
+
+    },
+    elementFromPoint: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value(left, top) {
+        const host = getHost(this);
+        const doc = getOwnerDocument(host);
+        const element = elementFromPoint.call(doc, left, top);
+
+        if (isNull(element)) {
+          return element;
+        }
+
+        return retarget(this, pathComposer(element, true));
+      }
+
+    },
+    elementsFromPoint: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value(_left, _top) {
+        throw new Error();
+      }
+
+    },
+    getSelection: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value() {
+        throw new Error();
+      }
+
+    },
+    host: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        return getHost(this);
+      }
+
+    },
+    mode: {
+      configurable: true,
+
+      get() {
+        return getInternalSlot(this).mode;
+      }
+
+    },
+    styleSheets: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        throw new Error();
+      }
+
+    }
+  };
+  const NodePatchDescriptors = {
+    insertBefore: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value(newChild, refChild) {
+        insertBefore.call(getHost(this), newChild, refChild);
+        return newChild;
+      }
+
+    },
+    removeChild: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value(oldChild) {
+        removeChild.call(getHost(this), oldChild);
+        return oldChild;
+      }
+
+    },
+    appendChild: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value(newChild) {
+        appendChild.call(getHost(this), newChild);
+        return newChild;
+      }
+
+    },
+    replaceChild: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value(newChild, oldChild) {
+        replaceChild.call(getHost(this), newChild, oldChild);
+        return oldChild;
+      }
+
+    },
+    addEventListener: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value(type, listener, options) {
+        addShadowRootEventListener(this, type, listener);
+      }
+
+    },
+    removeEventListener: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value(type, listener, options) {
+        removeShadowRootEventListener(this, type, listener);
+      }
+
+    },
+    baseURI: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        return getHost(this).baseURI;
+      }
+
+    },
+    childNodes: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        return createStaticNodeList(shadowRootChildNodes(this));
+      }
+
+    },
+    compareDocumentPosition: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value(otherNode) {
+        const host = getHost(this);
+
+        if (this === otherNode) {
+          return 0;
+        } else if (this.contains(otherNode)) {
+          return 20;
+        } else if (compareDocumentPosition.call(host, otherNode) & DOCUMENT_POSITION_CONTAINED_BY) {
+          return 37;
+        } else {
+          return 35;
+        }
+      }
+
+    },
+    contains: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value(otherNode) {
+        if (this === otherNode) {
+          return true;
+        }
+
+        const host = getHost(this);
+        return (compareDocumentPosition.call(host, otherNode) & DOCUMENT_POSITION_CONTAINED_BY) !== 0 && isNodeOwnedBy(host, otherNode);
+      }
+
+    },
+    firstChild: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        const childNodes = getInternalChildNodes(this);
+        return childNodes[0] || null;
+      }
+
+    },
+    lastChild: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        const childNodes = getInternalChildNodes(this);
+        return childNodes[childNodes.length - 1] || null;
+      }
+
+    },
+    hasChildNodes: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value() {
+        const childNodes = getInternalChildNodes(this);
+        return childNodes.length > 0;
+      }
+
+    },
+    isConnected: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        return isConnected.call(getHost(this));
+      }
+
+    },
+    nextSibling: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        return null;
+      }
+
+    },
+    previousSibling: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        return null;
+      }
+
+    },
+    nodeName: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        return '#document-fragment';
+      }
+
+    },
+    nodeType: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        return 11;
+      }
+
+    },
+    nodeValue: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        return null;
+      }
+
+    },
+    ownerDocument: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        return getHost(this).ownerDocument;
+      }
+
+    },
+    parentElement: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        return null;
+      }
+
+    },
+    parentNode: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        return null;
+      }
+
+    },
+    textContent: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        const childNodes = getInternalChildNodes(this);
+        let textContent = '';
+
+        for (let i = 0, len = childNodes.length; i < len; i += 1) {
+          const currentNode = childNodes[i];
+
+          if (currentNode.nodeType !== COMMENT_NODE) {
+            textContent += getTextContent(currentNode);
+          }
+        }
+
+        return textContent;
+      },
+
+      set(v) {
+        const host = getHost(this);
+        textContextSetter.call(host, v);
+      }
+
+    },
+    getRootNode: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value(options) {
+        return !isUndefined(options) && isTrue$1(options.composed) ? getHost(this).getRootNode(options) : this;
+      }
+
+    }
+  };
+  const ElementPatchDescriptors = {
+    innerHTML: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        const childNodes = getInternalChildNodes(this);
+        let innerHTML = '';
+
+        for (let i = 0, len = childNodes.length; i < len; i += 1) {
+          innerHTML += getOuterHTML(childNodes[i]);
+        }
+
+        return innerHTML;
+      },
+
+      set(v) {
+        const host = getHost(this);
+        innerHTMLSetter.call(host, v);
+      }
+
+    }
+  };
+  const ParentNodePatchDescriptors = {
+    childElementCount: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        return this.children.length;
+      }
+
+    },
+    children: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        return createStaticHTMLCollection(ArrayFilter.call(shadowRootChildNodes(this), elm => elm instanceof Element));
+      }
+
+    },
+    firstElementChild: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        return this.children[0] || null;
+      }
+
+    },
+    lastElementChild: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        const {
+          children
+        } = this;
+        return children.item(children.length - 1) || null;
+      }
+
+    },
+    querySelector: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value(selectors) {
+        return shadowRootQuerySelector(this, selectors);
+      }
+
+    },
+    querySelectorAll: {
+      writable: true,
+      enumerable: true,
+      configurable: true,
+
+      value(selectors) {
+        return createStaticNodeList(shadowRootQuerySelectorAll(this, selectors));
+      }
+
+    }
+  };
+  assign(SyntheticShadowRootDescriptors, NodePatchDescriptors, ParentNodePatchDescriptors, ElementPatchDescriptors, ShadowRootDescriptors);
+
+  function SyntheticShadowRoot() {
+    throw new TypeError('Illegal constructor');
+  }
+
+  SyntheticShadowRoot.prototype = create(DocumentFragment.prototype, SyntheticShadowRootDescriptors);
+
+  function getIE11FakeShadowRootPlaceholder(host) {
+    const shadowRoot = getShadowRoot(host);
+    let c = shadowRoot.$$placeholder$$;
+
+    if (!isUndefined(c)) {
+      return c;
+    }
+
+    const doc = getOwnerDocument(host);
+    c = shadowRoot.$$placeholder$$ = createComment.call(doc, '');
+    defineProperties(c, {
+      childNodes: {
+        get() {
+          return shadowRoot.childNodes;
+        },
+
+        enumerable: true,
+        configurable: true
+      },
+      tagName: {
+        get() {
+          return `#shadow-root (${shadowRoot.mode})`;
+        },
+
+        enumerable: true,
+        configurable: true
+      }
+    });
+    return c;
+  }
+
+  function foldSlotElement(slot) {
+    let parent = parentElementGetter.call(slot);
+
+    while (!isNull(parent) && isSlotElement(parent)) {
+      slot = parent;
+      parent = parentElementGetter.call(slot);
+    }
+
+    return slot;
+  }
+
+  function isNodeSlotted(host, node) {
+    {
+      assert.invariant(host instanceof HTMLElement, `isNodeSlotted() should be called with a host as the first argument instead of ${host}`);
+      assert.invariant(node instanceof Node, `isNodeSlotted() should be called with a node as the second argument instead of ${node}`);
+      assert.invariant(compareDocumentPosition.call(node, host) & DOCUMENT_POSITION_CONTAINS, `isNodeSlotted() should never be called with a node that is not a child node of ${host}`);
+    }
+
+    const hostKey = getNodeKey(host);
+    let currentElement = node instanceof Element ? node : parentElementGetter.call(node);
+
+    while (!isNull(currentElement) && currentElement !== host) {
+      const elmOwnerKey = getNodeNearestOwnerKey(currentElement);
+      const parent = parentElementGetter.call(currentElement);
+
+      if (elmOwnerKey === hostKey) {
+        return isSlotElement(currentElement);
+      } else if (parent === host) {
+        return false;
+      } else if (!isNull(parent) && getNodeNearestOwnerKey(parent) !== elmOwnerKey) {
+        if (isSlotElement(parent)) {
+          currentElement = getNodeOwner(foldSlotElement(parent));
+
+          if (!isNull(currentElement)) {
+            if (currentElement === host) {
+              return true;
+            } else if (getNodeNearestOwnerKey(currentElement) === hostKey) {
+              return true;
+            }
+          }
+        } else {
+          return false;
+        }
+      } else {
+        currentElement = parent;
+      }
+    }
+
+    return false;
+  }
+
+  function getNodeOwner(node) {
+    if (!(node instanceof Node)) {
+      return null;
+    }
+
+    const ownerKey = getNodeNearestOwnerKey(node);
+
+    if (isUndefined(ownerKey)) {
+      return null;
+    }
+
+    let nodeOwner = node;
+
+    while (!isNull(nodeOwner) && getNodeKey(nodeOwner) !== ownerKey) {
+      nodeOwner = parentNodeGetter.call(nodeOwner);
+    }
+
+    if (isNull(nodeOwner)) {
+      return null;
+    }
+
+    return nodeOwner;
+  }
+
+  function isSlotElement(node) {
+    return node instanceof HTMLSlotElement;
+  }
+
+  function isNodeOwnedBy(owner, node) {
+    {
+      assert.invariant(owner instanceof HTMLElement, `isNodeOwnedBy() should be called with an element as the first argument instead of ${owner}`);
+      assert.invariant(node instanceof Node, `isNodeOwnedBy() should be called with a node as the second argument instead of ${node}`);
+      assert.invariant(compareDocumentPosition.call(node, owner) & DOCUMENT_POSITION_CONTAINS, `isNodeOwnedBy() should never be called with a node that is not a child node of ${owner}`);
+    }
+
+    const ownerKey = getNodeNearestOwnerKey(node);
+    return isUndefined(ownerKey) || getNodeKey(owner) === ownerKey;
+  }
+
+  function shadowRootChildNodes(root) {
+    const elm = getHost(root);
+    return getAllMatches(elm, arrayFromCollection(childNodesGetter.call(elm)));
+  }
+
+  function getAllSlottedMatches(host, nodeList) {
+    const filteredAndPatched = [];
+
+    for (let i = 0, len = nodeList.length; i < len; i += 1) {
+      const node = nodeList[i];
+
+      if (!isNodeOwnedBy(host, node) && isNodeSlotted(host, node)) {
+        ArrayPush.call(filteredAndPatched, node);
+      }
+    }
+
+    return filteredAndPatched;
+  }
+
+  function getFirstSlottedMatch(host, nodeList) {
+    for (let i = 0, len = nodeList.length; i < len; i += 1) {
+      const node = nodeList[i];
+
+      if (!isNodeOwnedBy(host, node) && isNodeSlotted(host, node)) {
+        return node;
+      }
+    }
+
+    return null;
+  }
+
+  function getAllMatches(owner, nodeList) {
+    const filteredAndPatched = [];
+
+    for (let i = 0, len = nodeList.length; i < len; i += 1) {
+      const node = nodeList[i];
+      const isOwned = isNodeOwnedBy(owner, node);
+
+      if (isOwned) {
+        ArrayPush.call(filteredAndPatched, node);
+      }
+    }
+
+    return filteredAndPatched;
+  }
+
+  function getFirstMatch(owner, nodeList) {
+    for (let i = 0, len = nodeList.length; i < len; i += 1) {
+      if (isNodeOwnedBy(owner, nodeList[i])) {
+        return nodeList[i];
+      }
+    }
+
+    return null;
+  }
+
+  function shadowRootQuerySelector(root, selector) {
+    const elm = getHost(root);
+    const nodeList = arrayFromCollection(querySelectorAll.call(elm, selector));
+    return getFirstMatch(elm, nodeList);
+  }
+
+  function shadowRootQuerySelectorAll(root, selector) {
+    const elm = getHost(root);
+    const nodeList = querySelectorAll.call(elm, selector);
+    return getAllMatches(elm, arrayFromCollection(nodeList));
+  }
+
+  function getFilteredChildNodes(node) {
+    let children;
+
+    if (!isHostElement(node) && !isSlotElement(node)) {
+      children = childNodesGetter.call(node);
+      return arrayFromCollection(children);
+    }
+
+    if (isHostElement(node)) {
+      const slots = arrayFromCollection(querySelectorAll.call(node, 'slot'));
+      const resolver = getShadowRootResolver(getShadowRoot(node));
+      return ArrayReduce.call(slots, (seed, slot) => {
+        if (resolver === getShadowRootResolver(slot)) {
+          ArrayPush.apply(seed, getFilteredSlotAssignedNodes(slot));
+        }
+
+        return seed;
+      }, []);
+    } else {
+      children = arrayFromCollection(childNodesGetter.call(node));
+      const resolver = getShadowRootResolver(node);
+      return ArrayReduce.call(children, (seed, child) => {
+        if (resolver === getShadowRootResolver(child)) {
+          ArrayPush.call(seed, child);
+        }
+
+        return seed;
+      }, []);
+    }
+  }
+
+  function getFilteredSlotAssignedNodes(slot) {
+    const owner = getNodeOwner(slot);
+
+    if (isNull(owner)) {
+      return [];
+    }
+
+    const childNodes = arrayFromCollection(childNodesGetter.call(slot));
+    return ArrayReduce.call(childNodes, (seed, child) => {
+      if (!isNodeOwnedBy(owner, child)) {
+        ArrayPush.call(seed, child);
+      }
+
+      return seed;
+    }, []);
+  }
+
+  const OwnKey = '$$OwnKey$$';
+  const OwnerKey = '$$OwnerKey$$';
+  const hasNativeSymbolsSupport$2 = Symbol('x').toString() === 'Symbol(x)';
+
+  function getNodeOwnerKey(node) {
+    return node[OwnerKey];
+  }
+
+  function setNodeOwnerKey(node, value) {
+    {
+      defineProperty(node, OwnerKey, {
+        value,
+        configurable: true
+      });
+    }
+  }
+
+  function getNodeKey(node) {
+    return node[OwnKey];
+  }
+
+  function setNodeKey(node, value) {
+    {
+      defineProperty(node, OwnKey, {
+        value
+      });
+    }
+  }
+
+  function getNodeNearestOwnerKey(node) {
+    let ownerNode = node;
+    let ownerKey;
+
+    while (!isNull(ownerNode)) {
+      ownerKey = getNodeOwnerKey(ownerNode);
+
+      if (!isUndefined(ownerKey)) {
+        return ownerKey;
+      }
+
+      ownerNode = parentNodeGetter.call(ownerNode);
+    }
+  }
+
+  function isNodeShadowed(node) {
+    return !isUndefined(getNodeOwnerKey(node));
+  }
+
+  function isNodeDeepShadowed(node) {
+    return !isUndefined(getNodeNearestOwnerKey(node));
+  }
+
+  function hasMountedChildren(node) {
+    return isSlotElement(node) || isHostElement(node);
+  }
+
+  function getShadowParent(node, value) {
+    const owner = getNodeOwner(node);
+
+    if (value === owner) {
+      return getShadowRoot(owner);
+    } else if (value instanceof Element) {
+      if (getNodeNearestOwnerKey(node) === getNodeNearestOwnerKey(value)) {
+        return value;
+      } else if (!isNull(owner) && isSlotElement(value)) {
+        const slotOwner = getNodeOwner(value);
+
+        if (!isNull(slotOwner) && isNodeOwnedBy(owner, slotOwner)) {
+          return slotOwner;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  function hasChildNodesPatched() {
+    return getInternalChildNodes(this).length > 0;
+  }
+
+  function firstChildGetterPatched() {
+    const childNodes = getInternalChildNodes(this);
+    return childNodes[0] || null;
+  }
+
+  function lastChildGetterPatched() {
+    const childNodes = getInternalChildNodes(this);
+    return childNodes[childNodes.length - 1] || null;
+  }
+
+  function textContentGetterPatched() {
+    return getTextContent(this);
+  }
+
+  function textContentSetterPatched(value) {
+    textContextSetter.call(this, value);
+  }
+
+  function parentNodeGetterPatched() {
+    const value = parentNodeGetter.call(this);
+
+    if (isNull(value)) {
+      return value;
+    }
+
+    return getShadowParent(this, value);
+  }
+
+  function parentElementGetterPatched() {
+    const value = parentNodeGetter.call(this);
+
+    if (isNull(value)) {
+      return null;
+    }
+
+    const parentNode = getShadowParent(this, value);
+    return parentNode instanceof Element ? parentNode : null;
+  }
+
+  function compareDocumentPositionPatched(otherNode) {
+    if (this.getRootNode() === otherNode) {
+      return 10;
+    } else if (getNodeOwnerKey(this) !== getNodeOwnerKey(otherNode)) {
+      return 35;
+    }
+
+    return compareDocumentPosition.call(this, otherNode);
+  }
+
+  function containsPatched(otherNode) {
+    if (otherNode == null || getNodeOwnerKey(this) !== getNodeOwnerKey(otherNode)) {
+      return false;
+    }
+
+    return (compareDocumentPosition.call(this, otherNode) & DOCUMENT_POSITION_CONTAINED_BY) !== 0;
+  }
+
+  function cloneNodePatched(deep) {
+    const clone = cloneNode.call(this, false);
+
+    if (!deep) {
+      return clone;
+    }
+
+    const childNodes = getInternalChildNodes(this);
+
+    for (let i = 0, len = childNodes.length; i < len; i += 1) {
+      clone.appendChild(childNodes[i].cloneNode(true));
+    }
+
+    return clone;
+  }
+
+  function childNodesGetterPatched() {
+    if (this instanceof Element && isHostElement(this)) {
+      const owner = getNodeOwner(this);
+      const childNodes = isNull(owner) ? [] : getAllMatches(owner, getFilteredChildNodes(this));
+
+      if ( isFalse$1(hasNativeSymbolsSupport$2) && isExternalChildNodeAccessorFlagOn()) {
+        ArrayUnshift.call(childNodes, getIE11FakeShadowRootPlaceholder(this));
+      }
+
+      return createStaticNodeList(childNodes);
+    }
+
+    return childNodesGetter.call(this);
+  }
+
+  const nativeGetRootNode = Node.prototype.getRootNode;
+  const getDocumentOrRootNode = !isUndefined(nativeGetRootNode) ? nativeGetRootNode : function () {
+    let node = this;
+    let nodeParent;
+
+    while (!isNull(nodeParent = parentNodeGetter.call(node))) {
+      node = nodeParent;
+    }
+
+    return node;
+  };
+
+  function getNearestRoot(node) {
+    const ownerNode = getNodeOwner(node);
+
+    if (isNull(ownerNode)) {
+      return getDocumentOrRootNode.call(node);
+    }
+
+    return getShadowRoot(ownerNode);
+  }
+
+  function getRootNodePatched(options) {
+    const composed = isUndefined(options) ? false : !!options.composed;
+    return isTrue$1(composed) ? getDocumentOrRootNode.call(this, options) : getNearestRoot(this);
+  }
+
+  defineProperties(Node.prototype, {
+    firstChild: {
+      get() {
+        if (hasMountedChildren(this)) {
+          return firstChildGetterPatched.call(this);
+        }
+
+        return firstChildGetter.call(this);
+      },
+
+      enumerable: true,
+      configurable: true
+    },
+    lastChild: {
+      get() {
+        if (hasMountedChildren(this)) {
+          return lastChildGetterPatched.call(this);
+        }
+
+        return lastChildGetter.call(this);
+      },
+
+      enumerable: true,
+      configurable: true
+    },
+    textContent: {
+      get() {
+        if (!runtimeFlags.ENABLE_NODE_PATCH) {
+          if (isNodeShadowed(this) || isHostElement(this)) {
+            return textContentGetterPatched.call(this);
+          }
+
+          return textContentGetter.call(this);
+        }
+
+        if (isGlobalPatchingSkipped(this)) {
+          return textContentGetter.call(this);
+        }
+
+        return textContentGetterPatched.call(this);
+      },
+
+      set: textContentSetterPatched,
+      enumerable: true,
+      configurable: true
+    },
+    parentNode: {
+      get() {
+        if (isNodeShadowed(this)) {
+          return parentNodeGetterPatched.call(this);
+        }
+
+        return parentNodeGetter.call(this);
+      },
+
+      enumerable: true,
+      configurable: true
+    },
+    parentElement: {
+      get() {
+        if (isNodeShadowed(this)) {
+          return parentElementGetterPatched.call(this);
+        }
+
+        return parentElementGetter.call(this);
+      },
+
+      enumerable: true,
+      configurable: true
+    },
+    childNodes: {
+      get() {
+        if (hasMountedChildren(this)) {
+          return childNodesGetterPatched.call(this);
+        }
+
+        return childNodesGetter.call(this);
+      },
+
+      enumerable: true,
+      configurable: true
+    },
+    hasChildNodes: {
+      value() {
+        if (hasMountedChildren(this)) {
+          return hasChildNodesPatched.call(this);
+        }
+
+        return hasChildNodes.call(this);
+      },
+
+      enumerable: true,
+      writable: true,
+      configurable: true
+    },
+    compareDocumentPosition: {
+      value(otherNode) {
+        if (isGlobalPatchingSkipped(this)) {
+          return compareDocumentPosition.call(this, otherNode);
+        }
+
+        return compareDocumentPositionPatched.call(this, otherNode);
+      },
+
+      enumerable: true,
+      writable: true,
+      configurable: true
+    },
+    contains: {
+      value(otherNode) {
+        if (this === otherNode) {
+          return true;
+        }
+
+        if (!runtimeFlags.ENABLE_NODE_PATCH) {
+          if (otherNode == null) {
+            return false;
+          }
+
+          if (isNodeShadowed(this) || isHostElement(this)) {
+            return containsPatched.call(this, otherNode);
+          }
+
+          return contains.call(this, otherNode);
+        }
+
+        if (isGlobalPatchingSkipped(this)) {
+          return contains.call(this, otherNode);
+        }
+
+        return containsPatched.call(this, otherNode);
+      },
+
+      enumerable: true,
+      writable: true,
+      configurable: true
+    },
+    cloneNode: {
+      value(deep) {
+        if (!runtimeFlags.ENABLE_NODE_PATCH) {
+          if (isNodeShadowed(this) || isHostElement(this)) {
+            return cloneNodePatched.call(this, deep);
+          }
+
+          return cloneNode.call(this, deep);
+        }
+
+        if (isTrue$1(deep)) {
+          if (isGlobalPatchingSkipped(this)) {
+            return cloneNode.call(this, deep);
+          }
+
+          return cloneNodePatched.call(this, deep);
+        }
+
+        return cloneNode.call(this, deep);
+      },
+
+      enumerable: true,
+      writable: true,
+      configurable: true
+    },
+    getRootNode: {
+      value: getRootNodePatched,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    },
+    isConnected: {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        return isConnected.call(this);
+      }
+
+    }
+  });
+  let internalChildNodeAccessorFlag = false;
+
+  function isExternalChildNodeAccessorFlagOn() {
+    return !internalChildNodeAccessorFlag;
+  }
+
+  const getInternalChildNodes =  isFalse$1(hasNativeSymbolsSupport$2) ? function (node) {
+    internalChildNodeAccessorFlag = true;
+    let childNodes;
+    let error = null;
+
+    try {
+      childNodes = node.childNodes;
+    } catch (e) {
+      error = e;
+    } finally {
+      internalChildNodeAccessorFlag = false;
+
+      if (!isNull(error)) {
+        throw error;
+      }
+    }
+
+    return childNodes;
+  } : function (node) {
+    return node.childNodes;
+  };
+
+  if (hasOwnProperty.call(HTMLElement.prototype, 'contains')) {
+    defineProperty(HTMLElement.prototype, 'contains', getOwnPropertyDescriptor(Node.prototype, 'contains'));
+  }
+
+  if (hasOwnProperty.call(HTMLElement.prototype, 'parentElement')) {
+    defineProperty(HTMLElement.prototype, 'parentElement', getOwnPropertyDescriptor(Node.prototype, 'parentElement'));
+  }
+
+  function elemFromPoint(left, top) {
+    const element = elementFromPoint.call(this, left, top);
+
+    if (isNull(element)) {
+      return element;
+    }
+
+    return retarget(this, pathComposer(element, true));
+  }
+
+  Document.prototype.elementFromPoint = elemFromPoint;
+  defineProperty(Document.prototype, 'activeElement', {
+    get() {
+      let node = DocumentPrototypeActiveElement.call(this);
+
+      if (isNull(node)) {
+        return node;
+      }
+
+      while (!isUndefined(getNodeOwnerKey(node))) {
+        node = parentElementGetter.call(node);
+
+        if (isNull(node)) {
+          return null;
+        }
+      }
+
+      if (node.tagName === 'HTML') {
+        node = this.body;
+      }
+
+      return node;
+    },
+
+    enumerable: true,
+    configurable: true
+  });
+  defineProperty(Document.prototype, 'getElementById', {
+    value() {
+      const elm = getElementById.apply(this, ArraySlice.call(arguments));
+
+      if (isNull(elm)) {
+        return null;
+      }
+
+      return isUndefined(getNodeOwnerKey(elm)) || isGlobalPatchingSkipped(elm) ? elm : null;
+    },
+
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
+  defineProperty(Document.prototype, 'querySelector', {
+    value() {
+      const elements = arrayFromCollection(querySelectorAll$1.apply(this, ArraySlice.call(arguments)));
+      const filtered = ArrayFind.call(elements, elm => isUndefined(getNodeOwnerKey(elm)) || isGlobalPatchingSkipped(elm));
+      return !isUndefined(filtered) ? filtered : null;
+    },
+
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
+  defineProperty(Document.prototype, 'querySelectorAll', {
+    value() {
+      const elements = arrayFromCollection(querySelectorAll$1.apply(this, ArraySlice.call(arguments)));
+      const filtered = ArrayFilter.call(elements, elm => isUndefined(getNodeOwnerKey(elm)) || isGlobalPatchingSkipped(elm));
+      return createStaticNodeList(filtered);
+    },
+
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
+  defineProperty(Document.prototype, 'getElementsByClassName', {
+    value() {
+      const elements = arrayFromCollection(getElementsByClassName$1.apply(this, ArraySlice.call(arguments)));
+      const filtered = ArrayFilter.call(elements, elm => isUndefined(getNodeOwnerKey(elm)) || isGlobalPatchingSkipped(elm));
+      return createStaticHTMLCollection(filtered);
+    },
+
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
+  defineProperty(Document.prototype, 'getElementsByTagName', {
+    value() {
+      const elements = arrayFromCollection(getElementsByTagName$1.apply(this, ArraySlice.call(arguments)));
+      const filtered = ArrayFilter.call(elements, elm => isUndefined(getNodeOwnerKey(elm)) || isGlobalPatchingSkipped(elm));
+      return createStaticHTMLCollection(filtered);
+    },
+
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
+  defineProperty(Document.prototype, 'getElementsByTagNameNS', {
+    value() {
+      const elements = arrayFromCollection(getElementsByTagNameNS$1.apply(this, ArraySlice.call(arguments)));
+      const filtered = ArrayFilter.call(elements, elm => isUndefined(getNodeOwnerKey(elm)) || isGlobalPatchingSkipped(elm));
+      return createStaticHTMLCollection(filtered);
+    },
+
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
+  defineProperty(getOwnPropertyDescriptor(HTMLDocument.prototype, 'getElementsByName') ? HTMLDocument.prototype : Document.prototype, 'getElementsByName', {
+    value() {
+      const elements = arrayFromCollection(getElementsByName.apply(this, ArraySlice.call(arguments)));
+      const filtered = ArrayFilter.call(elements, elm => isUndefined(getNodeOwnerKey(elm)) || isGlobalPatchingSkipped(elm));
+      return createStaticNodeList(filtered);
+    },
+
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
+  Object.defineProperty(window, 'ShadowRoot', {
+    value: SyntheticShadowRoot,
+    configurable: true,
+    writable: true
+  });
+
+  function doesEventNeedsPatch(e) {
+    const originalTarget = eventTargetGetter.call(e);
+    return originalTarget instanceof Node && isNodeDeepShadowed(originalTarget);
+  }
+
+  function isValidEventListener(listener) {
+    return isFunction(listener) || !isNull(listener) && isObject(listener) && isFunction(listener.handleEvent);
+  }
+
+  function getEventListenerWrapper(listener) {
+    if ('$$lwcEventWrapper$$' in listener) {
+      return listener.$$lwcEventWrapper$$;
+    }
+
+    const isHandlerFunction = isFunction(listener);
+
+    const wrapperFn = listener.$$lwcEventWrapper$$ = function (e) {
+      if (doesEventNeedsPatch(e)) {
+        patchEvent(e);
+      }
+
+      return isHandlerFunction ? listener.call(this, e) : listener.handleEvent && listener.handleEvent(e);
+    };
+
+    return wrapperFn;
+  }
+
+  function windowAddEventListener$1(type, listener, optionsOrCapture) {
+    if (!isValidEventListener(listener)) {
+      return;
+    }
+
+    const wrapperFn = getEventListenerWrapper(listener);
+    windowAddEventListener.call(this, type, wrapperFn, optionsOrCapture);
+  }
+
+  function windowRemoveEventListener$1(type, listener, optionsOrCapture) {
+    if (!isValidEventListener(listener)) {
+      return;
+    }
+
+    const wrapperFn = getEventListenerWrapper(listener);
+    windowRemoveEventListener.call(this, type, wrapperFn || listener, optionsOrCapture);
+  }
+
+  function addEventListener$1(type, listener, optionsOrCapture) {
+    if (!isValidEventListener(listener)) {
+      return;
+    }
+
+    const wrapperFn = getEventListenerWrapper(listener);
+    addEventListener.call(this, type, wrapperFn, optionsOrCapture);
+  }
+
+  function removeEventListener$1(type, listener, optionsOrCapture) {
+    if (!isValidEventListener(listener)) {
+      return;
+    }
+
+    const wrapperFn = getEventListenerWrapper(listener);
+    removeEventListener.call(this, type, wrapperFn || listener, optionsOrCapture);
+  }
+
+  window.addEventListener = windowAddEventListener$1;
+  window.removeEventListener = windowRemoveEventListener$1;
+  const protoToBePatched = typeof EventTarget !== 'undefined' ? EventTarget.prototype : Node.prototype;
+  defineProperties(protoToBePatched, {
+    addEventListener: {
+      value: addEventListener$1,
+      enumerable: true,
+      writable: true,
+      configurable: true
+    },
+    removeEventListener: {
+      value: removeEventListener$1,
+      enumerable: true,
+      writable: true,
+      configurable: true
+    }
+  });
+  const composedDescriptor = Object.getOwnPropertyDescriptor(Event.prototype, 'composed');
+
+  function detect$1() {
+    if (!composedDescriptor) {
+      return false;
+    }
+
+    let clickEvent = new Event('click');
+    const button = document.createElement('button');
+    button.addEventListener('click', event => clickEvent = event);
+    button.click();
+    return !composedDescriptor.get.call(clickEvent);
+  }
+
+  const originalClickDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'click');
+
+  function handleClick(event) {
+    Object.defineProperty(event, 'composed', {
+      configurable: true,
+      enumerable: true,
+
+      get() {
+        return true;
+      }
+
+    });
+  }
+
+  function apply$1() {
+    HTMLElement.prototype.click = function () {
+      addEventListener.call(this, 'click', handleClick);
+
+      try {
+        originalClickDescriptor.value.call(this);
+      } finally {
+        removeEventListener.call(this, 'click', handleClick);
+      }
+    };
+  }
+
+  if (detect$1()) {
+    apply$1();
+  }
+
+  function detect$2() {
+    return new Event('test', {
+      composed: true
+    }).composed !== true;
+  }
+
+  function apply$2() {
+    const composedEvents = assign(create(null), {
+      beforeinput: 1,
+      blur: 1,
+      click: 1,
+      compositionend: 1,
+      compositionstart: 1,
+      compositionupdate: 1,
+      copy: 1,
+      cut: 1,
+      dblclick: 1,
+      DOMActivate: 1,
+      DOMFocusIn: 1,
+      DOMFocusOut: 1,
+      drag: 1,
+      dragend: 1,
+      dragenter: 1,
+      dragleave: 1,
+      dragover: 1,
+      dragstart: 1,
+      drop: 1,
+      focus: 1,
+      focusin: 1,
+      focusout: 1,
+      gotpointercapture: 1,
+      input: 1,
+      keydown: 1,
+      keypress: 1,
+      keyup: 1,
+      lostpointercapture: 1,
+      mousedown: 1,
+      mouseenter: 1,
+      mouseleave: 1,
+      mousemove: 1,
+      mouseout: 1,
+      mouseover: 1,
+      mouseup: 1,
+      paste: 1,
+      pointercancel: 1,
+      pointerdown: 1,
+      pointerenter: 1,
+      pointerleave: 1,
+      pointermove: 1,
+      pointerout: 1,
+      pointerover: 1,
+      pointerup: 1,
+      touchcancel: 1,
+      touchend: 1,
+      touchmove: 1,
+      touchstart: 1,
+      wheel: 1
+    });
+    const EventConstructor = Event;
+
+    function PatchedEvent(type, eventInitDict) {
+      const event = new EventConstructor(type, eventInitDict);
+      const isComposed = !!(eventInitDict && eventInitDict.composed);
+      Object.defineProperties(event, {
+        composed: {
+          get() {
+            return isComposed;
+          },
+
+          configurable: true,
+          enumerable: true
+        }
+      });
+      return event;
+    }
+
+    PatchedEvent.prototype = EventConstructor.prototype;
+    PatchedEvent.AT_TARGET = EventConstructor.AT_TARGET;
+    PatchedEvent.BUBBLING_PHASE = EventConstructor.BUBBLING_PHASE;
+    PatchedEvent.CAPTURING_PHASE = EventConstructor.CAPTURING_PHASE;
+    PatchedEvent.NONE = EventConstructor.NONE;
+    window.Event = PatchedEvent;
+    Object.defineProperties(Event.prototype, {
+      composed: {
+        get() {
+          const {
+            type
+          } = this;
+          return composedEvents[type] === 1;
+        },
+
+        configurable: true,
+        enumerable: true
+      }
+    });
+  }
+
+  if (detect$2()) {
+    apply$2();
+  }
+
+  const CustomEventConstructor = CustomEvent;
+
+  function PatchedCustomEvent(type, eventInitDict) {
+    const event = new CustomEventConstructor(type, eventInitDict);
+    const isComposed = !!(eventInitDict && eventInitDict.composed);
+    Object.defineProperties(event, {
+      composed: {
+        get() {
+          return isComposed;
+        },
+
+        configurable: true,
+        enumerable: true
+      }
+    });
+    return event;
+  }
+
+  PatchedCustomEvent.prototype = CustomEventConstructor.prototype;
+  window.CustomEvent = PatchedCustomEvent;
+
+  if (typeof ClipboardEvent !== 'undefined') {
+    const isComposedType = assign(create(null), {
+      copy: 1,
+      cut: 1,
+      paste: 1
+    });
+    defineProperties(ClipboardEvent.prototype, {
+      composed: {
+        get() {
+          const {
+            type
+          } = this;
+          return isComposedType[type] === 1;
+        },
+
+        configurable: true,
+        enumerable: true
+      }
+    });
+  }
+
+  function detect$3() {
+    return typeof HTMLIFrameElement !== 'undefined';
+  }
+
+  function apply$3() {
+    const desc = getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'contentWindow');
+    const {
+      get: originalGetter
+    } = desc;
+
+    desc.get = function () {
+      const original = originalGetter.call(this);
+
+      if (isNull(original) || isUndefined(getNodeOwnerKey(this))) {
+        return original;
+      }
+
+      return wrapIframeWindow(original);
+    };
+
+    defineProperty(HTMLIFrameElement.prototype, 'contentWindow', desc);
+  }
+
+  function wrapIframeWindow(win) {
+    return {
+      addEventListener() {
+        return win.addEventListener.apply(win, arguments);
+      },
+
+      blur() {
+        return win.blur.apply(win, arguments);
+      },
+
+      close() {
+        return win.close.apply(win, arguments);
+      },
+
+      focus() {
+        return win.focus.apply(win, arguments);
+      },
+
+      postMessage() {
+        return win.postMessage.apply(win, arguments);
+      },
+
+      removeEventListener() {
+        return win.removeEventListener.apply(win, arguments);
+      },
+
+      get closed() {
+        return win.closed;
+      },
+
+      get frames() {
+        return win.frames;
+      },
+
+      get length() {
+        return win.length;
+      },
+
+      get location() {
+        return win.location;
+      },
+
+      set location(value) {
+        win.location = value;
+      },
+
+      get opener() {
+        return win.opener;
+      },
+
+      get parent() {
+        return win.parent;
+      },
+
+      get self() {
+        return win.self;
+      },
+
+      get top() {
+        return win.top;
+      },
+
+      get window() {
+        return win.window;
+      }
+
+    };
+  }
+
+  if (detect$3()) {
+    apply$3();
+  }
+
+  const OriginalMutationObserver = MutationObserver;
+  const {
+    disconnect: originalDisconnect,
+    observe: originalObserve,
+    takeRecords: originalTakeRecords
+  } = OriginalMutationObserver.prototype;
+  const wrapperLookupField = '$$lwcObserverCallbackWrapper$$';
+  const observerLookupField = '$$lwcNodeObservers$$';
+  const observerToNodesMap = new WeakMap();
+
+  function getNodeObservers(node) {
+    return node[observerLookupField];
+  }
+
+  function setNodeObservers(node, observers) {
+    node[observerLookupField] = observers;
+  }
+
+  function retargetMutationRecord(originalRecord) {
+    const {
+      addedNodes,
+      removedNodes,
+      target,
+      type
+    } = originalRecord;
+    const retargetedRecord = create(MutationRecord.prototype);
+    defineProperties(retargetedRecord, {
+      addedNodes: {
+        get() {
+          return addedNodes;
+        },
+
+        enumerable: true,
+        configurable: true
+      },
+      removedNodes: {
+        get() {
+          return removedNodes;
+        },
+
+        enumerable: true,
+        configurable: true
+      },
+      type: {
+        get() {
+          return type;
+        },
+
+        enumerable: true,
+        configurable: true
+      },
+      target: {
+        get() {
+          return target.shadowRoot;
+        },
+
+        enumerable: true,
+        configurable: true
+      }
+    });
+    return retargetedRecord;
+  }
+
+  function isQualifiedObserver(observer, target) {
+    let parentNode = target;
+
+    while (!isNull(parentNode)) {
+      const parentNodeObservers = getNodeObservers(parentNode);
+
+      if (!isUndefined(parentNodeObservers) && (parentNodeObservers[0] === observer || ArrayIndexOf.call(parentNodeObservers, observer) !== -1)) {
+        return true;
+      }
+
+      parentNode = parentNode.parentNode;
+    }
+
+    return false;
+  }
+
+  function filterMutationRecords(mutations, observer) {
+    return ArrayReduce.call(mutations, (filteredSet, record) => {
+      const {
+        target,
+        addedNodes,
+        removedNodes,
+        type
+      } = record;
+
+      if (type === 'childList' && !isUndefined(getNodeKey(target))) {
+        if (addedNodes.length > 0) {
+          const sampleNode = addedNodes[0];
+
+          if (isQualifiedObserver(observer, sampleNode)) {
+            const nodeObservers = getNodeObservers(target);
+
+            if (nodeObservers && (nodeObservers[0] === observer || ArrayIndexOf.call(nodeObservers, observer) !== -1)) {
+              ArrayPush.call(filteredSet, record);
+            } else {
+              ArrayPush.call(filteredSet, retargetMutationRecord(record));
+            }
+          }
+        } else {
+          const shadowRoot = target.shadowRoot;
+          const sampleNode = removedNodes[0];
+
+          if (getNodeNearestOwnerKey(target) === getNodeNearestOwnerKey(sampleNode) && isQualifiedObserver(observer, target)) {
+            ArrayPush.call(filteredSet, record);
+          } else if (shadowRoot) {
+            const shadowRootObservers = getNodeObservers(shadowRoot);
+
+            if (shadowRootObservers && (shadowRootObservers[0] === observer || ArrayIndexOf.call(shadowRootObservers, observer) !== -1)) {
+              ArrayPush.call(filteredSet, retargetMutationRecord(record));
+            }
+          }
+        }
+      } else {
+        if (isQualifiedObserver(observer, target)) {
+          ArrayPush.call(filteredSet, record);
+        }
+      }
+
+      return filteredSet;
+    }, []);
+  }
+
+  function getWrappedCallback(callback) {
+    let wrappedCallback = callback[wrapperLookupField];
+
+    if (isUndefined(wrappedCallback)) {
+      wrappedCallback = callback[wrapperLookupField] = (mutations, observer) => {
+        const filteredRecords = filterMutationRecords(mutations, observer);
+
+        if (filteredRecords.length === 0) {
+          return;
+        }
+
+        callback.call(observer, filteredRecords, observer);
+      };
+    }
+
+    return wrappedCallback;
+  }
+
+  function PatchedMutationObserver(callback) {
+    const wrappedCallback = getWrappedCallback(callback);
+    const observer = new OriginalMutationObserver(wrappedCallback);
+    return observer;
+  }
+
+  function patchedDisconnect() {
+    originalDisconnect.call(this);
+    const observedNodes = observerToNodesMap.get(this);
+
+    if (!isUndefined(observedNodes)) {
+      forEach.call(observedNodes, observedNode => {
+        const observers = observedNode[observerLookupField];
+
+        if (!isUndefined(observers)) {
+          const index = ArrayIndexOf.call(observers, this);
+
+          if (index !== -1) {
+            ArraySplice.call(observers, index, 1);
+          }
+        }
+      });
+      observedNodes.length = 0;
+    }
+  }
+
+  function patchedObserve(target, options) {
+    let targetObservers = getNodeObservers(target);
+
+    if (isUndefined(targetObservers)) {
+      targetObservers = [];
+      setNodeObservers(target, targetObservers);
+    }
+
+    if (ArrayIndexOf.call(targetObservers, this) === -1) {
+      ArrayPush.call(targetObservers, this);
+    }
+
+    if (target instanceof SyntheticShadowRoot) {
+      target = target.host;
+    }
+
+    if (observerToNodesMap.has(this)) {
+      const observedNodes = observerToNodesMap.get(this);
+
+      if (ArrayIndexOf.call(observedNodes, target) === -1) {
+        ArrayPush.call(observedNodes, target);
+      }
+    } else {
+      observerToNodesMap.set(this, [target]);
+    }
+
+    return originalObserve.call(this, target, options);
+  }
+
+  function patchedTakeRecords() {
+    return filterMutationRecords(originalTakeRecords.call(this), this);
+  }
+
+  PatchedMutationObserver.prototype = OriginalMutationObserver.prototype;
+  PatchedMutationObserver.prototype.disconnect = patchedDisconnect;
+  PatchedMutationObserver.prototype.observe = patchedObserve;
+  PatchedMutationObserver.prototype.takeRecords = patchedTakeRecords;
+  defineProperty(window, 'MutationObserver', {
+    value: PatchedMutationObserver,
+    configurable: true,
+    writable: true
+  });
+  let observer;
+  const observerConfig = {
+    childList: true
+  };
+  const SlotChangeKey = createHiddenField('slotchange', 'synthetic-shadow');
+
+  function initSlotObserver() {
+    return new MO(mutations => {
+      const slots = [];
+      forEach.call(mutations, mutation => {
+        {
+          assert.invariant(mutation.type === 'childList', `Invalid mutation type: ${mutation.type}. This mutation handler for slots should only handle "childList" mutations.`);
+        }
+
+        const {
+          target: slot
+        } = mutation;
+
+        if (ArrayIndexOf.call(slots, slot) === -1) {
+          ArrayPush.call(slots, slot);
+          dispatchEvent.call(slot, new CustomEvent('slotchange'));
+        }
+      });
+    });
+  }
+
+  function getFilteredSlotFlattenNodes(slot) {
+    const childNodes = arrayFromCollection(childNodesGetter.call(slot));
+    return ArrayReduce.call(childNodes, (seed, child) => {
+      if (child instanceof Element && isSlotElement(child)) {
+        ArrayPush.apply(seed, getFilteredSlotFlattenNodes(child));
+      } else {
+        ArrayPush.call(seed, child);
+      }
+
+      return seed;
+    }, []);
+  }
+
+  function assignedSlotGetterPatched() {
+    const parentNode = parentNodeGetter.call(this);
+
+    if (isNull(parentNode) || !isSlotElement(parentNode) || getNodeNearestOwnerKey(parentNode) === getNodeNearestOwnerKey(this)) {
+      return null;
+    }
+
+    return parentNode;
+  }
+
+  defineProperties(HTMLSlotElement.prototype, {
+    addEventListener: {
+      value(type, listener, options) {
+        HTMLElement.prototype.addEventListener.call(this, type, listener, options);
+
+        if (type === 'slotchange' && !getHiddenField(this, SlotChangeKey)) {
+          setHiddenField(this, SlotChangeKey, true);
+
+          if (!observer) {
+            observer = initSlotObserver();
+          }
+
+          MutationObserverObserve.call(observer, this, observerConfig);
+        }
+      },
+
+      writable: true,
+      enumerable: true,
+      configurable: true
+    },
+    assignedElements: {
+      value(options) {
+        if (isNodeShadowed(this)) {
+          const flatten = !isUndefined(options) && isTrue$1(options.flatten);
+          const nodes = flatten ? getFilteredSlotFlattenNodes(this) : getFilteredSlotAssignedNodes(this);
+          return ArrayFilter.call(nodes, node => node instanceof Element);
+        } else {
+          return assignedElements.apply(this, ArraySlice.call(arguments));
+        }
+      },
+
+      writable: true,
+      enumerable: true,
+      configurable: true
+    },
+    assignedNodes: {
+      value(options) {
+        if (isNodeShadowed(this)) {
+          const flatten = !isUndefined(options) && isTrue$1(options.flatten);
+          return flatten ? getFilteredSlotFlattenNodes(this) : getFilteredSlotAssignedNodes(this);
+        } else {
+          return assignedNodes.apply(this, ArraySlice.call(arguments));
+        }
+      },
+
+      writable: true,
+      enumerable: true,
+      configurable: true
+    },
+    name: {
+      get() {
+        const name = getAttribute.call(this, 'name');
+        return isNull(name) ? '' : name;
+      },
+
+      set(value) {
+        setAttribute.call(this, 'name', value);
+      },
+
+      enumerable: true,
+      configurable: true
+    },
+    childNodes: {
+      get() {
+        if (isNodeShadowed(this)) {
+          const owner = getNodeOwner(this);
+          const childNodes = isNull(owner) ? [] : getAllMatches(owner, getFilteredChildNodes(this));
+          return createStaticNodeList(childNodes);
+        }
+
+        return childNodesGetter.call(this);
+      },
+
+      enumerable: true,
+      configurable: true
+    }
+  });
+  defineProperties(Text.prototype, {
+    assignedSlot: {
+      get: assignedSlotGetterPatched,
+      enumerable: true,
+      configurable: true
+    }
+  });
+
+  function getNonPatchedFilteredArrayOfNodes(context, unfilteredNodes) {
+    let filtered;
+    const ownerKey = getNodeOwnerKey(context);
+
+    if (!isUndefined(ownerKey)) {
+      if (isHostElement(context)) {
+        const owner = getNodeOwner(context);
+
+        if (isNull(owner)) {
+          filtered = [];
+        } else if (getNodeKey(context)) {
+          filtered = getAllSlottedMatches(context, unfilteredNodes);
+        } else {
+          filtered = getAllMatches(owner, unfilteredNodes);
+        }
+      } else {
+        filtered = ArrayFilter.call(unfilteredNodes, elm => getNodeNearestOwnerKey(elm) === ownerKey);
+      }
+    } else if (context instanceof HTMLBodyElement) {
+      filtered = ArrayFilter.call(unfilteredNodes, elm => isUndefined(getNodeOwnerKey(elm)) || isGlobalPatchingSkipped(context));
+    } else {
+      filtered = ArraySlice.call(unfilteredNodes);
+    }
+
+    return filtered;
+  }
+
+  var ShadowDomSemantic;
+
+  (function (ShadowDomSemantic) {
+    ShadowDomSemantic[ShadowDomSemantic["Disabled"] = 0] = "Disabled";
+    ShadowDomSemantic[ShadowDomSemantic["Enabled"] = 1] = "Enabled";
+  })(ShadowDomSemantic || (ShadowDomSemantic = {}));
+
+  function innerHTMLGetterPatched() {
+    const childNodes = getInternalChildNodes(this);
+    let innerHTML = '';
+
+    for (let i = 0, len = childNodes.length; i < len; i += 1) {
+      innerHTML += getOuterHTML(childNodes[i]);
+    }
+
+    return innerHTML;
+  }
+
+  function outerHTMLGetterPatched() {
+    return getOuterHTML(this);
+  }
+
+  function attachShadowPatched(options) {
+    if (isTrue$1(options['$$lwc-synthetic-mode$$'])) {
+      return attachShadow$1(this, options);
+    } else {
+      return attachShadow.call(this, options);
+    }
+  }
+
+  function shadowRootGetterPatched() {
+    if (isHostElement(this)) {
+      const shadow = getShadowRoot(this);
+
+      if (shadow.mode === 'open') {
+        return shadow;
+      }
+    }
+
+    return shadowRootGetter.call(this);
+  }
+
+  function childrenGetterPatched() {
+    const owner = getNodeOwner(this);
+    const childNodes = isNull(owner) ? [] : getAllMatches(owner, getFilteredChildNodes(this));
+    return createStaticHTMLCollection(ArrayFilter.call(childNodes, node => node instanceof Element));
+  }
+
+  function childElementCountGetterPatched() {
+    return this.children.length;
+  }
+
+  function firstElementChildGetterPatched() {
+    return this.children[0] || null;
+  }
+
+  function lastElementChildGetterPatched() {
+    const {
+      children
+    } = this;
+    return children.item(children.length - 1) || null;
+  }
+
+  defineProperties(Element.prototype, {
+    innerHTML: {
+      get() {
+        if (!runtimeFlags.ENABLE_ELEMENT_PATCH) {
+          if (isNodeShadowed(this) || isHostElement(this)) {
+            return innerHTMLGetterPatched.call(this);
+          }
+
+          return innerHTMLGetter.call(this);
+        }
+
+        if (isGlobalPatchingSkipped(this)) {
+          return innerHTMLGetter.call(this);
+        }
+
+        return innerHTMLGetterPatched.call(this);
+      },
+
+      set(v) {
+        innerHTMLSetter.call(this, v);
+      },
+
+      enumerable: true,
+      configurable: true
+    },
+    outerHTML: {
+      get() {
+        if (!runtimeFlags.ENABLE_ELEMENT_PATCH) {
+          if (isNodeShadowed(this) || isHostElement(this)) {
+            return outerHTMLGetterPatched.call(this);
+          }
+
+          return outerHTMLGetter.call(this);
+        }
+
+        if (isGlobalPatchingSkipped(this)) {
+          return outerHTMLGetter.call(this);
+        }
+
+        return outerHTMLGetterPatched.call(this);
+      },
+
+      set(v) {
+        outerHTMLSetter.call(this, v);
+      },
+
+      enumerable: true,
+      configurable: true
+    },
+    attachShadow: {
+      value: attachShadowPatched,
+      enumerable: true,
+      writable: true,
+      configurable: true
+    },
+    shadowRoot: {
+      get: shadowRootGetterPatched,
+      enumerable: true,
+      configurable: true
+    },
+    children: {
+      get() {
+        if (hasMountedChildren(this)) {
+          return childrenGetterPatched.call(this);
+        }
+
+        return childrenGetter.call(this);
+      },
+
+      enumerable: true,
+      configurable: true
+    },
+    childElementCount: {
+      get() {
+        if (hasMountedChildren(this)) {
+          return childElementCountGetterPatched.call(this);
+        }
+
+        return childElementCountGetter.call(this);
+      },
+
+      enumerable: true,
+      configurable: true
+    },
+    firstElementChild: {
+      get() {
+        if (hasMountedChildren(this)) {
+          return firstElementChildGetterPatched.call(this);
+        }
+
+        return firstElementChildGetter.call(this);
+      },
+
+      enumerable: true,
+      configurable: true
+    },
+    lastElementChild: {
+      get() {
+        if (hasMountedChildren(this)) {
+          return lastElementChildGetterPatched.call(this);
+        }
+
+        return lastElementChildGetter.call(this);
+      },
+
+      enumerable: true,
+      configurable: true
+    },
+    assignedSlot: {
+      get: assignedSlotGetterPatched,
+      enumerable: true,
+      configurable: true
+    }
+  });
+
+  if (hasOwnProperty.call(HTMLElement.prototype, 'innerHTML')) {
+    defineProperty(HTMLElement.prototype, 'innerHTML', getOwnPropertyDescriptor(Element.prototype, 'innerHTML'));
+  }
+
+  if (hasOwnProperty.call(HTMLElement.prototype, 'outerHTML')) {
+    defineProperty(HTMLElement.prototype, 'outerHTML', getOwnPropertyDescriptor(Element.prototype, 'outerHTML'));
+  }
+
+  if (hasOwnProperty.call(HTMLElement.prototype, 'children')) {
+    defineProperty(HTMLElement.prototype, 'children', getOwnPropertyDescriptor(Element.prototype, 'children'));
+  }
+
+  function querySelectorPatched() {
+    const nodeList = arrayFromCollection(querySelectorAll.apply(this, ArraySlice.call(arguments)));
+
+    if (isHostElement(this)) {
+      const owner = getNodeOwner(this);
+
+      if (isNull(owner)) {
+        return null;
+      } else if (getNodeKey(this)) {
+        return getFirstSlottedMatch(this, nodeList);
+      } else {
+        return getFirstMatch(owner, nodeList);
+      }
+    } else if (isNodeShadowed(this)) {
+      const ownerKey = getNodeOwnerKey(this);
+
+      if (!isUndefined(ownerKey)) {
+        const elm = ArrayFind.call(nodeList, elm => getNodeNearestOwnerKey(elm) === ownerKey);
+        return isUndefined(elm) ? null : elm;
+      } else {
+        if (!runtimeFlags.ENABLE_NODE_LIST_PATCH) {
+          return nodeList.length === 0 ? null : nodeList[0];
+        }
+
+        const contextNearestOwnerKey = getNodeNearestOwnerKey(this);
+        const elm = ArrayFind.call(nodeList, elm => getNodeNearestOwnerKey(elm) === contextNearestOwnerKey);
+        return isUndefined(elm) ? null : elm;
+      }
+    } else {
+      if (!runtimeFlags.ENABLE_NODE_LIST_PATCH) {
+        if (!(this instanceof HTMLBodyElement)) {
+          const elm = nodeList[0];
+          return isUndefined(elm) ? null : elm;
+        }
+      }
+
+      const elm = ArrayFind.call(nodeList, elm => isUndefined(getNodeOwnerKey(elm)) || isGlobalPatchingSkipped(this));
+      return isUndefined(elm) ? null : elm;
+    }
+  }
+
+  function getFilteredArrayOfNodes(context, unfilteredNodes, shadowDomSemantic) {
+    let filtered;
+
+    if (isHostElement(context)) {
+      const owner = getNodeOwner(context);
+
+      if (isNull(owner)) {
+        filtered = [];
+      } else if (getNodeKey(context)) {
+        filtered = getAllSlottedMatches(context, unfilteredNodes);
+      } else {
+        filtered = getAllMatches(owner, unfilteredNodes);
+      }
+    } else if (isNodeShadowed(context)) {
+      const ownerKey = getNodeOwnerKey(context);
+
+      if (!isUndefined(ownerKey)) {
+        filtered = ArrayFilter.call(unfilteredNodes, elm => getNodeNearestOwnerKey(elm) === ownerKey);
+      } else if (shadowDomSemantic === ShadowDomSemantic.Enabled) {
+        const contextNearestOwnerKey = getNodeNearestOwnerKey(context);
+        filtered = ArrayFilter.call(unfilteredNodes, elm => getNodeNearestOwnerKey(elm) === contextNearestOwnerKey);
+      } else {
+        filtered = ArraySlice.call(unfilteredNodes);
+      }
+    } else {
+      if (context instanceof HTMLBodyElement || shadowDomSemantic === ShadowDomSemantic.Enabled) {
+        filtered = ArrayFilter.call(unfilteredNodes, elm => isUndefined(getNodeOwnerKey(elm)) || isGlobalPatchingSkipped(context));
+      } else {
+        filtered = ArraySlice.call(unfilteredNodes);
+      }
+    }
+
+    return filtered;
+  }
+
+  defineProperties(Element.prototype, {
+    querySelector: {
+      value: querySelectorPatched,
+      writable: true,
+      enumerable: true,
+      configurable: true
+    },
+    querySelectorAll: {
+      value() {
+        const nodeList = arrayFromCollection(querySelectorAll.apply(this, ArraySlice.call(arguments)));
+
+        if (!runtimeFlags.ENABLE_NODE_LIST_PATCH) {
+          const filteredResults = getFilteredArrayOfNodes(this, nodeList, ShadowDomSemantic.Disabled);
+          return createStaticNodeList(filteredResults);
+        }
+
+        return createStaticNodeList(getFilteredArrayOfNodes(this, nodeList, ShadowDomSemantic.Enabled));
+      },
+
+      writable: true,
+      enumerable: true,
+      configurable: true
+    }
+  });
+
+  {
+    defineProperties(Element.prototype, {
+      getElementsByClassName: {
+        value() {
+          const elements = arrayFromCollection(getElementsByClassName.apply(this, ArraySlice.call(arguments)));
+
+          if (!runtimeFlags.ENABLE_HTML_COLLECTIONS_PATCH) {
+            return createStaticHTMLCollection(getNonPatchedFilteredArrayOfNodes(this, elements));
+          }
+
+          const filteredResults = getFilteredArrayOfNodes(this, elements, ShadowDomSemantic.Enabled);
+          return createStaticHTMLCollection(filteredResults);
+        },
+
+        writable: true,
+        enumerable: true,
+        configurable: true
+      },
+      getElementsByTagName: {
+        value() {
+          const elements = arrayFromCollection(getElementsByTagName.apply(this, ArraySlice.call(arguments)));
+
+          if (!runtimeFlags.ENABLE_HTML_COLLECTIONS_PATCH) {
+            return createStaticHTMLCollection(getNonPatchedFilteredArrayOfNodes(this, elements));
+          }
+
+          const filteredResults = getFilteredArrayOfNodes(this, elements, ShadowDomSemantic.Enabled);
+          return createStaticHTMLCollection(filteredResults);
+        },
+
+        writable: true,
+        enumerable: true,
+        configurable: true
+      },
+      getElementsByTagNameNS: {
+        value() {
+          const elements = arrayFromCollection(getElementsByTagNameNS.apply(this, ArraySlice.call(arguments)));
+
+          if (!runtimeFlags.ENABLE_HTML_COLLECTIONS_PATCH) {
+            return createStaticHTMLCollection(getNonPatchedFilteredArrayOfNodes(this, elements));
+          }
+
+          const filteredResults = getFilteredArrayOfNodes(this, elements, ShadowDomSemantic.Enabled);
+          return createStaticHTMLCollection(filteredResults);
+        },
+
+        writable: true,
+        enumerable: true,
+        configurable: true
+      }
+    });
+  }
+
+  if (hasOwnProperty.call(HTMLElement.prototype, 'getElementsByClassName')) {
+    defineProperty(HTMLElement.prototype, 'getElementsByClassName', getOwnPropertyDescriptor(Element.prototype, 'getElementsByClassName'));
+  }
+
+  const FocusableSelector = `
+    [contenteditable],
+    [tabindex],
+    a[href],
+    area[href],
+    audio[controls],
+    button,
+    iframe,
+    input,
+    select,
+    textarea,
+    video[controls]
+`;
+  const formElementTagNames = new Set(['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA']);
+
+  function filterSequentiallyFocusableElements(elements) {
+    return elements.filter(element => {
+      if (hasAttribute.call(element, 'tabindex')) {
+        return getAttribute.call(element, 'tabindex') === '0';
+      }
+
+      if (formElementTagNames.has(tagNameGetter.call(element))) {
+        return !hasAttribute.call(element, 'disabled');
+      }
+
+      return true;
+    });
+  }
+
+  const DidAddMouseDownListener = createHiddenField('DidAddMouseDownListener', 'synthetic-shadow');
+
+  function isVisible(element) {
+    const {
+      width,
+      height
+    } = getBoundingClientRect.call(element);
+    const noZeroSize = width > 0 || height > 0;
+    const isAreaElement = element.tagName === 'AREA';
+    return (noZeroSize || isAreaElement) && getComputedStyle(element).visibility !== 'hidden';
+  }
+
+  function isTabbable(element) {
+    if (isHostElement(element) && isDelegatingFocus(element)) {
+      return false;
+    }
+
+    return matches.call(element, FocusableSelector) && isVisible(element);
+  }
+
+  function hostElementFocus() {
+    const _rootNode = this.getRootNode();
+
+    if (_rootNode === this) {
+      const focusable = querySelector.call(this, FocusableSelector);
+
+      if (!isNull(focusable)) {
+        focusable.focus.apply(focusable, arguments);
+      }
+
+      return;
+    }
+
+    const rootNode = _rootNode;
+
+    if (rootNode.activeElement === this) {
+      return;
+    }
+
+    const focusables = arrayFromCollection(querySelectorAll.call(this, FocusableSelector));
+    let didFocus = false;
+
+    while (!didFocus && focusables.length !== 0) {
+      const focusable = focusables.shift();
+      focusable.focus.apply(focusable, arguments);
+      const currentRootNode = focusable.getRootNode();
+      didFocus = currentRootNode.activeElement === focusable;
+    }
+  }
+
+  function getTabbableSegments(host) {
+    const doc = getOwnerDocument(host);
+    const all = filterSequentiallyFocusableElements(arrayFromCollection(querySelectorAll$1.call(doc, FocusableSelector)));
+    const inner = filterSequentiallyFocusableElements(arrayFromCollection(querySelectorAll.call(host, FocusableSelector)));
+
+    {
+      assert.invariant(getAttribute.call(host, 'tabindex') === '-1' || isDelegatingFocus(host), `The focusin event is only relevant when the tabIndex property is -1 on the host.`);
+    }
+
+    const firstChild = inner[0];
+    const lastChild = inner[inner.length - 1];
+    const hostIndex = ArrayIndexOf.call(all, host);
+    const firstChildIndex = hostIndex > -1 ? hostIndex : ArrayIndexOf.call(all, firstChild);
+    const lastChildIndex = inner.length === 0 ? firstChildIndex + 1 : ArrayIndexOf.call(all, lastChild) + 1;
+    const prev = ArraySlice.call(all, 0, firstChildIndex);
+    const next = ArraySlice.call(all, lastChildIndex);
+    return {
+      prev,
+      inner,
+      next
+    };
+  }
+
+  function getActiveElement(host) {
+    const doc = getOwnerDocument(host);
+    const activeElement = DocumentPrototypeActiveElement.call(doc);
+
+    if (isNull(activeElement)) {
+      return activeElement;
+    }
+
+    return (compareDocumentPosition.call(host, activeElement) & DOCUMENT_POSITION_CONTAINED_BY) !== 0 ? activeElement : null;
+  }
+
+  function relatedTargetPosition(host, relatedTarget) {
+    const pos = compareDocumentPosition.call(host, relatedTarget);
+
+    if (pos & DOCUMENT_POSITION_CONTAINED_BY) {
+      return 0;
+    } else if (pos & DOCUMENT_POSITION_PRECEDING) {
+      return 1;
+    } else if (pos & DOCUMENT_POSITION_FOLLOWING) {
+      return 2;
+    }
+
+    return -1;
+  }
+
+  function muteEvent(event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  function muteFocusEventsDuringExecution(win, func) {
+    windowAddEventListener.call(win, 'focusin', muteEvent, true);
+    windowAddEventListener.call(win, 'focusout', muteEvent, true);
+    func();
+    windowRemoveEventListener.call(win, 'focusin', muteEvent, true);
+    windowRemoveEventListener.call(win, 'focusout', muteEvent, true);
+  }
+
+  function focusOnNextOrBlur(segment, target, relatedTarget) {
+    const win = getOwnerWindow(relatedTarget);
+    const next = getNextTabbable(segment, relatedTarget);
+
+    if (isNull(next)) {
+      muteFocusEventsDuringExecution(win, () => {
+        target.blur();
+      });
+    } else {
+      muteFocusEventsDuringExecution(win, () => {
+        next.focus();
+      });
+    }
+  }
+
+  let letBrowserHandleFocus = false;
+
+  function disableKeyboardFocusNavigationRoutines() {
+    letBrowserHandleFocus = true;
+  }
+
+  function enableKeyboardFocusNavigationRoutines() {
+    letBrowserHandleFocus = false;
+  }
+
+  function skipHostHandler(event) {
+    if (letBrowserHandleFocus) {
+      enableKeyboardFocusNavigationRoutines();
+      return;
+    }
+
+    const host = eventCurrentTargetGetter.call(event);
+    const target = eventTargetGetter.call(event);
+
+    if (host !== target) {
+      return;
+    }
+
+    const relatedTarget = focusEventRelatedTargetGetter.call(event);
+
+    if (isNull(relatedTarget)) {
+      return;
+    }
+
+    const segments = getTabbableSegments(host);
+    const position = relatedTargetPosition(host, relatedTarget);
+
+    if (position === 1) {
+      const findTabbableElms = isTabbableFrom.bind(null, host.getRootNode());
+      const first = ArrayFind.call(segments.inner, findTabbableElms);
+
+      if (!isUndefined(first)) {
+        const win = getOwnerWindow(first);
+        muteFocusEventsDuringExecution(win, () => {
+          first.focus();
+        });
+      } else {
+        focusOnNextOrBlur(segments.next, target, relatedTarget);
+      }
+    } else if (host === target) {
+      focusOnNextOrBlur(ArrayReverse.call(segments.prev), target, relatedTarget);
+    }
+  }
+
+  function skipShadowHandler(event) {
+    if (letBrowserHandleFocus) {
+      enableKeyboardFocusNavigationRoutines();
+      return;
+    }
+
+    const relatedTarget = focusEventRelatedTargetGetter.call(event);
+
+    if (isNull(relatedTarget)) {
+      return;
+    }
+
+    const host = eventCurrentTargetGetter.call(event);
+    const segments = getTabbableSegments(host);
+
+    if (ArrayIndexOf.call(segments.inner, relatedTarget) !== -1) {
+      return;
+    }
+
+    const target = eventTargetGetter.call(event);
+    const position = relatedTargetPosition(host, relatedTarget);
+
+    if (position === 1) {
+      focusOnNextOrBlur(segments.next, target, relatedTarget);
+    }
+
+    if (position === 2) {
+      focusOnNextOrBlur(ArrayReverse.call(segments.prev), target, relatedTarget);
+    }
+  }
+
+  function isTabbableFrom(fromRoot, toElm) {
+    if (!isTabbable(toElm)) {
+      return false;
+    }
+
+    const ownerDocument = getOwnerDocument(toElm);
+    let root = toElm.getRootNode();
+
+    while (root !== ownerDocument && root !== fromRoot) {
+      const sr = root;
+      const host = sr.host;
+
+      if (getAttribute.call(host, 'tabindex') === '-1') {
+        return false;
+      }
+
+      root = host && host.getRootNode();
+    }
+
+    return true;
+  }
+
+  function getNextTabbable(tabbables, relatedTarget) {
+    const len = tabbables.length;
+
+    if (len > 0) {
+      for (let i = 0; i < len; i += 1) {
+        const next = tabbables[i];
+
+        if (isTabbableFrom(relatedTarget.getRootNode(), next)) {
+          return next;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  function handleFocus(elm) {
+    {
+      assert.invariant(isDelegatingFocus(elm), `Invalid attempt to handle focus event for ${toString(elm)}. ${toString(elm)} should have delegates focus true, but is not delegating focus`);
+    }
+
+    bindDocumentMousedownMouseupHandlers(elm);
+    ignoreFocusIn(elm);
+    addEventListener.call(elm, 'focusin', skipHostHandler, true);
+  }
+
+  function ignoreFocus(elm) {
+    removeEventListener.call(elm, 'focusin', skipHostHandler, true);
+  }
+
+  function bindDocumentMousedownMouseupHandlers(elm) {
+    const ownerDocument = getOwnerDocument(elm);
+
+    if (!getHiddenField(ownerDocument, DidAddMouseDownListener)) {
+      setHiddenField(ownerDocument, DidAddMouseDownListener, true);
+      addEventListener.call(ownerDocument, 'mousedown', disableKeyboardFocusNavigationRoutines, true);
+      addEventListener.call(ownerDocument, 'mouseup', () => {
+        setTimeout(enableKeyboardFocusNavigationRoutines);
+      }, true);
+    }
+  }
+
+  function handleFocusIn(elm) {
+    {
+      assert.invariant(tabIndexGetter.call(elm) === -1, `Invalid attempt to handle focus in  ${toString(elm)}. ${toString(elm)} should have tabIndex -1, but has tabIndex ${tabIndexGetter.call(elm)}`);
+    }
+
+    bindDocumentMousedownMouseupHandlers(elm);
+    ignoreFocus(elm);
+    addEventListener.call(elm, 'focusin', skipShadowHandler, true);
+  }
+
+  function ignoreFocusIn(elm) {
+    removeEventListener.call(elm, 'focusin', skipShadowHandler, true);
+  }
+
+  const {
+    blur,
+    focus
+  } = HTMLElement.prototype;
+
+  function tabIndexGetterPatched() {
+    if (isDelegatingFocus(this) && isFalse$1(hasAttribute.call(this, 'tabindex'))) {
+      return 0;
+    }
+
+    return tabIndexGetter.call(this);
+  }
+
+  function tabIndexSetterPatched(value) {
+    const delegatesFocus = isDelegatingFocus(this);
+    const prevValue = tabIndexGetter.call(this);
+    const prevHasAttr = hasAttribute.call(this, 'tabindex');
+    tabIndexSetter.call(this, value);
+    const currValue = tabIndexGetter.call(this);
+    const currHasAttr = hasAttribute.call(this, 'tabindex');
+    const didValueChange = prevValue !== currValue;
+
+    if (prevHasAttr && (didValueChange || isFalse$1(currHasAttr))) {
+      if (prevValue === -1) {
+        ignoreFocusIn(this);
+      }
+
+      if (prevValue === 0 && delegatesFocus) {
+        ignoreFocus(this);
+      }
+    }
+
+    if (isFalse$1(currHasAttr)) {
+      return;
+    }
+
+    if (prevHasAttr && currHasAttr && isFalse$1(didValueChange)) {
+      return;
+    }
+
+    if (currValue === -1) {
+      handleFocusIn(this);
+    }
+
+    if (currValue === 0 && delegatesFocus) {
+      handleFocus(this);
+    }
+  }
+
+  function blurPatched() {
+    if (isDelegatingFocus(this)) {
+      const currentActiveElement = getActiveElement(this);
+
+      if (!isNull(currentActiveElement)) {
+        currentActiveElement.blur();
+        return;
+      }
+    }
+
+    return blur.call(this);
+  }
+
+  function focusPatched() {
+    disableKeyboardFocusNavigationRoutines();
+
+    if (isHostElement(this) && isDelegatingFocus(this)) {
+      hostElementFocus.call(this);
+      return;
+    }
+
+    focus.apply(this, arguments);
+    enableKeyboardFocusNavigationRoutines();
+  }
+
+  defineProperties(HTMLElement.prototype, {
+    tabIndex: {
+      get() {
+        if (isHostElement(this)) {
+          return tabIndexGetterPatched.call(this);
+        }
+
+        return tabIndexGetter.call(this);
+      },
+
+      set(v) {
+        if (isHostElement(this)) {
+          return tabIndexSetterPatched.call(this, v);
+        }
+
+        return tabIndexSetter.call(this, v);
+      },
+
+      enumerable: true,
+      configurable: true
+    },
+    blur: {
+      value() {
+        if (isHostElement(this)) {
+          return blurPatched.call(this);
+        }
+
+        blur.call(this);
+      },
+
+      enumerable: true,
+      writable: true,
+      configurable: true
+    },
+    focus: {
+      value() {
+        focusPatched.apply(this, arguments);
+      },
+
+      enumerable: true,
+      writable: true,
+      configurable: true
+    }
+  });
+  const {
+    addEventListener: superAddEventListener,
+    removeEventListener: superRemoveEventListener
+  } = Node.prototype;
+
+  function addEventListenerPatched(type, listener, options) {
+    if (isHostElement(this)) {
+      addCustomElementEventListener(this, type, listener);
+    } else {
+      superAddEventListener.call(this, type, listener, options);
+    }
+  }
+
+  function removeEventListenerPatched(type, listener, options) {
+    if (isHostElement(this)) {
+      removeCustomElementEventListener(this, type, listener);
+    } else {
+      superRemoveEventListener.call(this, type, listener, options);
+    }
+  }
+
+  if (typeof EventTarget !== 'undefined') {
+    defineProperties(EventTarget.prototype, {
+      addEventListener: {
+        value: addEventListenerPatched,
+        enumerable: true,
+        writable: true,
+        configurable: true
+      },
+      removeEventListener: {
+        value: removeEventListenerPatched,
+        enumerable: true,
+        writable: true,
+        configurable: true
+      }
+    });
+  } else {
+    defineProperties(Node.prototype, {
+      addEventListener: {
+        value: addEventListenerPatched,
+        enumerable: true,
+        writable: true,
+        configurable: true
+      },
+      removeEventListener: {
+        value: removeEventListenerPatched,
+        enumerable: true,
+        writable: true,
+        configurable: true
+      }
+    });
+  }
+
+  const ShadowTokenKey = '$shadowToken$';
+  const ShadowTokenPrivateKey = '$$ShadowTokenKey$$';
+
+  function getShadowToken(node) {
+    return node[ShadowTokenKey];
+  }
+
+  function setShadowToken(node, shadowToken) {
+    node[ShadowTokenKey] = shadowToken;
+  }
+
+  defineProperty(Element.prototype, ShadowTokenKey, {
+    set(shadowToken) {
+      const oldShadowToken = this[ShadowTokenPrivateKey];
+
+      if (!isUndefined(oldShadowToken) && oldShadowToken !== shadowToken) {
+        removeAttribute.call(this, oldShadowToken);
+      }
+
+      if (!isUndefined(shadowToken)) {
+        setAttribute.call(this, shadowToken, '');
+      }
+
+      this[ShadowTokenPrivateKey] = shadowToken;
+    },
+
+    get() {
+      return this[ShadowTokenPrivateKey];
+    },
+
+    configurable: true
+  });
+  const DomManualPrivateKey = '$$DomManualKey$$';
+
+  const DocumentResolverFn = function () {};
+
+  let portalObserver;
+  const portalObserverConfig = {
+    childList: true
+  };
+
+  function adoptChildNode(node, fn, shadowToken) {
+    const previousNodeShadowResolver = getShadowRootResolver(node);
+
+    if (previousNodeShadowResolver === fn) {
+      return;
+    }
+
+    setShadowRootResolver(node, fn);
+
+    if (node instanceof Element) {
+      setShadowToken(node, shadowToken);
+
+      if (isHostElement(node)) {
+        return;
+      }
+
+      if (isUndefined(previousNodeShadowResolver)) {
+        MutationObserverObserve.call(portalObserver, node, portalObserverConfig);
+      }
+
+      const childNodes = childNodesGetter.call(node);
+
+      for (let i = 0, len = childNodes.length; i < len; i += 1) {
+        adoptChildNode(childNodes[i], fn, shadowToken);
+      }
+    }
+  }
+
+  function initPortalObserver() {
+    return new MO(mutations => {
+      forEach.call(mutations, mutation => {
+        const {
+          target: elm,
+          addedNodes,
+          removedNodes
+        } = mutation;
+        const fn = getShadowRootResolver(elm);
+        const shadowToken = getShadowToken(elm);
+
+        for (let i = 0, len = removedNodes.length; i < len; i += 1) {
+          const node = removedNodes[i];
+
+          if (!(compareDocumentPosition.call(elm, node) & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
+            adoptChildNode(node, DocumentResolverFn, undefined);
+          }
+        }
+
+        for (let i = 0, len = addedNodes.length; i < len; i += 1) {
+          const node = addedNodes[i];
+
+          if (compareDocumentPosition.call(elm, node) & Node.DOCUMENT_POSITION_CONTAINED_BY) {
+            adoptChildNode(node, fn, shadowToken);
+          }
+        }
+      });
+    });
+  }
+
+  function markElementAsPortal(elm) {
+    if (isUndefined(portalObserver)) {
+      portalObserver = initPortalObserver();
+    }
+
+    if (isUndefined(getShadowRootResolver(elm))) {
+      throw new Error(`Invalid Element`);
+    }
+
+    MutationObserverObserve.call(portalObserver, elm, portalObserverConfig);
+  }
+
+  defineProperty(Element.prototype, '$domManual$', {
+    set(v) {
+      this[DomManualPrivateKey] = v;
+
+      if (isTrue$1(v)) {
+        markElementAsPortal(this);
+      }
+    },
+
+    get() {
+      return this[DomManualPrivateKey];
+    },
+
+    configurable: true
+  });
+  /** version: 1.7.10 */
+
+  /* proxy-compat-disable */
 
   /*
    * Copyright (c) 2018, salesforce.com, inc.
@@ -9,7 +4312,7 @@
    * SPDX-License-Identifier: MIT
    * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/MIT
    */
-  function detect() {
+  function detect$4() {
     // Don't apply polyfill when ProxyCompat is enabled.
     if ('getKey' in Proxy) {
       return false;
@@ -31,26 +4334,26 @@
     isConcatSpreadable
   } = Symbol;
   const {
-    isArray
+    isArray: isArray$1
   } = Array;
   const {
-    slice: ArraySlice,
-    unshift: ArrayUnshift,
+    slice: ArraySlice$2,
+    unshift: ArrayUnshift$2,
     shift: ArrayShift
   } = Array.prototype;
 
-  function isObject(O) {
+  function isObject$1(O) {
     return typeof O === 'object' ? O !== null : typeof O === 'function';
   } // https://www.ecma-international.org/ecma-262/6.0/#sec-isconcatspreadable
 
 
   function isSpreadable(O) {
-    if (!isObject(O)) {
+    if (!isObject$1(O)) {
       return false;
     }
 
     const spreadable = O[isConcatSpreadable];
-    return spreadable !== undefined ? Boolean(spreadable) : isArray(O);
+    return spreadable !== undefined ? Boolean(spreadable) : isArray$1(O);
   } // https://www.ecma-international.org/ecma-262/6.0/#sec-array.prototype.concat
 
 
@@ -58,8 +4361,8 @@
     const O = Object(this);
     const A = [];
     let N = 0;
-    const items = ArraySlice.call(arguments);
-    ArrayUnshift.call(items, O);
+    const items = ArraySlice$2.call(arguments);
+    ArrayUnshift$2.call(items, O);
 
     while (items.length) {
       const E = ArrayShift.call(items);
@@ -83,7 +4386,7 @@
     return A;
   }
 
-  function apply() {
+  function apply$4() {
     // eslint-disable-next-line no-extend-native
     Array.prototype.concat = ArrayConcatPolyfill;
   }
@@ -95,8 +4398,8 @@
    */
 
 
-  if (detect()) {
-    apply();
+  if (detect$4()) {
+    apply$4();
   }
   /**
    * Copyright (C) 2018 salesforce.com, inc.
@@ -110,34 +4413,34 @@
    */
 
 
-  function invariant(value, msg) {
+  function invariant$1(value, msg) {
     if (!value) {
       throw new Error(`Invariant Violation: ${msg}`);
     }
   }
 
-  function isTrue(value, msg) {
+  function isTrue$2(value, msg) {
     if (!value) {
       throw new Error(`Assert Violation: ${msg}`);
     }
   }
 
-  function isFalse(value, msg) {
+  function isFalse$2(value, msg) {
     if (value) {
       throw new Error(`Assert Violation: ${msg}`);
     }
   }
 
-  function fail(msg) {
+  function fail$1(msg) {
     throw new Error(msg);
   }
 
-  var assert = /*#__PURE__*/Object.freeze({
+  var assert$1 = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    invariant: invariant,
-    isTrue: isTrue,
-    isFalse: isFalse,
-    fail: fail
+    invariant: invariant$1,
+    isTrue: isTrue$2,
+    isFalse: isFalse$2,
+    fail: fail$1
   });
   /*
    * Copyright (c) 2018, salesforce.com, inc.
@@ -147,42 +4450,42 @@
    */
 
   const {
-    assign,
-    create,
-    defineProperties,
-    defineProperty,
-    freeze,
-    getOwnPropertyDescriptor,
-    getOwnPropertyNames,
-    getPrototypeOf,
-    hasOwnProperty,
-    isFrozen,
-    keys,
-    seal,
-    setPrototypeOf
+    assign: assign$2,
+    create: create$2,
+    defineProperties: defineProperties$2,
+    defineProperty: defineProperty$2,
+    freeze: freeze$2,
+    getOwnPropertyDescriptor: getOwnPropertyDescriptor$2,
+    getOwnPropertyNames: getOwnPropertyNames$2,
+    getPrototypeOf: getPrototypeOf$2,
+    hasOwnProperty: hasOwnProperty$2,
+    isFrozen: isFrozen$2,
+    keys: keys$2,
+    seal: seal$2,
+    setPrototypeOf: setPrototypeOf$2
   } = Object;
   const {
-    filter: ArrayFilter,
-    find: ArrayFind,
-    indexOf: ArrayIndexOf,
-    join: ArrayJoin,
-    map: ArrayMap,
-    push: ArrayPush,
-    reduce: ArrayReduce,
-    reverse: ArrayReverse,
-    slice: ArraySlice$1,
-    splice: ArraySplice,
-    unshift: ArrayUnshift$1,
-    forEach
+    filter: ArrayFilter$2,
+    find: ArrayFind$2,
+    indexOf: ArrayIndexOf$2,
+    join: ArrayJoin$2,
+    map: ArrayMap$2,
+    push: ArrayPush$2,
+    reduce: ArrayReduce$2,
+    reverse: ArrayReverse$2,
+    slice: ArraySlice$1$1,
+    splice: ArraySplice$2,
+    unshift: ArrayUnshift$1$1,
+    forEach: forEach$2
   } = Array.prototype;
   const {
-    charCodeAt: StringCharCodeAt,
-    replace: StringReplace,
-    slice: StringSlice,
-    toLowerCase: StringToLowerCase
+    charCodeAt: StringCharCodeAt$2,
+    replace: StringReplace$2,
+    slice: StringSlice$2,
+    toLowerCase: StringToLowerCase$2
   } = String.prototype;
 
-  function isUndefined(obj) {
+  function isUndefined$1(obj) {
     return obj === undefined;
   }
   /*
@@ -202,17 +4505,17 @@
    * https://wicg.github.io/aom/spec/aria-reflection.html
    */
 
-  const AriaPropertyNames = ['ariaActiveDescendant', 'ariaAtomic', 'ariaAutoComplete', 'ariaBusy', 'ariaChecked', 'ariaColCount', 'ariaColIndex', 'ariaColSpan', 'ariaControls', 'ariaCurrent', 'ariaDescribedBy', 'ariaDetails', 'ariaDisabled', 'ariaErrorMessage', 'ariaExpanded', 'ariaFlowTo', 'ariaHasPopup', 'ariaHidden', 'ariaInvalid', 'ariaKeyShortcuts', 'ariaLabel', 'ariaLabelledBy', 'ariaLevel', 'ariaLive', 'ariaModal', 'ariaMultiLine', 'ariaMultiSelectable', 'ariaOrientation', 'ariaOwns', 'ariaPlaceholder', 'ariaPosInSet', 'ariaPressed', 'ariaReadOnly', 'ariaRelevant', 'ariaRequired', 'ariaRoleDescription', 'ariaRowCount', 'ariaRowIndex', 'ariaRowSpan', 'ariaSelected', 'ariaSetSize', 'ariaSort', 'ariaValueMax', 'ariaValueMin', 'ariaValueNow', 'ariaValueText', 'role'];
-  const AttrNameToPropNameMap = create(null);
-  const PropNameToAttrNameMap = create(null); // Synthetic creation of all AOM property descriptors for Custom Elements
+  const AriaPropertyNames$2 = ['ariaActiveDescendant', 'ariaAtomic', 'ariaAutoComplete', 'ariaBusy', 'ariaChecked', 'ariaColCount', 'ariaColIndex', 'ariaColSpan', 'ariaControls', 'ariaCurrent', 'ariaDescribedBy', 'ariaDetails', 'ariaDisabled', 'ariaErrorMessage', 'ariaExpanded', 'ariaFlowTo', 'ariaHasPopup', 'ariaHidden', 'ariaInvalid', 'ariaKeyShortcuts', 'ariaLabel', 'ariaLabelledBy', 'ariaLevel', 'ariaLive', 'ariaModal', 'ariaMultiLine', 'ariaMultiSelectable', 'ariaOrientation', 'ariaOwns', 'ariaPlaceholder', 'ariaPosInSet', 'ariaPressed', 'ariaReadOnly', 'ariaRelevant', 'ariaRequired', 'ariaRoleDescription', 'ariaRowCount', 'ariaRowIndex', 'ariaRowSpan', 'ariaSelected', 'ariaSetSize', 'ariaSort', 'ariaValueMax', 'ariaValueMin', 'ariaValueNow', 'ariaValueText', 'role'];
+  const AttrNameToPropNameMap$2 = create$2(null);
+  const PropNameToAttrNameMap$2 = create$2(null); // Synthetic creation of all AOM property descriptors for Custom Elements
 
-  forEach.call(AriaPropertyNames, propName => {
+  forEach$2.call(AriaPropertyNames$2, propName => {
     // Typescript infers the wrong function type for this particular overloaded method:
     // https://github.com/Microsoft/TypeScript/issues/27972
     // @ts-ignore type-mismatch
-    const attrName = StringToLowerCase.call(StringReplace.call(propName, /^aria/, 'aria-'));
-    AttrNameToPropNameMap[attrName] = propName;
-    PropNameToAttrNameMap[propName] = attrName;
+    const attrName = StringToLowerCase$2.call(StringReplace$2.call(propName, /^aria/, 'aria-'));
+    AttrNameToPropNameMap$2[attrName] = propName;
+    PropNameToAttrNameMap$2[propName] = attrName;
   });
   /*
    * Copyright (c) 2018, salesforce.com, inc.
@@ -222,7 +4525,7 @@
    */
   // Inspired from: https://mathiasbynens.be/notes/globalthis
 
-  const _globalThis = function () {
+  const _globalThis$2 = function () {
     // On recent browsers, `globalThis` is already defined. In this case return it directly.
     if (typeof globalThis === 'object') {
       return globalThis;
@@ -271,23 +4574,23 @@
    */
 
 
-  const hasNativeSymbolsSupport = Symbol('x').toString() === 'Symbol(x)';
+  const hasNativeSymbolsSupport$3 = Symbol('x').toString() === 'Symbol(x)';
 
-  function createHiddenField(key, namespace) {
-    return hasNativeSymbolsSupport ? Symbol(key) : `$$lwc-${namespace}-${key}$$`;
+  function createHiddenField$1(key, namespace) {
+    return hasNativeSymbolsSupport$3 ? Symbol(key) : `$$lwc-${namespace}-${key}$$`;
   }
 
-  const hiddenFieldsMap = new WeakMap();
+  const hiddenFieldsMap$1 = new WeakMap();
 
-  function getHiddenField(o, field) {
-    const valuesByField = hiddenFieldsMap.get(o);
+  function getHiddenField$1(o, field) {
+    const valuesByField = hiddenFieldsMap$1.get(o);
 
-    if (!isUndefined(valuesByField)) {
+    if (!isUndefined$1(valuesByField)) {
       return valuesByField[field];
     }
   }
 
-  const HTML_ATTRIBUTES_TO_PROPERTY = {
+  const HTML_ATTRIBUTES_TO_PROPERTY$2 = {
     accesskey: 'accessKey',
     readonly: 'readOnly',
     tabindex: 'tabIndex',
@@ -305,7 +4608,7 @@
     usemap: 'useMap',
     for: 'htmlFor'
   };
-  keys(HTML_ATTRIBUTES_TO_PROPERTY).forEach(attrName => {});
+  keys$2(HTML_ATTRIBUTES_TO_PROPERTY$2).forEach(attrName => {});
   /** version: 1.7.10 */
 
   /*
@@ -315,7 +4618,7 @@
    * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/MIT
    */
 
-  function detect$1(propName) {
+  function detect$1$1(propName) {
     return Object.getOwnPropertyDescriptor(Element.prototype, propName) === undefined;
   }
   /*
@@ -348,7 +4651,7 @@
       get() {
         const map = getAriaPropertyMap(this);
 
-        if (hasOwnProperty.call(map, propName)) {
+        if (hasOwnProperty$2.call(map, propName)) {
           return map[propName];
         } // otherwise just reflect what's in the attribute
 
@@ -377,7 +4680,7 @@
     // Typescript is inferring the wrong function type for this particular
     // overloaded method: https://github.com/Microsoft/TypeScript/issues/27972
     // @ts-ignore type-mismatch
-    const attrName = PropNameToAttrNameMap[propName];
+    const attrName = PropNameToAttrNameMap$2[propName];
     const descriptor = createAriaPropertyPropertyDescriptor(propName, attrName);
     Object.defineProperty(Element.prototype, propName, descriptor);
   }
@@ -389,12 +4692,12 @@
    */
 
 
-  const ElementPrototypeAriaPropertyNames = keys(PropNameToAttrNameMap);
+  const ElementPrototypeAriaPropertyNames = keys$2(PropNameToAttrNameMap$2);
 
   for (let i = 0, len = ElementPrototypeAriaPropertyNames.length; i < len; i += 1) {
     const propName = ElementPrototypeAriaPropertyNames[i];
 
-    if (detect$1(propName)) {
+    if (detect$1$1(propName)) {
       patch(propName);
     }
   }
@@ -412,34 +4715,34 @@
    */
 
 
-  function invariant$1(value, msg) {
+  function invariant$1$1(value, msg) {
     if (!value) {
       throw new Error(`Invariant Violation: ${msg}`);
     }
   }
 
-  function isTrue$1(value, msg) {
+  function isTrue$1$1(value, msg) {
     if (!value) {
       throw new Error(`Assert Violation: ${msg}`);
     }
   }
 
-  function isFalse$2(value, msg) {
+  function isFalse$2$1(value, msg) {
     if (value) {
       throw new Error(`Assert Violation: ${msg}`);
     }
   }
 
-  function fail$1(msg) {
+  function fail$1$1(msg) {
     throw new Error(msg);
   }
 
-  var assert$1 = /*#__PURE__*/Object.freeze({
+  var assert$1$1 = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    invariant: invariant$1,
-    isTrue: isTrue$1,
-    isFalse: isFalse$2,
-    fail: fail$1
+    invariant: invariant$1$1,
+    isTrue: isTrue$1$1,
+    isFalse: isFalse$2$1,
+    fail: fail$1$1
   });
   /*
    * Copyright (c) 2018, salesforce.com, inc.
@@ -449,45 +4752,45 @@
    */
 
   const {
-    assign: assign$1,
-    create: create$1,
-    defineProperties: defineProperties$1,
-    defineProperty: defineProperty$1,
-    freeze: freeze$1,
-    getOwnPropertyDescriptor: getOwnPropertyDescriptor$1,
-    getOwnPropertyNames: getOwnPropertyNames$1,
-    getPrototypeOf: getPrototypeOf$1,
-    hasOwnProperty: hasOwnProperty$1,
-    isFrozen: isFrozen$1,
-    keys: keys$1,
-    seal: seal$1,
-    setPrototypeOf: setPrototypeOf$1
+    assign: assign$1$1,
+    create: create$1$1,
+    defineProperties: defineProperties$1$1,
+    defineProperty: defineProperty$1$1,
+    freeze: freeze$1$1,
+    getOwnPropertyDescriptor: getOwnPropertyDescriptor$1$1,
+    getOwnPropertyNames: getOwnPropertyNames$1$1,
+    getPrototypeOf: getPrototypeOf$1$1,
+    hasOwnProperty: hasOwnProperty$1$1,
+    isFrozen: isFrozen$1$1,
+    keys: keys$1$1,
+    seal: seal$1$1,
+    setPrototypeOf: setPrototypeOf$1$1
   } = Object;
   const {
     isArray: isArray$2
   } = Array;
   const {
-    filter: ArrayFilter$1,
-    find: ArrayFind$1,
-    indexOf: ArrayIndexOf$1,
-    join: ArrayJoin$1,
-    map: ArrayMap$1,
-    push: ArrayPush$1,
-    reduce: ArrayReduce$1,
-    reverse: ArrayReverse$1,
-    slice: ArraySlice$2,
-    splice: ArraySplice$1,
-    unshift: ArrayUnshift$2,
-    forEach: forEach$1
+    filter: ArrayFilter$1$1,
+    find: ArrayFind$1$1,
+    indexOf: ArrayIndexOf$1$1,
+    join: ArrayJoin$1$1,
+    map: ArrayMap$1$1,
+    push: ArrayPush$1$1,
+    reduce: ArrayReduce$1$1,
+    reverse: ArrayReverse$1$1,
+    slice: ArraySlice$2$1,
+    splice: ArraySplice$1$1,
+    unshift: ArrayUnshift$2$1,
+    forEach: forEach$1$1
   } = Array.prototype;
   const {
-    charCodeAt: StringCharCodeAt$1,
-    replace: StringReplace$1,
-    slice: StringSlice$1,
-    toLowerCase: StringToLowerCase$1
+    charCodeAt: StringCharCodeAt$1$1,
+    replace: StringReplace$1$1,
+    slice: StringSlice$1$1,
+    toLowerCase: StringToLowerCase$1$1
   } = String.prototype;
 
-  function isUndefined$1(obj) {
+  function isUndefined$1$1(obj) {
     return obj === undefined;
   }
 
@@ -495,7 +4798,7 @@
     return obj === null;
   }
 
-  function isTrue$1$1(obj) {
+  function isTrue$1$1$1(obj) {
     return obj === true;
   }
 
@@ -527,7 +4830,7 @@
       // Array.prototype.toString directly will cause an error Iterate through
       // all the items and handle individually.
       if (isArray$2(obj)) {
-        return ArrayJoin$1.call(ArrayMap$1.call(obj, toString$1), ',');
+        return ArrayJoin$1$1.call(ArrayMap$1$1.call(obj, toString$1), ',');
       }
 
       return obj.toString();
@@ -538,15 +4841,15 @@
     }
   }
 
-  function getPropertyDescriptor(o, p) {
+  function getPropertyDescriptor$1(o, p) {
     do {
-      const d = getOwnPropertyDescriptor$1(o, p);
+      const d = getOwnPropertyDescriptor$1$1(o, p);
 
-      if (!isUndefined$1(d)) {
+      if (!isUndefined$1$1(d)) {
         return d;
       }
 
-      o = getPrototypeOf$1(o);
+      o = getPrototypeOf$1$1(o);
     } while (o !== null);
   }
 
@@ -568,17 +4871,17 @@
    * https://wicg.github.io/aom/spec/aria-reflection.html
    */
 
-  const AriaPropertyNames$1 = ['ariaActiveDescendant', 'ariaAtomic', 'ariaAutoComplete', 'ariaBusy', 'ariaChecked', 'ariaColCount', 'ariaColIndex', 'ariaColSpan', 'ariaControls', 'ariaCurrent', 'ariaDescribedBy', 'ariaDetails', 'ariaDisabled', 'ariaErrorMessage', 'ariaExpanded', 'ariaFlowTo', 'ariaHasPopup', 'ariaHidden', 'ariaInvalid', 'ariaKeyShortcuts', 'ariaLabel', 'ariaLabelledBy', 'ariaLevel', 'ariaLive', 'ariaModal', 'ariaMultiLine', 'ariaMultiSelectable', 'ariaOrientation', 'ariaOwns', 'ariaPlaceholder', 'ariaPosInSet', 'ariaPressed', 'ariaReadOnly', 'ariaRelevant', 'ariaRequired', 'ariaRoleDescription', 'ariaRowCount', 'ariaRowIndex', 'ariaRowSpan', 'ariaSelected', 'ariaSetSize', 'ariaSort', 'ariaValueMax', 'ariaValueMin', 'ariaValueNow', 'ariaValueText', 'role'];
-  const AttrNameToPropNameMap$1 = create$1(null);
-  const PropNameToAttrNameMap$1 = create$1(null); // Synthetic creation of all AOM property descriptors for Custom Elements
+  const AriaPropertyNames$1$1 = ['ariaActiveDescendant', 'ariaAtomic', 'ariaAutoComplete', 'ariaBusy', 'ariaChecked', 'ariaColCount', 'ariaColIndex', 'ariaColSpan', 'ariaControls', 'ariaCurrent', 'ariaDescribedBy', 'ariaDetails', 'ariaDisabled', 'ariaErrorMessage', 'ariaExpanded', 'ariaFlowTo', 'ariaHasPopup', 'ariaHidden', 'ariaInvalid', 'ariaKeyShortcuts', 'ariaLabel', 'ariaLabelledBy', 'ariaLevel', 'ariaLive', 'ariaModal', 'ariaMultiLine', 'ariaMultiSelectable', 'ariaOrientation', 'ariaOwns', 'ariaPlaceholder', 'ariaPosInSet', 'ariaPressed', 'ariaReadOnly', 'ariaRelevant', 'ariaRequired', 'ariaRoleDescription', 'ariaRowCount', 'ariaRowIndex', 'ariaRowSpan', 'ariaSelected', 'ariaSetSize', 'ariaSort', 'ariaValueMax', 'ariaValueMin', 'ariaValueNow', 'ariaValueText', 'role'];
+  const AttrNameToPropNameMap$1$1 = create$1$1(null);
+  const PropNameToAttrNameMap$1$1 = create$1$1(null); // Synthetic creation of all AOM property descriptors for Custom Elements
 
-  forEach$1.call(AriaPropertyNames$1, propName => {
+  forEach$1$1.call(AriaPropertyNames$1$1, propName => {
     // Typescript infers the wrong function type for this particular overloaded method:
     // https://github.com/Microsoft/TypeScript/issues/27972
     // @ts-ignore type-mismatch
-    const attrName = StringToLowerCase$1.call(StringReplace$1.call(propName, /^aria/, 'aria-'));
-    AttrNameToPropNameMap$1[attrName] = propName;
-    PropNameToAttrNameMap$1[propName] = attrName;
+    const attrName = StringToLowerCase$1$1.call(StringReplace$1$1.call(propName, /^aria/, 'aria-'));
+    AttrNameToPropNameMap$1$1[attrName] = propName;
+    PropNameToAttrNameMap$1$1[propName] = attrName;
   });
   /*
    * Copyright (c) 2018, salesforce.com, inc.
@@ -588,7 +4891,7 @@
    */
   // Inspired from: https://mathiasbynens.be/notes/globalthis
 
-  const _globalThis$1 = function () {
+  const _globalThis$1$1 = function () {
     // On recent browsers, `globalThis` is already defined. In this case return it directly.
     if (typeof globalThis === 'object') {
       return globalThis;
@@ -637,34 +4940,34 @@
    */
 
 
-  const hasNativeSymbolsSupport$1 = Symbol('x').toString() === 'Symbol(x)';
+  const hasNativeSymbolsSupport$1$1 = Symbol('x').toString() === 'Symbol(x)';
 
-  function createHiddenField$1(key, namespace) {
-    return hasNativeSymbolsSupport$1 ? Symbol(key) : `$$lwc-${namespace}-${key}$$`;
+  function createHiddenField$1$1(key, namespace) {
+    return hasNativeSymbolsSupport$1$1 ? Symbol(key) : `$$lwc-${namespace}-${key}$$`;
   }
 
-  const hiddenFieldsMap$1 = new WeakMap();
+  const hiddenFieldsMap$1$1 = new WeakMap();
 
   function setHiddenField$1(o, field, value) {
-    let valuesByField = hiddenFieldsMap$1.get(o);
+    let valuesByField = hiddenFieldsMap$1$1.get(o);
 
-    if (isUndefined$1(valuesByField)) {
-      valuesByField = create$1(null);
-      hiddenFieldsMap$1.set(o, valuesByField);
+    if (isUndefined$1$1(valuesByField)) {
+      valuesByField = create$1$1(null);
+      hiddenFieldsMap$1$1.set(o, valuesByField);
     }
 
     valuesByField[field] = value;
   }
 
-  function getHiddenField$1(o, field) {
-    const valuesByField = hiddenFieldsMap$1.get(o);
+  function getHiddenField$1$1(o, field) {
+    const valuesByField = hiddenFieldsMap$1$1.get(o);
 
-    if (!isUndefined$1(valuesByField)) {
+    if (!isUndefined$1$1(valuesByField)) {
       return valuesByField[field];
     }
   }
 
-  const HTML_ATTRIBUTES_TO_PROPERTY$1 = {
+  const HTML_ATTRIBUTES_TO_PROPERTY$1$1 = {
     accesskey: 'accessKey',
     readonly: 'readOnly',
     tabindex: 'tabIndex',
@@ -682,7 +4985,7 @@
     usemap: 'useMap',
     for: 'htmlFor'
   };
-  keys$1(HTML_ATTRIBUTES_TO_PROPERTY$1).forEach(attrName => {});
+  keys$1$1(HTML_ATTRIBUTES_TO_PROPERTY$1$1).forEach(attrName => {});
   /** version: 1.7.10 */
 
   /*
@@ -694,8 +4997,8 @@
 
   let nextTickCallbackQueue = [];
   const SPACE_CHAR = 32;
-  const EmptyObject = seal$1(create$1(null));
-  const EmptyArray = seal$1([]);
+  const EmptyObject = seal$1$1(create$1$1(null));
+  const EmptyArray = seal$1$1([]);
 
   function flushCallbackQueue() {
     {
@@ -723,7 +5026,7 @@
       Promise.resolve().then(flushCallbackQueue);
     }
 
-    ArrayPush$1.call(nextTickCallbackQueue, callback);
+    ArrayPush$1$1.call(nextTickCallbackQueue, callback);
   }
   /*
    * Copyright (c) 2019, salesforce.com, inc.
@@ -734,24 +5037,24 @@
 
 
   const {
-    create: create$1$1
+    create: create$1$1$1
   } = Object;
   const {
-    splice: ArraySplice$1$1,
-    indexOf: ArrayIndexOf$1$1,
-    push: ArrayPush$1$1
+    splice: ArraySplice$1$1$1,
+    indexOf: ArrayIndexOf$1$1$1,
+    push: ArrayPush$1$1$1
   } = Array.prototype;
   const TargetToReactiveRecordMap = new WeakMap();
 
-  function isUndefined$1$1(obj) {
+  function isUndefined$1$1$1(obj) {
     return obj === undefined;
   }
 
   function getReactiveRecord(target) {
     let reactiveRecord = TargetToReactiveRecordMap.get(target);
 
-    if (isUndefined$1$1(reactiveRecord)) {
-      const newRecord = create$1$1(null);
+    if (isUndefined$1$1$1(reactiveRecord)) {
+      const newRecord = create$1$1$1(null);
       reactiveRecord = newRecord;
       TargetToReactiveRecordMap.set(target, newRecord);
     }
@@ -764,10 +5067,10 @@
   function valueMutated(target, key) {
     const reactiveRecord = TargetToReactiveRecordMap.get(target);
 
-    if (!isUndefined$1$1(reactiveRecord)) {
+    if (!isUndefined$1$1$1(reactiveRecord)) {
       const reactiveObservers = reactiveRecord[key];
 
-      if (!isUndefined$1$1(reactiveObservers)) {
+      if (!isUndefined$1$1$1(reactiveObservers)) {
         for (let i = 0, len = reactiveObservers.length; i < len; i += 1) {
           const ro = reactiveObservers[i];
           ro.notify();
@@ -786,14 +5089,14 @@
     const reactiveRecord = getReactiveRecord(target);
     let reactiveObservers = reactiveRecord[key];
 
-    if (isUndefined$1$1(reactiveObservers)) {
+    if (isUndefined$1$1$1(reactiveObservers)) {
       reactiveObservers = [];
       reactiveRecord[key] = reactiveObservers;
     } else if (reactiveObservers[0] === ro) {
       return; // perf optimization considering that most subscriptions will come from the same record
     }
 
-    if (ArrayIndexOf$1$1.call(reactiveObservers, ro) === -1) {
+    if (ArrayIndexOf$1$1$1.call(reactiveObservers, ro) === -1) {
       ro.link(reactiveObservers);
     }
   }
@@ -837,8 +5140,8 @@
       if (len > 0) {
         for (let i = 0; i < len; i += 1) {
           const set = listeners[i];
-          const pos = ArrayIndexOf$1$1.call(listeners[i], this);
-          ArraySplice$1$1.call(set, pos, 1);
+          const pos = ArrayIndexOf$1$1$1.call(listeners[i], this);
+          ArraySplice$1$1$1.call(set, pos, 1);
         }
 
         listeners.length = 0;
@@ -851,9 +5154,9 @@
     }
 
     link(reactiveObservers) {
-      ArrayPush$1$1.call(reactiveObservers, this); // we keep track of observing records where the observing record was added to so we can do some clean up later on
+      ArrayPush$1$1$1.call(reactiveObservers, this); // we keep track of observing records where the observing record was added to so we can do some clean up later on
 
-      ArrayPush$1$1.call(this.listeners, reactiveObservers);
+      ArrayPush$1$1$1.call(this.listeners, reactiveObservers);
     }
 
   }
@@ -881,7 +5184,7 @@
 
 
   function getComponentTag(vm) {
-    return `<${StringToLowerCase$1.call(vm.tagName)}>`;
+    return `<${StringToLowerCase$1$1.call(vm.tagName)}>`;
   } // TODO [#1695]: Unify getComponentStack and getErrorComponentStack
 
 
@@ -890,12 +5193,12 @@
     let prefix = '';
 
     while (!isNull$1(vm.owner)) {
-      ArrayPush$1.call(stack, prefix + getComponentTag(vm));
+      ArrayPush$1$1.call(stack, prefix + getComponentTag(vm));
       vm = vm.owner;
       prefix += '\t';
     }
 
-    return ArrayJoin$1.call(stack, '\n');
+    return ArrayJoin$1$1.call(stack, '\n');
   }
 
   function getErrorComponentStack(vm) {
@@ -903,7 +5206,7 @@
     let currentVm = vm;
 
     while (!isNull$1(currentVm)) {
-      ArrayPush$1.call(wcStack, getComponentTag(currentVm));
+      ArrayPush$1$1.call(wcStack, getComponentTag(currentVm));
       currentVm = currentVm.owner;
     }
 
@@ -920,7 +5223,7 @@
   function logError(message, vm) {
     let msg = `[LWC error]: ${message}`;
 
-    if (!isUndefined$1(vm)) {
+    if (!isUndefined$1$1(vm)) {
       msg = `${msg}\n${getComponentStack(vm)}`;
     }
 
@@ -962,7 +5265,7 @@
   }
 
   function updateAllEventListeners(oldVnode, vnode) {
-    if (isUndefined$1(oldVnode.listener)) {
+    if (isUndefined$1$1(oldVnode.listener)) {
       createAllEventListeners(vnode);
     } else {
       vnode.listener = oldVnode.listener;
@@ -981,7 +5284,7 @@
       }
     } = vnode;
 
-    if (isUndefined$1(on)) {
+    if (isUndefined$1$1(on)) {
       return;
     }
 
@@ -1019,7 +5322,7 @@
   // https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement
 
 
-  const globalHTMLProperties = assign$1(create$1(null), {
+  const globalHTMLProperties = assign$1$1(create$1$1(null), {
     accessKey: {
       attribute: 'accesskey'
     },
@@ -1105,17 +5408,17 @@
       attribute: 'role'
     }
   });
-  const AttrNameToPropNameMap$1$1 = assign$1(create$1(null), AttrNameToPropNameMap$1);
-  const PropNameToAttrNameMap$1$1 = assign$1(create$1(null), PropNameToAttrNameMap$1);
-  forEach$1.call(defaultDefHTMLPropertyNames, propName => {
-    const attrName = StringToLowerCase$1.call(propName);
-    AttrNameToPropNameMap$1$1[attrName] = propName;
-    PropNameToAttrNameMap$1$1[propName] = attrName;
+  const AttrNameToPropNameMap$1$1$1 = assign$1$1(create$1$1(null), AttrNameToPropNameMap$1$1);
+  const PropNameToAttrNameMap$1$1$1 = assign$1$1(create$1$1(null), PropNameToAttrNameMap$1$1);
+  forEach$1$1.call(defaultDefHTMLPropertyNames, propName => {
+    const attrName = StringToLowerCase$1$1.call(propName);
+    AttrNameToPropNameMap$1$1$1[attrName] = propName;
+    PropNameToAttrNameMap$1$1$1[propName] = attrName;
   });
-  forEach$1.call(HTMLPropertyNamesWithLowercasedReflectiveAttributes, propName => {
-    const attrName = StringToLowerCase$1.call(propName);
-    AttrNameToPropNameMap$1$1[attrName] = propName;
-    PropNameToAttrNameMap$1$1[propName] = attrName;
+  forEach$1$1.call(HTMLPropertyNamesWithLowercasedReflectiveAttributes, propName => {
+    const attrName = StringToLowerCase$1$1.call(propName);
+    AttrNameToPropNameMap$1$1$1[attrName] = propName;
+    PropNameToAttrNameMap$1$1$1[propName] = attrName;
   });
   const CAPS_REGEX = /[A-Z]/g;
   /**
@@ -1124,11 +5427,11 @@
    */
 
   function getAttrNameFromPropName(propName) {
-    if (isUndefined$1(PropNameToAttrNameMap$1$1[propName])) {
-      PropNameToAttrNameMap$1$1[propName] = StringReplace$1.call(propName, CAPS_REGEX, match => '-' + match.toLowerCase());
+    if (isUndefined$1$1(PropNameToAttrNameMap$1$1$1[propName])) {
+      PropNameToAttrNameMap$1$1$1[propName] = StringReplace$1$1.call(propName, CAPS_REGEX, match => '-' + match.toLowerCase());
     }
 
-    return PropNameToAttrNameMap$1$1[propName];
+    return PropNameToAttrNameMap$1$1$1[propName];
   }
 
   let controlledElement = null;
@@ -1169,7 +5472,7 @@
       }
     } = vnode;
 
-    if (isUndefined$1(attrs)) {
+    if (isUndefined$1$1(attrs)) {
       return;
     }
 
@@ -1184,7 +5487,7 @@
     }
 
     {
-      assert$1.invariant(isUndefined$1(oldAttrs) || keys$1(oldAttrs).join(',') === keys$1(attrs).join(','), `vnode.data.attrs cannot change shape.`);
+      assert$1$1.invariant(isUndefined$1$1(oldAttrs) || keys$1$1(oldAttrs).join(',') === keys$1$1(attrs).join(','), `vnode.data.attrs cannot change shape.`);
     }
 
     const elm = vnode.elm;
@@ -1193,7 +5496,7 @@
       removeAttribute
     } = renderer;
     let key;
-    oldAttrs = isUndefined$1(oldAttrs) ? EmptyObject : oldAttrs; // update modified attributes, add new attributes
+    oldAttrs = isUndefined$1$1(oldAttrs) ? EmptyObject : oldAttrs; // update modified attributes, add new attributes
     // this routine is only useful for data-* attributes in all kind of elements
     // and aria-* in standard elements (custom elements will use props for these)
 
@@ -1204,10 +5507,10 @@
       if (old !== cur) {
         unlockAttribute(elm, key);
 
-        if (StringCharCodeAt$1.call(key, 3) === ColonCharCode) {
+        if (StringCharCodeAt$1$1.call(key, 3) === ColonCharCode) {
           // Assume xml namespace
           setAttribute(elm, key, cur, xmlNS);
-        } else if (StringCharCodeAt$1.call(key, 5) === ColonCharCode) {
+        } else if (StringCharCodeAt$1$1.call(key, 5) === ColonCharCode) {
           // Assume xlink namespace
           setAttribute(elm, key, cur, xlinkNS);
         } else if (isNull$1(cur)) {
@@ -1244,7 +5547,7 @@
   function update(oldVnode, vnode) {
     const props = vnode.data.props;
 
-    if (isUndefined$1(props)) {
+    if (isUndefined$1$1(props)) {
       return;
     }
 
@@ -1255,10 +5558,10 @@
     }
 
     {
-      assert$1.invariant(isUndefined$1(oldProps) || keys$1(oldProps).join(',') === keys$1(props).join(','), 'vnode.data.props cannot change shape.');
+      assert$1$1.invariant(isUndefined$1$1(oldProps) || keys$1$1(oldProps).join(',') === keys$1$1(props).join(','), 'vnode.data.props cannot change shape.');
     }
 
-    const isFirstPatch = isUndefined$1(oldProps);
+    const isFirstPatch = isUndefined$1$1(oldProps);
     const {
       elm,
       sel,
@@ -1290,7 +5593,7 @@
    * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/MIT
    */
 
-  const classNameToClassMap = create$1(null);
+  const classNameToClassMap = create$1$1(null);
 
   function getMapFromClassName(className) {
     // Intentionally using == to match undefined and null values from computed style attribute
@@ -1306,15 +5609,15 @@
       return map;
     }
 
-    map = create$1(null);
+    map = create$1$1(null);
     let start = 0;
     let o;
     const len = className.length;
 
     for (o = 0; o < len; o++) {
-      if (StringCharCodeAt$1.call(className, o) === SPACE_CHAR) {
+      if (StringCharCodeAt$1$1.call(className, o) === SPACE_CHAR) {
         if (o > start) {
-          map[StringSlice$1.call(className, start, o)] = true;
+          map[StringSlice$1$1.call(className, start, o)] = true;
         }
 
         start = o + 1;
@@ -1322,14 +5625,14 @@
     }
 
     if (o > start) {
-      map[StringSlice$1.call(className, start, o)] = true;
+      map[StringSlice$1$1.call(className, start, o)] = true;
     }
 
     classNameToClassMap[className] = map;
 
     {
       // just to make sure that this object never changes as part of the diffing algo
-      freeze$1(map);
+      freeze$1$1(map);
     }
 
     return map;
@@ -1362,13 +5665,13 @@
 
     for (name in oldClassMap) {
       // remove only if it is not in the new class collection and it is not set from within the instance
-      if (isUndefined$1(newClassMap[name])) {
+      if (isUndefined$1$1(newClassMap[name])) {
         classList.remove(name);
       }
     }
 
     for (name in newClassMap) {
-      if (isUndefined$1(oldClassMap[name])) {
+      if (isUndefined$1$1(oldClassMap[name])) {
         classList.add(name);
       }
     }
@@ -1443,7 +5746,7 @@
       }
     } = vnode;
 
-    if (isUndefined$1(classMap)) {
+    if (isUndefined$1$1(classMap)) {
       return;
     }
 
@@ -1477,7 +5780,7 @@
       }
     } = vnode;
 
-    if (isUndefined$1(styleMap)) {
+    if (isUndefined$1$1(styleMap)) {
       return;
     }
 
@@ -1700,7 +6003,7 @@
 
 
   function generateDataDescriptor(options) {
-    return assign$1({
+    return assign$1$1({
       configurable: true,
       enumerable: true,
       writable: true
@@ -1708,7 +6011,7 @@
   }
 
   function generateAccessorDescriptor(options) {
-    return assign$1({
+    return assign$1$1({
       configurable: true,
       enumerable: true
     }, options);
@@ -1732,7 +6035,7 @@
 
   function patchElementWithRestrictions(elm, options) {
 
-    const originalOuterHTMLDescriptor = getPropertyDescriptor(elm, 'outerHTML');
+    const originalOuterHTMLDescriptor = getPropertyDescriptor$1(elm, 'outerHTML');
     const descriptors = {
       outerHTML: generateAccessorDescriptor({
         get() {
@@ -1753,10 +6056,10 @@
         removeChild,
         replaceChild
       } = elm;
-      const originalNodeValueDescriptor = getPropertyDescriptor(elm, 'nodeValue');
-      const originalInnerHTMLDescriptor = getPropertyDescriptor(elm, 'innerHTML');
-      const originalTextContentDescriptor = getPropertyDescriptor(elm, 'textContent');
-      assign$1(descriptors, {
+      const originalNodeValueDescriptor = getPropertyDescriptor$1(elm, 'nodeValue');
+      const originalInnerHTMLDescriptor = getPropertyDescriptor$1(elm, 'innerHTML');
+      const originalTextContentDescriptor = getPropertyDescriptor$1(elm, 'textContent');
+      assign$1$1(descriptors, {
         appendChild: generateDataDescriptor({
           value(aChild) {
             logMissingPortalError('appendChild', 'method');
@@ -1830,7 +6133,7 @@
       });
     }
 
-    defineProperties$1(elm, descriptors);
+    defineProperties$1$1(elm, descriptors);
   }
 
   const BLOCKED_SHADOW_ROOT_METHODS = ['cloneNode', 'getElementById', 'getSelection', 'elementsFromPoint', 'dispatchEvent'];
@@ -1841,8 +6144,8 @@
 
 
     const originalAddEventListener = sr.addEventListener;
-    const originalInnerHTMLDescriptor = getPropertyDescriptor(sr, 'innerHTML');
-    const originalTextContentDescriptor = getPropertyDescriptor(sr, 'textContent');
+    const originalInnerHTMLDescriptor = getPropertyDescriptor$1(sr, 'innerHTML');
+    const originalTextContentDescriptor = getPropertyDescriptor$1(sr, 'textContent');
     const descriptors = {
       innerHTML: generateAccessorDescriptor({
         get() {
@@ -1868,7 +6171,7 @@
         value(type, listener, options) {
           // TODO [#420]: this is triggered when the component author attempts to add a listener
           // programmatically into its Component's shadow root
-          if (!isUndefined$1(options)) {
+          if (!isUndefined$1$1(options)) {
             logError('The `addEventListener` method in `LightningElement` does not support any options.', getAssociatedVMIfPresent(this));
           } // Typescript does not like it when you treat the `arguments` object as an array
           // @ts-ignore type-mismatch
@@ -1879,7 +6182,7 @@
 
       })
     };
-    forEach$1.call(BLOCKED_SHADOW_ROOT_METHODS, methodName => {
+    forEach$1$1.call(BLOCKED_SHADOW_ROOT_METHODS, methodName => {
       descriptors[methodName] = generateAccessorDescriptor({
         get() {
           throw new Error(`Disallowed method "${methodName}" in ShadowRoot.`);
@@ -1895,9 +6198,9 @@
   function getCustomElementRestrictionsDescriptors(elm) {
 
     const originalAddEventListener = elm.addEventListener;
-    const originalInnerHTMLDescriptor = getPropertyDescriptor(elm, 'innerHTML');
-    const originalOuterHTMLDescriptor = getPropertyDescriptor(elm, 'outerHTML');
-    const originalTextContentDescriptor = getPropertyDescriptor(elm, 'textContent');
+    const originalInnerHTMLDescriptor = getPropertyDescriptor$1(elm, 'innerHTML');
+    const originalOuterHTMLDescriptor = getPropertyDescriptor$1(elm, 'outerHTML');
+    const originalTextContentDescriptor = getPropertyDescriptor$1(elm, 'textContent');
     return {
       innerHTML: generateAccessorDescriptor({
         get() {
@@ -1933,7 +6236,7 @@
         value(type, listener, options) {
           // TODO [#420]: this is triggered when the component author attempts to add a listener
           // programmatically into a lighting element node
-          if (!isUndefined$1(options)) {
+          if (!isUndefined$1$1(options)) {
             logError('The `addEventListener` method in `LightningElement` does not support any options.', getAssociatedVMIfPresent(this));
           } // Typescript does not like it when you treat the `arguments` object as an array
           // @ts-ignore type-mismatch
@@ -1985,7 +6288,7 @@
 
       })
     };
-    forEach$1.call(getOwnPropertyNames$1(globalHTMLProperties), propName => {
+    forEach$1$1.call(getOwnPropertyNames$1$1(globalHTMLProperties), propName => {
       if (propName in proto) {
         return; // no need to redefine something that we are already exposing
       }
@@ -2026,21 +6329,21 @@
 
 
   function patchShadowRootWithRestrictions(sr) {
-    defineProperties$1(sr, getShadowRootRestrictionsDescriptors(sr));
+    defineProperties$1$1(sr, getShadowRootRestrictionsDescriptors(sr));
   }
 
   function patchCustomElementWithRestrictions(elm) {
     const restrictionsDescriptors = getCustomElementRestrictionsDescriptors(elm);
-    const elmProto = getPrototypeOf$1(elm);
-    setPrototypeOf$1(elm, create$1(elmProto, restrictionsDescriptors));
+    const elmProto = getPrototypeOf$1$1(elm);
+    setPrototypeOf$1$1(elm, create$1$1(elmProto, restrictionsDescriptors));
   }
 
   function patchComponentWithRestrictions(cmp) {
-    defineProperties$1(cmp, getComponentRestrictionsDescriptors());
+    defineProperties$1$1(cmp, getComponentRestrictionsDescriptors());
   }
 
   function patchLightningElementPrototypeWithRestrictions(proto) {
-    defineProperties$1(proto, getLightningElementPrototypeRestrictionsDescriptors(proto));
+    defineProperties$1$1(proto, getLightningElementPrototypeRestrictionsDescriptors(proto));
   }
   /*
    * Copyright (c) 2020, salesforce.com, inc.
@@ -2068,23 +6371,23 @@
    * Base Lightning Element should support.
    */
 
-  const HTMLElementOriginalDescriptors = create$1(null);
-  forEach$1.call(keys$1(PropNameToAttrNameMap$1), propName => {
+  const HTMLElementOriginalDescriptors = create$1$1(null);
+  forEach$1$1.call(keys$1$1(PropNameToAttrNameMap$1$1), propName => {
     // Note: intentionally using our in-house getPropertyDescriptor instead of getOwnPropertyDescriptor here because
     // in IE11, some properties are on Element.prototype instead of HTMLElement, just to be sure.
-    const descriptor = getPropertyDescriptor(HTMLElementPrototype, propName);
+    const descriptor = getPropertyDescriptor$1(HTMLElementPrototype, propName);
 
-    if (!isUndefined$1(descriptor)) {
+    if (!isUndefined$1$1(descriptor)) {
       HTMLElementOriginalDescriptors[propName] = descriptor;
     }
   });
-  forEach$1.call(defaultDefHTMLPropertyNames, propName => {
+  forEach$1$1.call(defaultDefHTMLPropertyNames, propName => {
     // Note: intentionally using our in-house getPropertyDescriptor instead of getOwnPropertyDescriptor here because
     // in IE11, id property is on Element.prototype instead of HTMLElement, and we suspect that more will fall into
     // this category, so, better to be sure.
-    const descriptor = getPropertyDescriptor(HTMLElementPrototype, propName);
+    const descriptor = getPropertyDescriptor$1(HTMLElementPrototype, propName);
 
-    if (!isUndefined$1(descriptor)) {
+    if (!isUndefined$1$1(descriptor)) {
       HTMLElementOriginalDescriptors[propName] = descriptor;
     }
   });
@@ -2112,7 +6415,7 @@
 
     if (!isFunction$1(get)) {
       {
-        assert$1.fail(`Detected invalid public property descriptor for HTMLElement.prototype.${propName} definition. Missing the standard getter.`);
+        assert$1$1.fail(`Detected invalid public property descriptor for HTMLElement.prototype.${propName} definition. Missing the standard getter.`);
       }
 
       throw new TypeError();
@@ -2120,7 +6423,7 @@
 
     if (!isFunction$1(set)) {
       {
-        assert$1.fail(`Detected invalid public property descriptor for HTMLElement.prototype.${propName} definition. Missing the standard setter.`);
+        assert$1$1.fail(`Detected invalid public property descriptor for HTMLElement.prototype.${propName} definition. Missing the standard setter.`);
       }
 
       throw new TypeError();
@@ -2150,10 +6453,10 @@
 
         {
           const vmBeingRendered = getVMBeingRendered();
-          assert$1.invariant(!isInvokingRender, `${vmBeingRendered}.render() method has side effects on the state of ${vm}.${propName}`);
-          assert$1.invariant(!isUpdatingTemplate, `When updating the template of ${vmBeingRendered}, one of the accessors used by the template has side effects on the state of ${vm}.${propName}`);
-          assert$1.isFalse(isBeingConstructed(vm), `Failed to construct '${getComponentTag(vm)}': The result must not have attributes.`);
-          assert$1.invariant(!isObject$2(newValue) || isNull$1(newValue), `Invalid value "${newValue}" for "${propName}" of ${vm}. Value cannot be an object, must be a primitive value.`);
+          assert$1$1.invariant(!isInvokingRender, `${vmBeingRendered}.render() method has side effects on the state of ${vm}.${propName}`);
+          assert$1$1.invariant(!isUpdatingTemplate, `When updating the template of ${vmBeingRendered}, one of the accessors used by the template has side effects on the state of ${vm}.${propName}`);
+          assert$1$1.isFalse(isBeingConstructed(vm), `Failed to construct '${getComponentTag(vm)}': The result must not have attributes.`);
+          assert$1$1.invariant(!isObject$2(newValue) || isNull$1(newValue), `Invalid value "${newValue}" for "${propName}" of ${vm}. Value cannot be an object, must be a primitive value.`);
         }
 
         if (newValue !== vm.cmpProps[propName]) {
@@ -2255,9 +6558,9 @@
 
       {
         const vmBeingRendered = getVMBeingRendered();
-        assert$1.invariant(!isInvokingRender, `${vmBeingRendered}.render() method has side effects on the state of ${vm} by adding an event listener for "${type}".`);
-        assert$1.invariant(!isUpdatingTemplate, `Updating the template of ${vmBeingRendered} has side effects on the state of ${vm} by adding an event listener for "${type}".`);
-        assert$1.invariant(isFunction$1(listener), `Invalid second argument for this.addEventListener() in ${vm} for event "${type}". Expected an EventListener but received ${listener}.`);
+        assert$1$1.invariant(!isInvokingRender, `${vmBeingRendered}.render() method has side effects on the state of ${vm} by adding an event listener for "${type}".`);
+        assert$1$1.invariant(!isUpdatingTemplate, `Updating the template of ${vmBeingRendered} has side effects on the state of ${vm} by adding an event listener for "${type}".`);
+        assert$1$1.invariant(isFunction$1(listener), `Invalid second argument for this.addEventListener() in ${vm} for event "${type}". Expected an EventListener but received ${listener}.`);
       }
 
       const wrappedListener = getWrappedComponentsListener(vm, listener);
@@ -2350,7 +6653,7 @@
       } = vm;
 
       {
-        assert$1.isFalse(isBeingConstructed(vm), `Failed to construct '${getComponentTag(vm)}': The result must not have attributes.`);
+        assert$1$1.isFalse(isBeingConstructed(vm), `Failed to construct '${getComponentTag(vm)}': The result must not have attributes.`);
       }
 
       unlockAttribute(elm, name);
@@ -2368,7 +6671,7 @@
       } = vm;
 
       {
-        assert$1.isFalse(isBeingConstructed(vm), `Failed to construct '${getComponentTag(vm)}': The result must not have attributes.`);
+        assert$1$1.isFalse(isBeingConstructed(vm), `Failed to construct '${getComponentTag(vm)}': The result must not have attributes.`);
       }
 
       unlockAttribute(elm, name);
@@ -2386,7 +6689,7 @@
       } = vm;
 
       {
-        assert$1.isFalse(isBeingConstructed(vm), `this.getBoundingClientRect() should not be called during the construction of the custom element for ${getComponentTag(vm)} because the element is not yet in the DOM, instead, you can use it in one of the available life-cycle hooks.`);
+        assert$1$1.isFalse(isBeingConstructed(vm), `this.getBoundingClientRect() should not be called during the construction of the custom element for ${getComponentTag(vm)} because the element is not yet in the DOM, instead, you can use it in one of the available life-cycle hooks.`);
       }
 
       return getBoundingClientRect(elm);
@@ -2402,7 +6705,7 @@
       } = vm;
 
       {
-        assert$1.isFalse(isBeingConstructed(vm), `this.querySelector() cannot be called during the construction of the custom element for ${getComponentTag(vm)} because no children has been added to this element yet.`);
+        assert$1$1.isFalse(isBeingConstructed(vm), `this.querySelector() cannot be called during the construction of the custom element for ${getComponentTag(vm)} because no children has been added to this element yet.`);
       }
 
       return querySelector(elm, selectors);
@@ -2418,7 +6721,7 @@
       } = vm;
 
       {
-        assert$1.isFalse(isBeingConstructed(vm), `this.querySelectorAll() cannot be called during the construction of the custom element for ${getComponentTag(vm)} because no children has been added to this element yet.`);
+        assert$1$1.isFalse(isBeingConstructed(vm), `this.querySelectorAll() cannot be called during the construction of the custom element for ${getComponentTag(vm)} because no children has been added to this element yet.`);
       }
 
       return querySelectorAll(elm, selectors);
@@ -2434,7 +6737,7 @@
       } = vm;
 
       {
-        assert$1.isFalse(isBeingConstructed(vm), `this.getElementsByTagName() cannot be called during the construction of the custom element for ${getComponentTag(vm)} because no children has been added to this element yet.`);
+        assert$1$1.isFalse(isBeingConstructed(vm), `this.getElementsByTagName() cannot be called during the construction of the custom element for ${getComponentTag(vm)} because no children has been added to this element yet.`);
       }
 
       return getElementsByTagName(elm, tagNameOrWildCard);
@@ -2450,7 +6753,7 @@
       } = vm;
 
       {
-        assert$1.isFalse(isBeingConstructed(vm), `this.getElementsByClassName() cannot be called during the construction of the custom element for ${getComponentTag(vm)} because no children has been added to this element yet.`);
+        assert$1$1.isFalse(isBeingConstructed(vm), `this.getElementsByClassName() cannot be called during the construction of the custom element for ${getComponentTag(vm)} because no children has been added to this element yet.`);
       }
 
       return getElementsByClassName(elm, names);
@@ -2478,7 +6781,7 @@
       {
         // TODO [#1290]: this still fails in dev but works in production, eventually, we should
         // just throw in all modes
-        assert$1.isFalse(isBeingConstructed(vm), `Failed to construct ${vm}: The result must not have attributes. Adding or tampering with classname in constructor is not allowed in a web component, use connectedCallback() instead.`);
+        assert$1$1.isFalse(isBeingConstructed(vm), `Failed to construct ${vm}: The result must not have attributes. Adding or tampering with classname in constructor is not allowed in a web component, use connectedCallback() instead.`);
       }
 
       return getClassList(elm);
@@ -2506,14 +6809,14 @@
     }
 
   };
-  const lightningBasedDescriptors = create$1(null);
+  const lightningBasedDescriptors = create$1$1(null);
 
   for (const propName in HTMLElementOriginalDescriptors) {
     lightningBasedDescriptors[propName] = createBridgeToElementDescriptor(propName, HTMLElementOriginalDescriptors[propName]);
   }
 
-  defineProperties$1(BaseLightningElementConstructor.prototype, lightningBasedDescriptors);
-  defineProperty$1(BaseLightningElementConstructor, 'CustomElementConstructor', {
+  defineProperties$1$1(BaseLightningElementConstructor.prototype, lightningBasedDescriptors);
+  defineProperty$1$1(BaseLightningElementConstructor, 'CustomElementConstructor', {
     get() {
       // If required, a runtime-specific implementation must be defined.
       throw new ReferenceError('The current runtime does not support CustomElementConstructor.');
@@ -2565,21 +6868,21 @@
     isArray: isArray$1$1
   } = Array;
   const {
-    getPrototypeOf: getPrototypeOf$1$1,
+    getPrototypeOf: getPrototypeOf$1$1$1,
     create: ObjectCreate,
     defineProperty: ObjectDefineProperty,
     defineProperties: ObjectDefineProperties,
     isExtensible,
-    getOwnPropertyDescriptor: getOwnPropertyDescriptor$1$1,
-    getOwnPropertyNames: getOwnPropertyNames$1$1,
+    getOwnPropertyDescriptor: getOwnPropertyDescriptor$1$1$1,
+    getOwnPropertyNames: getOwnPropertyNames$1$1$1,
     getOwnPropertySymbols,
     preventExtensions,
-    hasOwnProperty: hasOwnProperty$1$1
+    hasOwnProperty: hasOwnProperty$1$1$1
   } = Object;
   const {
-    push: ArrayPush$2,
+    push: ArrayPush$2$1,
     concat: ArrayConcat,
-    map: ArrayMap$1$1
+    map: ArrayMap$1$1$1
   } = Array.prototype;
   const OtS$1$1 = {}.toString;
 
@@ -2624,7 +6927,7 @@
 
 
   function unwrapDescriptor(descriptor) {
-    if (hasOwnProperty$1$1.call(descriptor, 'value')) {
+    if (hasOwnProperty$1$1$1.call(descriptor, 'value')) {
       descriptor.value = unwrap(descriptor.value);
     }
 
@@ -2632,9 +6935,9 @@
   }
 
   function lockShadowTarget(membrane, shadowTarget, originalTarget) {
-    const targetKeys = ArrayConcat.call(getOwnPropertyNames$1$1(originalTarget), getOwnPropertySymbols(originalTarget));
+    const targetKeys = ArrayConcat.call(getOwnPropertyNames$1$1$1(originalTarget), getOwnPropertySymbols(originalTarget));
     targetKeys.forEach(key => {
-      let descriptor = getOwnPropertyDescriptor$1$1(originalTarget, key); // We do not need to wrap the descriptor if configurable
+      let descriptor = getOwnPropertyDescriptor$1$1$1(originalTarget, key); // We do not need to wrap the descriptor if configurable
       // Because we can deal with wrapping it when user goes through
       // Get own property descriptor. There is also a chance that this descriptor
       // could change sometime in the future, so we can defer wrapping
@@ -2726,7 +7029,7 @@
       const {
         originalTarget
       } = this;
-      return ArrayConcat.call(getOwnPropertyNames$1$1(originalTarget), getOwnPropertySymbols(originalTarget));
+      return ArrayConcat.call(getOwnPropertyNames$1$1$1(originalTarget), getOwnPropertySymbols(originalTarget));
     }
 
     isExtensible(shadowTarget) {
@@ -2759,7 +7062,7 @@
       const {
         originalTarget
       } = this;
-      return getPrototypeOf$1$1(originalTarget);
+      return getPrototypeOf$1$1$1(originalTarget);
     }
 
     getOwnPropertyDescriptor(shadowTarget, key) {
@@ -2772,13 +7075,13 @@
       } = this.membrane; // keys looked up via hasOwnProperty need to be reactive
 
       valueObserved(originalTarget, key);
-      let desc = getOwnPropertyDescriptor$1$1(originalTarget, key);
+      let desc = getOwnPropertyDescriptor$1$1$1(originalTarget, key);
 
       if (isUndefined$2(desc)) {
         return desc;
       }
 
-      const shadowDescriptor = getOwnPropertyDescriptor$1$1(shadowTarget, key);
+      const shadowDescriptor = getOwnPropertyDescriptor$1$1$1(shadowTarget, key);
 
       if (!isUndefined$2(shadowDescriptor)) {
         return shadowDescriptor;
@@ -2829,8 +7132,8 @@
       // So we can just check if writable is present and then see if
       // value is present. This eliminates getter and setter descriptors
 
-      if (hasOwnProperty$1$1.call(descriptor, 'writable') && !hasOwnProperty$1$1.call(descriptor, 'value')) {
-        const originalDescriptor = getOwnPropertyDescriptor$1$1(originalTarget, key);
+      if (hasOwnProperty$1$1$1.call(descriptor, 'writable') && !hasOwnProperty$1$1$1.call(descriptor, 'value')) {
+        const originalDescriptor = getOwnPropertyDescriptor$1$1$1(originalTarget, key);
         descriptor.value = originalDescriptor.value;
       }
 
@@ -2910,7 +7213,7 @@
       const {
         originalTarget
       } = this;
-      return ArrayConcat.call(getOwnPropertyNames$1$1(originalTarget), getOwnPropertySymbols(originalTarget));
+      return ArrayConcat.call(getOwnPropertyNames$1$1$1(originalTarget), getOwnPropertySymbols(originalTarget));
     }
 
     setPrototypeOf(shadowTarget, prototype) {
@@ -2932,13 +7235,13 @@
       } = membrane; // keys looked up via hasOwnProperty need to be reactive
 
       valueObserved(originalTarget, key);
-      let desc = getOwnPropertyDescriptor$1$1(originalTarget, key);
+      let desc = getOwnPropertyDescriptor$1$1$1(originalTarget, key);
 
       if (isUndefined$2(desc)) {
         return desc;
       }
 
-      const shadowDescriptor = getOwnPropertyDescriptor$1$1(shadowTarget, key);
+      const shadowDescriptor = getOwnPropertyDescriptor$1$1$1(shadowTarget, key);
 
       if (!isUndefined$2(shadowDescriptor)) {
         return shadowDescriptor;
@@ -2949,7 +7252,7 @@
 
       desc = wrapDescriptor(membrane, desc, wrapReadOnlyValue);
 
-      if (hasOwnProperty$1$1.call(desc, 'set')) {
+      if (hasOwnProperty$1$1$1.call(desc, 'set')) {
         desc.set = undefined; // readOnly membrane does not allow setters
       }
 
@@ -2998,8 +7301,8 @@
       });
     }
 
-    const obj = ObjectCreate(getPrototypeOf$1$1(objectOrArray));
-    const names = getOwnPropertyNames$1$1(objectOrArray);
+    const obj = ObjectCreate(getPrototypeOf$1$1$1(objectOrArray));
+    const names = getOwnPropertyNames$1$1$1(objectOrArray);
     return ArrayConcat.call(names, getOwnPropertySymbols(objectOrArray)).reduce((seed, key) => {
       const item = objectOrArray[key];
       const original = unwrap(item);
@@ -3067,7 +7370,7 @@
     // For more information, https://docs.google.com/document/d/1FTascZXT9cxfetuPRT2eXPQKXui4nWFivUnS_335T3U/preview
 
     const devtoolsFormatters = global.devtoolsFormatters || [];
-    ArrayPush$2.call(devtoolsFormatters, formatter);
+    ArrayPush$2$1.call(devtoolsFormatters, formatter);
     global.devtoolsFormatters = devtoolsFormatters;
   }
 
@@ -3104,8 +7407,8 @@
       return true;
     }
 
-    const proto = getPrototypeOf$1$1(value);
-    return proto === ObjectDotPrototype || proto === null || getPrototypeOf$1$1(proto) === null;
+    const proto = getPrototypeOf$1$1$1(value);
+    return proto === ObjectDotPrototype || proto === null || getPrototypeOf$1$1$1(proto) === null;
   }
 
   const defaultValueObserved = (obj, key) => {
@@ -3124,7 +7427,7 @@
       get
     } = descriptor;
 
-    if (hasOwnProperty$1$1.call(descriptor, 'value')) {
+    if (hasOwnProperty$1$1$1.call(descriptor, 'value')) {
       descriptor.value = getValue(membrane, descriptor.value);
     } else {
       if (!isUndefined$2(get)) {
@@ -3273,8 +7576,8 @@
 
         {
           const vmBeingRendered = getVMBeingRendered();
-          assert$1.invariant(!isInvokingRender, `${vmBeingRendered}.render() method has side effects on the state of ${vm}.${toString$1(key)}`);
-          assert$1.invariant(!isUpdatingTemplate, `Updating the template of ${vmBeingRendered} has side effects on the state of ${vm}.${toString$1(key)}`);
+          assert$1$1.invariant(!isInvokingRender, `${vmBeingRendered}.render() method has side effects on the state of ${vm}.${toString$1(key)}`);
+          assert$1$1.invariant(!isUpdatingTemplate, `Updating the template of ${vmBeingRendered} has side effects on the state of ${vm}.${toString$1(key)}`);
         }
 
         const reactiveOrAnyValue = reactiveMembrane.getProxy(newValue);
@@ -3306,39 +7609,39 @@
 
 
   const {
-    assign: assign$1$1,
-    create: create$2,
-    defineProperties: defineProperties$1$1,
-    defineProperty: defineProperty$1$1,
-    freeze: freeze$1$1,
-    getOwnPropertyDescriptor: getOwnPropertyDescriptor$2,
-    getOwnPropertyNames: getOwnPropertyNames$2,
-    getPrototypeOf: getPrototypeOf$2,
-    hasOwnProperty: hasOwnProperty$2,
-    isFrozen: isFrozen$1$1,
-    keys: keys$1$1,
-    seal: seal$1$1,
-    setPrototypeOf: setPrototypeOf$1$1
+    assign: assign$1$1$1,
+    create: create$2$1,
+    defineProperties: defineProperties$1$1$1,
+    defineProperty: defineProperty$1$1$1,
+    freeze: freeze$1$1$1,
+    getOwnPropertyDescriptor: getOwnPropertyDescriptor$2$1,
+    getOwnPropertyNames: getOwnPropertyNames$2$1,
+    getPrototypeOf: getPrototypeOf$2$1,
+    hasOwnProperty: hasOwnProperty$2$1,
+    isFrozen: isFrozen$1$1$1,
+    keys: keys$1$1$1,
+    seal: seal$1$1$1,
+    setPrototypeOf: setPrototypeOf$1$1$1
   } = Object;
   const {
-    filter: ArrayFilter$1$1,
-    find: ArrayFind$1$1,
-    indexOf: ArrayIndexOf$2,
-    join: ArrayJoin$1$1,
-    map: ArrayMap$2,
+    filter: ArrayFilter$1$1$1,
+    find: ArrayFind$1$1$1,
+    indexOf: ArrayIndexOf$2$1,
+    join: ArrayJoin$1$1$1,
+    map: ArrayMap$2$1,
     push: ArrayPush$3,
-    reduce: ArrayReduce$1$1,
-    reverse: ArrayReverse$1$1,
-    slice: ArraySlice$1$1,
-    splice: ArraySplice$2,
-    unshift: ArrayUnshift$1$1,
-    forEach: forEach$1$1
+    reduce: ArrayReduce$1$1$1,
+    reverse: ArrayReverse$1$1$1,
+    slice: ArraySlice$1$1$1,
+    splice: ArraySplice$2$1,
+    unshift: ArrayUnshift$1$1$1,
+    forEach: forEach$1$1$1
   } = Array.prototype;
   const {
-    charCodeAt: StringCharCodeAt$1$1,
-    replace: StringReplace$1$1,
-    slice: StringSlice$1$1,
-    toLowerCase: StringToLowerCase$1$1
+    charCodeAt: StringCharCodeAt$1$1$1,
+    replace: StringReplace$1$1$1,
+    slice: StringSlice$1$1$1,
+    toLowerCase: StringToLowerCase$1$1$1
   } = String.prototype;
   /*
    * Copyright (c) 2018, salesforce.com, inc.
@@ -3358,17 +7661,17 @@
    */
 
 
-  const AriaPropertyNames$1$1 = ['ariaActiveDescendant', 'ariaAtomic', 'ariaAutoComplete', 'ariaBusy', 'ariaChecked', 'ariaColCount', 'ariaColIndex', 'ariaColSpan', 'ariaControls', 'ariaCurrent', 'ariaDescribedBy', 'ariaDetails', 'ariaDisabled', 'ariaErrorMessage', 'ariaExpanded', 'ariaFlowTo', 'ariaHasPopup', 'ariaHidden', 'ariaInvalid', 'ariaKeyShortcuts', 'ariaLabel', 'ariaLabelledBy', 'ariaLevel', 'ariaLive', 'ariaModal', 'ariaMultiLine', 'ariaMultiSelectable', 'ariaOrientation', 'ariaOwns', 'ariaPlaceholder', 'ariaPosInSet', 'ariaPressed', 'ariaReadOnly', 'ariaRelevant', 'ariaRequired', 'ariaRoleDescription', 'ariaRowCount', 'ariaRowIndex', 'ariaRowSpan', 'ariaSelected', 'ariaSetSize', 'ariaSort', 'ariaValueMax', 'ariaValueMin', 'ariaValueNow', 'ariaValueText', 'role'];
-  const AttrNameToPropNameMap$2 = create$2(null);
-  const PropNameToAttrNameMap$2 = create$2(null); // Synthetic creation of all AOM property descriptors for Custom Elements
+  const AriaPropertyNames$1$1$1 = ['ariaActiveDescendant', 'ariaAtomic', 'ariaAutoComplete', 'ariaBusy', 'ariaChecked', 'ariaColCount', 'ariaColIndex', 'ariaColSpan', 'ariaControls', 'ariaCurrent', 'ariaDescribedBy', 'ariaDetails', 'ariaDisabled', 'ariaErrorMessage', 'ariaExpanded', 'ariaFlowTo', 'ariaHasPopup', 'ariaHidden', 'ariaInvalid', 'ariaKeyShortcuts', 'ariaLabel', 'ariaLabelledBy', 'ariaLevel', 'ariaLive', 'ariaModal', 'ariaMultiLine', 'ariaMultiSelectable', 'ariaOrientation', 'ariaOwns', 'ariaPlaceholder', 'ariaPosInSet', 'ariaPressed', 'ariaReadOnly', 'ariaRelevant', 'ariaRequired', 'ariaRoleDescription', 'ariaRowCount', 'ariaRowIndex', 'ariaRowSpan', 'ariaSelected', 'ariaSetSize', 'ariaSort', 'ariaValueMax', 'ariaValueMin', 'ariaValueNow', 'ariaValueText', 'role'];
+  const AttrNameToPropNameMap$2$1 = create$2$1(null);
+  const PropNameToAttrNameMap$2$1 = create$2$1(null); // Synthetic creation of all AOM property descriptors for Custom Elements
 
-  forEach$1$1.call(AriaPropertyNames$1$1, propName => {
+  forEach$1$1$1.call(AriaPropertyNames$1$1$1, propName => {
     // Typescript infers the wrong function type for this particular overloaded method:
     // https://github.com/Microsoft/TypeScript/issues/27972
     // @ts-ignore type-mismatch
-    const attrName = StringToLowerCase$1$1.call(StringReplace$1$1.call(propName, /^aria/, 'aria-'));
-    AttrNameToPropNameMap$2[attrName] = propName;
-    PropNameToAttrNameMap$2[propName] = attrName;
+    const attrName = StringToLowerCase$1$1$1.call(StringReplace$1$1$1.call(propName, /^aria/, 'aria-'));
+    AttrNameToPropNameMap$2$1[attrName] = propName;
+    PropNameToAttrNameMap$2$1[propName] = attrName;
   });
   /*
    * Copyright (c) 2018, salesforce.com, inc.
@@ -3378,7 +7681,7 @@
    */
   // Inspired from: https://mathiasbynens.be/notes/globalthis
 
-  const _globalThis$1$1 = function () {
+  const _globalThis$1$1$1 = function () {
     // On recent browsers, `globalThis` is already defined. In this case return it directly.
     if (typeof globalThis === 'object') {
       return globalThis;
@@ -3427,8 +7730,8 @@
    */
 
 
-  const hasNativeSymbolsSupport$1$1 = Symbol('x').toString() === 'Symbol(x)';
-  const HTML_ATTRIBUTES_TO_PROPERTY$1$1 = {
+  const hasNativeSymbolsSupport$1$1$1 = Symbol('x').toString() === 'Symbol(x)';
+  const HTML_ATTRIBUTES_TO_PROPERTY$1$1$1 = {
     accesskey: 'accessKey',
     readonly: 'readOnly',
     tabindex: 'tabIndex',
@@ -3446,7 +7749,7 @@
     usemap: 'useMap',
     for: 'htmlFor'
   };
-  keys$1$1(HTML_ATTRIBUTES_TO_PROPERTY$1$1).forEach(attrName => {});
+  keys$1$1$1(HTML_ATTRIBUTES_TO_PROPERTY$1$1$1).forEach(attrName => {});
   /** version: 1.7.10 */
 
   /*
@@ -3456,13 +7759,13 @@
    * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/MIT
    */
 
-  if (!_globalThis$1$1.lwcRuntimeFlags) {
-    Object.defineProperty(_globalThis$1$1, 'lwcRuntimeFlags', {
-      value: create$2(null)
+  if (!_globalThis$1$1$1.lwcRuntimeFlags) {
+    Object.defineProperty(_globalThis$1$1$1, 'lwcRuntimeFlags', {
+      value: create$2$1(null)
     });
   }
 
-  const runtimeFlags = _globalThis$1$1.lwcRuntimeFlags; // This function is not supported for use within components and is meant for
+  const runtimeFlags$1 = _globalThis$1$1$1.lwcRuntimeFlags; // This function is not supported for use within components and is meant for
 
   function createPublicPropertyDescriptor(key) {
     return {
@@ -3486,8 +7789,8 @@
 
         {
           const vmBeingRendered = getVMBeingRendered();
-          assert$1.invariant(!isInvokingRender, `${vmBeingRendered}.render() method has side effects on the state of ${vm}.${toString$1(key)}`);
-          assert$1.invariant(!isUpdatingTemplate, `Updating the template of ${vmBeingRendered} has side effects on the state of ${vm}.${toString$1(key)}`);
+          assert$1$1.invariant(!isInvokingRender, `${vmBeingRendered}.render() method has side effects on the state of ${vm}.${toString$1(key)}`);
+          assert$1$1.invariant(!isUpdatingTemplate, `Updating the template of ${vmBeingRendered} has side effects on the state of ${vm}.${toString$1(key)}`);
         }
 
         vm.cmpProps[key] = newValue;
@@ -3505,7 +7808,7 @@
         if (isFalse$1$1(this.debouncing)) {
           this.debouncing = true;
           addCallbackToNextTick(() => {
-            if (isTrue$1$1(this.debouncing)) {
+            if (isTrue$1$1$1(this.debouncing)) {
               const {
                 value
               } = this;
@@ -3520,7 +7823,7 @@
 
               this.debouncing = false;
 
-              if (isTrue$1$1(vm.isDirty) && isFalse$1$1(dirtyStateBeforeSetterCall) && idx > 0) {
+              if (isTrue$1$1$1(vm.isDirty) && isFalse$1$1(dirtyStateBeforeSetterCall) && idx > 0) {
                 // immediate rehydration due to a setter driven mutation, otherwise
                 // the component will get rendered on the second tick, which it is not
                 // desirable.
@@ -3554,7 +7857,7 @@
 
     if (!isFunction$1(get)) {
       {
-        assert$1.invariant(isFunction$1(get), `Invalid compiler output for public accessor ${toString$1(key)} decorated with @api`);
+        assert$1$1.invariant(isFunction$1(get), `Invalid compiler output for public accessor ${toString$1(key)} decorated with @api`);
       }
 
       throw new Error();
@@ -3575,15 +7878,15 @@
 
         {
           const vmBeingRendered = getVMBeingRendered();
-          assert$1.invariant(!isInvokingRender, `${vmBeingRendered}.render() method has side effects on the state of ${vm}.${toString$1(key)}`);
-          assert$1.invariant(!isUpdatingTemplate, `Updating the template of ${vmBeingRendered} has side effects on the state of ${vm}.${toString$1(key)}`);
+          assert$1$1.invariant(!isInvokingRender, `${vmBeingRendered}.render() method has side effects on the state of ${vm}.${toString$1(key)}`);
+          assert$1$1.invariant(!isUpdatingTemplate, `Updating the template of ${vmBeingRendered} has side effects on the state of ${vm}.${toString$1(key)}`);
         }
 
         if (set) {
-          if (runtimeFlags.ENABLE_REACTIVE_SETTER) {
+          if (runtimeFlags$1.ENABLE_REACTIVE_SETTER) {
             let ro = vm.oar[key];
 
-            if (isUndefined$1(ro)) {
+            if (isUndefined$1$1(ro)) {
               ro = vm.oar[key] = new AccessorReactiveObserver(vm, set);
             } // every time we invoke this setter from outside (through this wrapper setter)
             // we should reset the value and then debounce just in case there is a pending
@@ -3599,7 +7902,7 @@
             set.call(this, newValue);
           }
         } else {
-          assert$1.fail(`Invalid attempt to set a new value for property ${toString$1(key)} of ${vm} that does not has a setter decorated with @api.`);
+          assert$1$1.fail(`Invalid attempt to set a new value for property ${toString$1(key)} of ${vm} that does not has a setter decorated with @api.`);
         }
       },
 
@@ -3648,60 +7951,60 @@
 
   function validateObservedField(Ctor, fieldName, descriptor) {
     {
-      if (!isUndefined$1(descriptor)) {
-        assert$1.fail(`Compiler Error: Invalid field ${fieldName} declaration.`);
+      if (!isUndefined$1$1(descriptor)) {
+        assert$1$1.fail(`Compiler Error: Invalid field ${fieldName} declaration.`);
       }
     }
   }
 
   function validateFieldDecoratedWithTrack(Ctor, fieldName, descriptor) {
     {
-      if (!isUndefined$1(descriptor)) {
-        assert$1.fail(`Compiler Error: Invalid @track ${fieldName} declaration.`);
+      if (!isUndefined$1$1(descriptor)) {
+        assert$1$1.fail(`Compiler Error: Invalid @track ${fieldName} declaration.`);
       }
     }
   }
 
   function validateFieldDecoratedWithWire(Ctor, fieldName, descriptor) {
     {
-      if (!isUndefined$1(descriptor)) {
-        assert$1.fail(`Compiler Error: Invalid @wire(...) ${fieldName} field declaration.`);
+      if (!isUndefined$1$1(descriptor)) {
+        assert$1$1.fail(`Compiler Error: Invalid @wire(...) ${fieldName} field declaration.`);
       }
     }
   }
 
   function validateMethodDecoratedWithWire(Ctor, methodName, descriptor) {
     {
-      if (isUndefined$1(descriptor) || !isFunction$1(descriptor.value) || isFalse$1$1(descriptor.writable)) {
-        assert$1.fail(`Compiler Error: Invalid @wire(...) ${methodName} method declaration.`);
+      if (isUndefined$1$1(descriptor) || !isFunction$1(descriptor.value) || isFalse$1$1(descriptor.writable)) {
+        assert$1$1.fail(`Compiler Error: Invalid @wire(...) ${methodName} method declaration.`);
       }
     }
   }
 
   function validateFieldDecoratedWithApi(Ctor, fieldName, descriptor) {
     {
-      if (!isUndefined$1(descriptor)) {
-        assert$1.fail(`Compiler Error: Invalid @api ${fieldName} field declaration.`);
+      if (!isUndefined$1$1(descriptor)) {
+        assert$1$1.fail(`Compiler Error: Invalid @api ${fieldName} field declaration.`);
       }
     }
   }
 
   function validateAccessorDecoratedWithApi(Ctor, fieldName, descriptor) {
     {
-      if (isUndefined$1(descriptor)) {
-        assert$1.fail(`Compiler Error: Invalid @api get ${fieldName} accessor declaration.`);
+      if (isUndefined$1$1(descriptor)) {
+        assert$1$1.fail(`Compiler Error: Invalid @api get ${fieldName} accessor declaration.`);
       } else if (isFunction$1(descriptor.set)) {
-        assert$1.isTrue(isFunction$1(descriptor.get), `Compiler Error: Missing getter for property ${toString$1(fieldName)} decorated with @api in ${Ctor}. You cannot have a setter without the corresponding getter.`);
+        assert$1$1.isTrue(isFunction$1(descriptor.get), `Compiler Error: Missing getter for property ${toString$1(fieldName)} decorated with @api in ${Ctor}. You cannot have a setter without the corresponding getter.`);
       } else if (!isFunction$1(descriptor.get)) {
-        assert$1.fail(`Compiler Error: Missing @api get ${fieldName} accessor declaration.`);
+        assert$1$1.fail(`Compiler Error: Missing @api get ${fieldName} accessor declaration.`);
       }
     }
   }
 
   function validateMethodDecoratedWithApi(Ctor, methodName, descriptor) {
     {
-      if (isUndefined$1(descriptor) || !isFunction$1(descriptor.value) || isFalse$1$1(descriptor.writable)) {
-        assert$1.fail(`Compiler Error: Invalid @api ${methodName} method declaration.`);
+      if (isUndefined$1$1(descriptor) || !isFunction$1(descriptor.value) || isFalse$1$1(descriptor.writable)) {
+        assert$1$1.fail(`Compiler Error: Invalid @api ${methodName} method declaration.`);
       }
     }
   }
@@ -3720,19 +8023,19 @@
       track,
       fields
     } = meta;
-    const apiMethods = create$1(null);
-    const apiFields = create$1(null);
-    const wiredMethods = create$1(null);
-    const wiredFields = create$1(null);
-    const observedFields = create$1(null);
-    const apiFieldsConfig = create$1(null);
+    const apiMethods = create$1$1(null);
+    const apiFields = create$1$1(null);
+    const wiredMethods = create$1$1(null);
+    const wiredFields = create$1$1(null);
+    const observedFields = create$1$1(null);
+    const apiFieldsConfig = create$1$1(null);
     let descriptor;
 
-    if (!isUndefined$1(publicProps)) {
+    if (!isUndefined$1$1(publicProps)) {
       for (const fieldName in publicProps) {
         const propConfig = publicProps[fieldName];
         apiFieldsConfig[fieldName] = propConfig.config;
-        descriptor = getOwnPropertyDescriptor$1(proto, fieldName);
+        descriptor = getOwnPropertyDescriptor$1$1(proto, fieldName);
 
         if (propConfig.config > 0) {
           // accessor declaration
@@ -3740,7 +8043,7 @@
             validateAccessorDecoratedWithApi(Ctor, fieldName, descriptor);
           }
 
-          if (isUndefined$1(descriptor)) {
+          if (isUndefined$1$1(descriptor)) {
             throw new Error();
           }
 
@@ -3755,19 +8058,19 @@
         }
 
         apiFields[fieldName] = descriptor;
-        defineProperty$1(proto, fieldName, descriptor);
+        defineProperty$1$1(proto, fieldName, descriptor);
       }
     }
 
-    if (!isUndefined$1(publicMethods)) {
-      forEach$1.call(publicMethods, methodName => {
-        descriptor = getOwnPropertyDescriptor$1(proto, methodName);
+    if (!isUndefined$1$1(publicMethods)) {
+      forEach$1$1.call(publicMethods, methodName => {
+        descriptor = getOwnPropertyDescriptor$1$1(proto, methodName);
 
         {
           validateMethodDecoratedWithApi(Ctor, methodName, descriptor);
         }
 
-        if (isUndefined$1(descriptor)) {
+        if (isUndefined$1$1(descriptor)) {
           throw new Error();
         }
 
@@ -3775,7 +8078,7 @@
       });
     }
 
-    if (!isUndefined$1(wire)) {
+    if (!isUndefined$1$1(wire)) {
       for (const fieldOrMethodName in wire) {
         const {
           adapter,
@@ -3783,15 +8086,15 @@
           config: configCallback,
           dynamic = []
         } = wire[fieldOrMethodName];
-        descriptor = getOwnPropertyDescriptor$1(proto, fieldOrMethodName);
+        descriptor = getOwnPropertyDescriptor$1$1(proto, fieldOrMethodName);
 
         if (method === 1) {
           {
-            assert$1.isTrue(adapter, `@wire on method "${fieldOrMethodName}": adapter id must be truthy.`);
+            assert$1$1.isTrue(adapter, `@wire on method "${fieldOrMethodName}": adapter id must be truthy.`);
             validateMethodDecoratedWithWire(Ctor, fieldOrMethodName, descriptor);
           }
 
-          if (isUndefined$1(descriptor)) {
+          if (isUndefined$1$1(descriptor)) {
             throw new Error();
           }
 
@@ -3799,35 +8102,35 @@
           storeWiredMethodMeta(descriptor, adapter, configCallback, dynamic);
         } else {
           {
-            assert$1.isTrue(adapter, `@wire on field "${fieldOrMethodName}": adapter id must be truthy.`);
+            assert$1$1.isTrue(adapter, `@wire on field "${fieldOrMethodName}": adapter id must be truthy.`);
             validateFieldDecoratedWithWire(Ctor, fieldOrMethodName, descriptor);
           }
 
           descriptor = internalWireFieldDecorator(fieldOrMethodName);
           wiredFields[fieldOrMethodName] = descriptor;
           storeWiredFieldMeta(descriptor, adapter, configCallback, dynamic);
-          defineProperty$1(proto, fieldOrMethodName, descriptor);
+          defineProperty$1$1(proto, fieldOrMethodName, descriptor);
         }
       }
     }
 
-    if (!isUndefined$1(track)) {
+    if (!isUndefined$1$1(track)) {
       for (const fieldName in track) {
-        descriptor = getOwnPropertyDescriptor$1(proto, fieldName);
+        descriptor = getOwnPropertyDescriptor$1$1(proto, fieldName);
 
         {
           validateFieldDecoratedWithTrack(Ctor, fieldName, descriptor);
         }
 
         descriptor = internalTrackDecorator(fieldName);
-        defineProperty$1(proto, fieldName, descriptor);
+        defineProperty$1$1(proto, fieldName, descriptor);
       }
     }
 
-    if (!isUndefined$1(fields)) {
+    if (!isUndefined$1$1(fields)) {
       for (let i = 0, n = fields.length; i < n; i++) {
         const fieldName = fields[i];
-        descriptor = getOwnPropertyDescriptor$1(proto, fieldName);
+        descriptor = getOwnPropertyDescriptor$1$1(proto, fieldName);
 
         {
           validateObservedField(Ctor, fieldName, descriptor);
@@ -3865,7 +8168,7 @@
 
   function getDecoratorsMeta(Ctor) {
     const meta = signedDecoratorToMetaMap.get(Ctor);
-    return isUndefined$1(meta) ? defaultMeta : meta;
+    return isUndefined$1$1(meta) ? defaultMeta : meta;
   }
 
   const signedTemplateSet = new Set();
@@ -3902,13 +8205,13 @@
   // descriptor, so we can cache them:
 
 
-  const cachedGetterByKey = create$1(null);
-  const cachedSetterByKey = create$1(null);
+  const cachedGetterByKey = create$1$1(null);
+  const cachedSetterByKey = create$1$1(null);
 
   function createGetter(key) {
     let fn = cachedGetterByKey[key];
 
-    if (isUndefined$1(fn)) {
+    if (isUndefined$1$1(fn)) {
       fn = cachedGetterByKey[key] = function () {
         const vm = getAssociatedVM(this);
         const {
@@ -3924,7 +8227,7 @@
   function createSetter(key) {
     let fn = cachedSetterByKey[key];
 
-    if (isUndefined$1(fn)) {
+    if (isUndefined$1$1(fn)) {
       fn = cachedSetterByKey[key] = function (newValue) {
         const vm = getAssociatedVM(this);
         const {
@@ -3946,7 +8249,7 @@
         component
       } = vm;
       const fn = component[methodName];
-      return callHook(vm.component, fn, ArraySlice$2.call(arguments));
+      return callHook(vm.component, fn, ArraySlice$2$1.call(arguments));
     };
   }
 
@@ -3972,16 +8275,16 @@
       }; // prototype inheritance dance
 
 
-      setPrototypeOf$1(HTMLBridgeElement, SuperClass);
-      setPrototypeOf$1(HTMLBridgeElement.prototype, SuperClass.prototype);
-      defineProperty$1(HTMLBridgeElement.prototype, 'constructor', {
+      setPrototypeOf$1$1(HTMLBridgeElement, SuperClass);
+      setPrototypeOf$1$1(HTMLBridgeElement.prototype, SuperClass.prototype);
+      defineProperty$1$1(HTMLBridgeElement.prototype, 'constructor', {
         writable: true,
         configurable: true,
         value: HTMLBridgeElement
       });
     }
 
-    const descriptors = create$1(null); // expose getters and setters for each public props on the new Element Bridge
+    const descriptors = create$1$1(null); // expose getters and setters for each public props on the new Element Bridge
 
     for (let i = 0, len = props.length; i < len; i += 1) {
       const propName = props[i];
@@ -4003,13 +8306,13 @@
       };
     }
 
-    defineProperties$1(HTMLBridgeElement.prototype, descriptors);
+    defineProperties$1$1(HTMLBridgeElement.prototype, descriptors);
     return HTMLBridgeElement;
   }
 
-  const BaseBridgeElement = HTMLBridgeElementFactory(HTMLElementConstructor, getOwnPropertyNames$1(HTMLElementOriginalDescriptors), []);
-  freeze$1(BaseBridgeElement);
-  seal$1(BaseBridgeElement.prototype);
+  const BaseBridgeElement = HTMLBridgeElementFactory(HTMLElementConstructor, getOwnPropertyNames$1$1(HTMLElementOriginalDescriptors), []);
+  freeze$1$1(BaseBridgeElement);
+  seal$1$1(BaseBridgeElement.prototype);
   /*
    * Copyright (c) 2020, salesforce.com, inc.
    * All rights reserved.
@@ -4022,7 +8325,7 @@
   }
 
   function isCircularModuleDependency(obj) {
-    return isFunction$1(obj) && hasOwnProperty$1.call(obj, '__circular__');
+    return isFunction$1(obj) && hasOwnProperty$1$1.call(obj, '__circular__');
   }
   /*
    * Copyright (c) 2018, salesforce.com, inc.
@@ -4035,7 +8338,7 @@
   const CtorToDefMap = new WeakMap();
 
   function getCtorProto(Ctor) {
-    let proto = getPrototypeOf$1(Ctor);
+    let proto = getPrototypeOf$1$1(Ctor);
 
     if (isNull$1(proto)) {
       throw new ReferenceError(`Invalid prototype chain for ${Ctor.name}, you must extend LightningElement.`);
@@ -4066,7 +8369,7 @@
       const ctorName = Ctor.name; // Removing the following assert until https://bugs.webkit.org/show_bug.cgi?id=190140 is fixed.
       // assert.isTrue(ctorName && isString(ctorName), `${toString(Ctor)} should have a "name" property with string value, but found ${ctorName}.`);
 
-      assert$1.isTrue(Ctor.constructor, `Missing ${ctorName}.constructor, ${ctorName} should have a "constructor" property.`);
+      assert$1$1.isTrue(Ctor.constructor, `Missing ${ctorName}.constructor, ${ctorName} should have a "constructor" property.`);
     }
 
     const decoratorsMeta = getDecoratorsMeta(Ctor);
@@ -4088,11 +8391,11 @@
     } = proto;
     const superProto = getCtorProto(Ctor);
     const superDef = superProto !== BaseLightningElement ? getComponentInternalDef(superProto) : lightingElementDef;
-    const bridge = HTMLBridgeElementFactory(superDef.bridge, keys$1(apiFields), keys$1(apiMethods));
-    const props = assign$1(create$1(null), superDef.props, apiFields);
-    const propsConfig = assign$1(create$1(null), superDef.propsConfig, apiFieldsConfig);
-    const methods = assign$1(create$1(null), superDef.methods, apiMethods);
-    const wire = assign$1(create$1(null), superDef.wire, wiredFields, wiredMethods);
+    const bridge = HTMLBridgeElementFactory(superDef.bridge, keys$1$1(apiFields), keys$1$1(apiMethods));
+    const props = assign$1$1(create$1$1(null), superDef.props, apiFields);
+    const propsConfig = assign$1$1(create$1$1(null), superDef.propsConfig, apiFieldsConfig);
+    const methods = assign$1$1(create$1$1(null), superDef.methods, apiMethods);
+    const wire = assign$1$1(create$1$1(null), superDef.wire, wiredFields, wiredMethods);
     connectedCallback = connectedCallback || superDef.connectedCallback;
     disconnectedCallback = disconnectedCallback || superDef.disconnectedCallback;
     renderedCallback = renderedCallback || superDef.renderedCallback;
@@ -4101,7 +8404,7 @@
     const template = getComponentRegisteredTemplate(Ctor) || superDef.template;
     const name = Ctor.name || superDef.name; // installing observed fields into the prototype.
 
-    defineProperties$1(proto, observedFields);
+    defineProperties$1$1(proto, observedFields);
     const def = {
       ctor: Ctor,
       name,
@@ -4119,7 +8422,7 @@
     };
 
     {
-      freeze$1(Ctor.prototype);
+      freeze$1$1(Ctor.prototype);
     }
 
     return def;
@@ -4160,7 +8463,7 @@
       if (current === BaseLightningElement) {
         return true;
       }
-    } while (!isNull$1(current) && (current = getPrototypeOf$1(current))); // Finally return false if the LightningElement is not part of the prototype chain.
+    } while (!isNull$1(current) && (current = getPrototypeOf$1$1(current))); // Finally return false if the LightningElement is not part of the prototype chain.
 
 
     return false;
@@ -4169,7 +8472,7 @@
   function getComponentInternalDef(Ctor) {
     let def = CtorToDefMap.get(Ctor);
 
-    if (isUndefined$1(def)) {
+    if (isUndefined$1$1(def)) {
       if (isCircularModuleDependency(Ctor)) {
         const resolvedCtor = resolveCircularModuleDependency(Ctor);
         def = getComponentInternalDef(resolvedCtor); // Cache the unresolved component ctor too. The next time if the same unresolved ctor is used,
@@ -4193,7 +8496,7 @@
 
 
   function setElementProto(elm, def) {
-    setPrototypeOf$1(elm, def.bridge.prototype);
+    setPrototypeOf$1$1(elm, def.bridge.prototype);
   }
 
   const lightingElementDef = {
@@ -4231,22 +8534,22 @@
   // was in core so available to this code.
 
 
-  const ShadowTokenPrivateKey = '$$ShadowTokenKey$$';
+  const ShadowTokenPrivateKey$1 = '$$ShadowTokenKey$$';
 
   function setSyntheticShadowToken(elm, shadowToken) {
-    const oldShadowToken = elm[ShadowTokenPrivateKey];
+    const oldShadowToken = elm[ShadowTokenPrivateKey$1];
 
-    if (!isUndefined$1(oldShadowToken) && oldShadowToken !== shadowToken) {
+    if (!isUndefined$1$1(oldShadowToken) && oldShadowToken !== shadowToken) {
       //removeAttribute.call(elm, oldShadowToken);
       elm.removeAttribute(oldShadowToken);
     }
 
-    if (!isUndefined$1(shadowToken)) {
+    if (!isUndefined$1$1(shadowToken)) {
       //setAttribute.call(elm, shadowToken, '');
       elm.setAttribute(shadowToken, '');
     }
 
-    elm[ShadowTokenPrivateKey] = shadowToken;
+    elm[ShadowTokenPrivateKey$1] = shadowToken;
   }
 
   function setElementShadowToken(elm, token, lightDom) {
@@ -4336,7 +8639,7 @@
       owner
     } = vnode; // PHIL: handle Light DOM
 
-    if (isTrue$1$1(owner.lightDom) || isTrue$1$1(owner.renderer.syntheticShadow)) {
+    if (isTrue$1$1$1(owner.lightDom) || isTrue$1$1$1(owner.renderer.syntheticShadow)) {
       const {
         data: {
           context
@@ -4346,7 +8649,7 @@
         shadowAttribute
       } = owner.context;
 
-      if (!isUndefined$1(context) && !isUndefined$1(context.lwc) && context.lwc.dom === LWCDOMMode.manual) {
+      if (!isUndefined$1$1(context) && !isUndefined$1$1(context.lwc) && context.lwc.dom === LWCDOMMode.manual) {
         // this element will now accept any manual content inserted into it
         observeElementChildNodes(elm);
       } // when running in synthetic shadow mode, we need to set the shadowToken value
@@ -4354,7 +8657,7 @@
       // PHIL: handle Light DOM
 
 
-      setElementShadowToken(elm, shadowAttribute, isTrue$1$1(owner.lightDom));
+      setElementShadowToken(elm, shadowAttribute, isTrue$1$1$1(owner.lightDom));
     }
 
     {
@@ -4363,7 +8666,7 @@
           context
         }
       } = vnode;
-      const isPortal = !isUndefined$1(context) && !isUndefined$1(context.lwc) && context.lwc.dom === LWCDOMMode.manual;
+      const isPortal = !isUndefined$1$1(context) && !isUndefined$1$1(context.lwc) && context.lwc.dom === LWCDOMMode.manual;
       patchElementWithRestrictions(elm, {
         isPortal
       });
@@ -4411,7 +8714,7 @@
     const children = vnode.aChildren || vnode.children;
     vm.aChildren = children; // PHIL: handle Light DOM
 
-    if (isTrue$1$1(vm.lightDom) || isTrue$1$1(vm.renderer.syntheticShadow)) {
+    if (isTrue$1$1$1(vm.lightDom) || isTrue$1$1$1(vm.renderer.syntheticShadow)) {
       // slow path
       allocateInSlot(vm, children); // save the allocated children in case this vnode is reused.
 
@@ -4422,7 +8725,7 @@
   }
 
   function createViewModelHook(elm, vnode) {
-    if (!isUndefined$1(getAssociatedVMIfPresent(elm))) {
+    if (!isUndefined$1$1(getAssociatedVMIfPresent(elm))) {
       // There is a possibility that a custom element is registered under tagName,
       // in which case, the initialization is already carry on, and there is nothing else
       // to do here since this hook is called right after invoking `document.createElement`.
@@ -4438,14 +8741,14 @@
     const def = getComponentInternalDef(ctor);
     setElementProto(elm, def); // PHIL: handle Light DOM
 
-    if (isTrue$1$1(owner.lightDom) || isTrue$1$1(owner.renderer.syntheticShadow)) {
+    if (isTrue$1$1$1(owner.lightDom) || isTrue$1$1$1(owner.renderer.syntheticShadow)) {
       const {
         shadowAttribute
       } = owner.context; // when running in synthetic shadow mode, we need to set the shadowToken value
       // into each element from the template, so they can be styled accordingly.
       // PHIL: handle Light DOM
 
-      setElementShadowToken(elm, shadowAttribute, isTrue$1$1(owner.lightDom));
+      setElementShadowToken(elm, shadowAttribute, isTrue$1$1$1(owner.lightDom));
     }
 
     createVM(elm, def, {
@@ -4456,7 +8759,7 @@
     });
 
     {
-      assert$1.isTrue(isArray$2(vnode.children), `Invalid vnode for a custom element, it must have children defined.`);
+      assert$1$1.isTrue(isArray$2(vnode.children), `Invalid vnode for a custom element, it must have children defined.`);
     }
   }
 
@@ -4493,7 +8796,7 @@
     const vm = getAssociatedVM(vnode.elm);
 
     {
-      assert$1.isTrue(isArray$2(vnode.children), `Invalid vnode for a custom element, it must have children defined.`);
+      assert$1$1.isTrue(isArray$2(vnode.children), `Invalid vnode for a custom element, it must have children defined.`);
     }
 
     rerenderVM(vm);
@@ -4552,7 +8855,7 @@
    */
 
 
-  const CHAR_S = 115;
+  const CHAR_S$1 = 115;
   const CHAR_V = 118;
   const CHAR_G = 103;
   const NamespaceAttributeForSVG = 'http://www.w3.org/2000/svg';
@@ -4640,7 +8943,7 @@
       const vm = getAssociatedVM(vnode.elm);
 
       {
-        assert$1.isTrue(vm.state === VMState.created, `${vm} cannot be recycled.`);
+        assert$1$1.isTrue(vm.state === VMState.created, `${vm} cannot be recycled.`);
       }
 
       runConnectedCallback(vm);
@@ -4682,7 +8985,7 @@
   }
 
   function addVNodeToChildLWC(vnode) {
-    ArrayPush$1.call(getVMBeingRendered().velements, vnode);
+    ArrayPush$1$1.call(getVMBeingRendered().velements, vnode);
   } // [h]tml node
 
 
@@ -4690,21 +8993,21 @@
     const vmBeingRendered = getVMBeingRendered();
 
     {
-      assert$1.isTrue(isString(sel), `h() 1st argument sel must be a string.`);
-      assert$1.isTrue(isObject$2(data), `h() 2nd argument data must be an object.`);
-      assert$1.isTrue(isArray$2(children), `h() 3rd argument children must be an array.`);
-      assert$1.isTrue('key' in data, ` <${sel}> "key" attribute is invalid or missing for ${vmBeingRendered}. Key inside iterator is either undefined or null.`); // checking reserved internal data properties
+      assert$1$1.isTrue(isString(sel), `h() 1st argument sel must be a string.`);
+      assert$1$1.isTrue(isObject$2(data), `h() 2nd argument data must be an object.`);
+      assert$1$1.isTrue(isArray$2(children), `h() 3rd argument children must be an array.`);
+      assert$1$1.isTrue('key' in data, ` <${sel}> "key" attribute is invalid or missing for ${vmBeingRendered}. Key inside iterator is either undefined or null.`); // checking reserved internal data properties
 
-      assert$1.isFalse(data.className && data.classMap, `vnode.data.className and vnode.data.classMap ambiguous declaration.`);
-      assert$1.isFalse(data.styleMap && data.style, `vnode.data.styleMap and vnode.data.style ambiguous declaration.`);
+      assert$1$1.isFalse(data.className && data.classMap, `vnode.data.className and vnode.data.classMap ambiguous declaration.`);
+      assert$1$1.isFalse(data.styleMap && data.style, `vnode.data.styleMap and vnode.data.style ambiguous declaration.`);
 
       if (data.style && !isString(data.style)) {
         logError(`Invalid 'style' attribute passed to <${sel}> is ignored. This attribute must be a string value.`, vmBeingRendered);
       }
 
-      forEach$1.call(children, childVnode => {
+      forEach$1$1.call(children, childVnode => {
         if (childVnode != null) {
-          assert$1.isTrue(childVnode && 'sel' in childVnode && 'data' in childVnode && 'children' in childVnode && 'text' in childVnode && 'elm' in childVnode && 'key' in childVnode, `${childVnode} is not a vnode.`);
+          assert$1$1.isTrue(childVnode && 'sel' in childVnode && 'data' in childVnode && 'children' in childVnode && 'text' in childVnode && 'elm' in childVnode && 'key' in childVnode, `${childVnode} is not a vnode.`);
         }
       });
     }
@@ -4724,7 +9027,7 @@
       owner: vmBeingRendered
     };
 
-    if (sel.length === 3 && StringCharCodeAt$1.call(sel, 0) === CHAR_S && StringCharCodeAt$1.call(sel, 1) === CHAR_V && StringCharCodeAt$1.call(sel, 2) === CHAR_G) {
+    if (sel.length === 3 && StringCharCodeAt$1$1.call(sel, 0) === CHAR_S$1 && StringCharCodeAt$1$1.call(sel, 1) === CHAR_V && StringCharCodeAt$1$1.call(sel, 2) === CHAR_G) {
       addNS(vnode);
     }
 
@@ -4736,7 +9039,7 @@
     // if value is greater than 0, we normalize to 0
     // If value is an invalid tabIndex value (null, undefined, string, etc), we let that value pass through
     // If value is less than -1, we don't care
-    const shouldNormalize = value > 0 && !(isTrue$1$1(value) || isFalse$1$1(value));
+    const shouldNormalize = value > 0 && !(isTrue$1$1$1(value) || isFalse$1$1(value));
 
     {
       const vmBeingRendered = getVMBeingRendered();
@@ -4752,12 +9055,12 @@
 
   function s(slotName, data, children, slotset) {
     {
-      assert$1.isTrue(isString(slotName), `s() 1st argument slotName must be a string.`);
-      assert$1.isTrue(isObject$2(data), `s() 2nd argument data must be an object.`);
-      assert$1.isTrue(isArray$2(children), `h() 3rd argument children must be an array.`);
+      assert$1$1.isTrue(isString(slotName), `s() 1st argument slotName must be a string.`);
+      assert$1$1.isTrue(isObject$2(data), `s() 2nd argument data must be an object.`);
+      assert$1$1.isTrue(isArray$2(children), `h() 3rd argument children must be an array.`);
     }
 
-    if (!isUndefined$1(slotset) && !isUndefined$1(slotset[slotName]) && slotset[slotName].length !== 0) {
+    if (!isUndefined$1$1(slotset) && !isUndefined$1$1(slotset[slotName]) && slotset[slotName].length !== 0) {
       children = slotset[slotName];
     }
 
@@ -4776,22 +9079,22 @@
     const vmBeingRendered = getVMBeingRendered();
 
     {
-      assert$1.isTrue(isString(sel), `c() 1st argument sel must be a string.`);
-      assert$1.isTrue(isFunction$1(Ctor), `c() 2nd argument Ctor must be a function.`);
-      assert$1.isTrue(isObject$2(data), `c() 3nd argument data must be an object.`);
-      assert$1.isTrue(arguments.length === 3 || isArray$2(children), `c() 4nd argument data must be an array.`); // checking reserved internal data properties
+      assert$1$1.isTrue(isString(sel), `c() 1st argument sel must be a string.`);
+      assert$1$1.isTrue(isFunction$1(Ctor), `c() 2nd argument Ctor must be a function.`);
+      assert$1$1.isTrue(isObject$2(data), `c() 3nd argument data must be an object.`);
+      assert$1$1.isTrue(arguments.length === 3 || isArray$2(children), `c() 4nd argument data must be an array.`); // checking reserved internal data properties
 
-      assert$1.isFalse(data.className && data.classMap, `vnode.data.className and vnode.data.classMap ambiguous declaration.`);
-      assert$1.isFalse(data.styleMap && data.style, `vnode.data.styleMap and vnode.data.style ambiguous declaration.`);
+      assert$1$1.isFalse(data.className && data.classMap, `vnode.data.className and vnode.data.classMap ambiguous declaration.`);
+      assert$1$1.isFalse(data.styleMap && data.style, `vnode.data.styleMap and vnode.data.style ambiguous declaration.`);
 
       if (data.style && !isString(data.style)) {
         logError(`Invalid 'style' attribute passed to <${sel}> is ignored. This attribute must be a string value.`, vmBeingRendered);
       }
 
       if (arguments.length === 4) {
-        forEach$1.call(children, childVnode => {
+        forEach$1$1.call(children, childVnode => {
           if (childVnode != null) {
-            assert$1.isTrue(childVnode && 'sel' in childVnode && 'data' in childVnode && 'children' in childVnode && 'text' in childVnode && 'elm' in childVnode && 'key' in childVnode, `${childVnode} is not a vnode.`);
+            assert$1$1.isTrue(childVnode && 'sel' in childVnode && 'data' in childVnode && 'children' in childVnode && 'text' in childVnode && 'elm' in childVnode && 'key' in childVnode, `${childVnode} is not a vnode.`);
           }
         });
       }
@@ -4824,7 +9127,7 @@
     sc(list);
     const vmBeingRendered = getVMBeingRendered();
 
-    if (isUndefined$1(iterable) || iterable === null) {
+    if (isUndefined$1$1(iterable) || iterable === null) {
       {
         logError(`Invalid template iteration for value "${toString$1(iterable)}" in ${vmBeingRendered}. It must be an Array or an iterable Object.`, vmBeingRendered);
       }
@@ -4833,13 +9136,13 @@
     }
 
     {
-      assert$1.isFalse(isUndefined$1(iterable[SymbolIterator]), `Invalid template iteration for value \`${toString$1(iterable)}\` in ${vmBeingRendered}. It must be an array-like object and not \`null\` nor \`undefined\`.`);
+      assert$1$1.isFalse(isUndefined$1$1(iterable[SymbolIterator]), `Invalid template iteration for value \`${toString$1(iterable)}\` in ${vmBeingRendered}. It must be an array-like object and not \`null\` nor \`undefined\`.`);
     }
 
     const iterator = iterable[SymbolIterator]();
 
     {
-      assert$1.isTrue(iterator && isFunction$1(iterator.next), `Invalid iterator function for "${toString$1(iterable)}" in ${vmBeingRendered}.`);
+      assert$1$1.isTrue(iterator && isFunction$1(iterator.next), `Invalid iterator function for "${toString$1(iterable)}" in ${vmBeingRendered}.`);
     }
 
     let next = iterator.next();
@@ -4852,7 +9155,7 @@
     let iterationError;
 
     {
-      keyMap = create$1(null);
+      keyMap = create$1$1(null);
     }
 
     while (last === false) {
@@ -4863,26 +9166,26 @@
       const vnode = factory(value, j, j === 0, last);
 
       if (isArray$2(vnode)) {
-        ArrayPush$1.apply(list, vnode);
+        ArrayPush$1$1.apply(list, vnode);
       } else {
-        ArrayPush$1.call(list, vnode);
+        ArrayPush$1$1.call(list, vnode);
       }
 
       {
         const vnodes = isArray$2(vnode) ? vnode : [vnode];
-        forEach$1.call(vnodes, childVnode => {
-          if (!isNull$1(childVnode) && isObject$2(childVnode) && !isUndefined$1(childVnode.sel)) {
+        forEach$1$1.call(vnodes, childVnode => {
+          if (!isNull$1(childVnode) && isObject$2(childVnode) && !isUndefined$1$1(childVnode.sel)) {
             const {
               key
             } = childVnode;
 
             if (isString(key) || isNumber(key)) {
-              if (keyMap[key] === 1 && isUndefined$1(iterationError)) {
+              if (keyMap[key] === 1 && isUndefined$1$1(iterationError)) {
                 iterationError = `Duplicated "key" attribute value for "<${childVnode.sel}>" in ${vmBeingRendered} for item number ${j}. A key with value "${childVnode.key}" appears more than once in the iteration. Key values must be unique numbers or strings.`;
               }
 
               keyMap[key] = 1;
-            } else if (isUndefined$1(iterationError)) {
+            } else if (isUndefined$1$1(iterationError)) {
               iterationError = `Invalid "key" attribute value in "<${childVnode.sel}>" in ${vmBeingRendered} for item number ${j}. Set a unique "key" value on all iterated child elements.`;
             }
           }
@@ -4895,7 +9198,7 @@
     }
 
     {
-      if (!isUndefined$1(iterationError)) {
+      if (!isUndefined$1$1(iterationError)) {
         logError(iterationError, vmBeingRendered);
       }
     }
@@ -4909,7 +9212,7 @@
 
   function f(items) {
     {
-      assert$1.isTrue(isArray$2(items), 'flattening api can only work with arrays.');
+      assert$1$1.isTrue(isArray$2(items), 'flattening api can only work with arrays.');
     }
 
     const len = items.length;
@@ -4921,9 +9224,9 @@
       const item = items[j];
 
       if (isArray$2(item)) {
-        ArrayPush$1.apply(flattened, item);
+        ArrayPush$1$1.apply(flattened, item);
       } else {
-        ArrayPush$1.call(flattened, item);
+        ArrayPush$1$1.call(flattened, item);
       }
     }
 
@@ -4978,7 +9281,7 @@
 
       case 'object':
         {
-          assert$1.fail(`Invalid key value "${obj}" in ${getVMBeingRendered()}. Key must be a string or number.`);
+          assert$1$1.fail(`Invalid key value "${obj}" in ${getVMBeingRendered()}. Key must be a string or number.`);
         }
 
     }
@@ -4988,7 +9291,7 @@
   function gid(id) {
     const vmBeingRendered = getVMBeingRendered();
 
-    if (isUndefined$1(id) || id === '') {
+    if (isUndefined$1$1(id) || id === '') {
       {
         logError(`Invalid id value "${id}". The id attribute must contain a non-empty string.`, vmBeingRendered);
       }
@@ -5008,9 +9311,9 @@
   function fid(url) {
     const vmBeingRendered = getVMBeingRendered();
 
-    if (isUndefined$1(url) || url === '') {
+    if (isUndefined$1$1(url) || url === '') {
       {
-        if (isUndefined$1(url)) {
+        if (isUndefined$1$1(url)) {
           logError(`Undefined url value for "href" or "xlink:href" attribute. Expected a non-empty string.`, vmBeingRendered);
         }
       }
@@ -5045,9 +9348,9 @@
 
   function dc(sel, Ctor, data, children) {
     {
-      assert$1.isTrue(isString(sel), `dc() 1st argument sel must be a string.`);
-      assert$1.isTrue(isObject$2(data), `dc() 3nd argument data must be an object.`);
-      assert$1.isTrue(arguments.length === 3 || isArray$2(children), `dc() 4nd argument data must be an array.`);
+      assert$1$1.isTrue(isString(sel), `dc() 1st argument sel must be a string.`);
+      assert$1$1.isTrue(isObject$2(data), `dc() 3nd argument data must be an object.`);
+      assert$1$1.isTrue(arguments.length === 3 || isArray$2(children), `dc() 4nd argument data must be an array.`);
     } // null or undefined values should produce a null value in the VNodes
 
 
@@ -5061,7 +9364,7 @@
 
     let idx = DynamicImportedComponentMap.get(Ctor);
 
-    if (isUndefined$1(idx)) {
+    if (isUndefined$1$1(idx)) {
       idx = dynamicImportedComponentCounter++;
       DynamicImportedComponentMap.set(Ctor, idx);
     } // the new vnode key is a mix of idx and compiler key, this is required by the diffing algo
@@ -5089,7 +9392,7 @@
 
   function sc(vnodes) {
     {
-      assert$1.isTrue(isArray$2(vnodes), 'sc() api can only work with arrays.');
+      assert$1$1.isTrue(isArray$2(vnodes), 'sc() api can only work with arrays.');
     } // We have to mark the vnodes collection as dynamic so we can later on
     // choose to use the snabbdom virtual dom diffing algo instead of our
     // static dummy algo.
@@ -5147,13 +9450,13 @@
 
     const oldHostAttribute = context.hostAttribute;
 
-    if (!isUndefined$1(oldHostAttribute)) {
+    if (!isUndefined$1$1(oldHostAttribute)) {
       renderer.removeAttribute(elm, oldHostAttribute);
     } // Apply the new template styling token to the host element, if the new template has any
     // associated stylesheets.
 
 
-    if (!isUndefined$1(newStylesheetTokens) && !isUndefined$1(newStylesheets) && newStylesheets.length !== 0) {
+    if (!isUndefined$1$1(newStylesheetTokens) && !isUndefined$1$1(newStylesheets) && newStylesheets.length !== 0) {
       newHostAttribute = newStylesheetTokens.hostAttribute;
       newShadowAttribute = newStylesheetTokens.shadowAttribute;
       renderer.setAttribute(elm, newHostAttribute, '');
@@ -5171,9 +9474,9 @@
       const stylesheet = stylesheets[i];
 
       if (isArray$2(stylesheet)) {
-        ArrayPush$1.apply(content, evaluateStylesheetsContent(stylesheet, hostSelector, shadowSelector, nativeShadow));
+        ArrayPush$1$1.apply(content, evaluateStylesheetsContent(stylesheet, hostSelector, shadowSelector, nativeShadow));
       } else {
-        ArrayPush$1.call(content, stylesheet(hostSelector, shadowSelector, nativeShadow));
+        ArrayPush$1$1.call(content, stylesheet(hostSelector, shadowSelector, nativeShadow));
       }
     }
 
@@ -5194,7 +9497,7 @@
     } = vm;
     let content = [];
 
-    if (!isUndefined$1(stylesheets) && !isUndefined$1(tokens)) {
+    if (!isUndefined$1$1(stylesheets) && !isUndefined$1$1(tokens)) {
       // PHIL: handle Light DOM
       const hostSelector = lightDom || syntheticShadow ? `[${tokens.hostAttribute}]` : '';
       const shadowSelector = lightDom || syntheticShadow ? `[${tokens.shadowAttribute}]` : ''; // PHIL: handle Light DOM
@@ -5218,7 +9521,7 @@
 
       return null;
     } else {
-      const shadowStyleSheetContent = ArrayJoin$1.call(stylesheets, '\n');
+      const shadowStyleSheetContent = ArrayJoin$1$1.call(stylesheets, '\n');
       return createShadowStyleVNode(shadowStyleSheetContent);
     }
   }
@@ -5277,11 +9580,11 @@
     end(measureName, markName);
   };
   const startGlobalMeasure = !isUserTimingSupported ? noop$1 : function (phase, vm) {
-    const markName = isUndefined$1(vm) ? phase : getMarkName(phase, vm);
+    const markName = isUndefined$1$1(vm) ? phase : getMarkName(phase, vm);
     start(markName);
   };
   const endGlobalMeasure = !isUserTimingSupported ? noop$1 : function (phase, vm) {
-    const markName = isUndefined$1(vm) ? phase : getMarkName(phase, vm);
+    const markName = isUndefined$1$1(vm) ? phase : getMarkName(phase, vm);
     end(phase, markName);
   };
   /*
@@ -5313,9 +9616,9 @@
 
     for (const slotName in cmpSlots) {
       // eslint-disable-next-line lwc-internal/no-production-assert
-      assert$1.isTrue(isArray$2(cmpSlots[slotName]), `Slots can only be set to an array, instead received ${toString$1(cmpSlots[slotName])} for slot "${slotName}" in ${vm}.`);
+      assert$1$1.isTrue(isArray$2(cmpSlots[slotName]), `Slots can only be set to an array, instead received ${toString$1(cmpSlots[slotName])} for slot "${slotName}" in ${vm}.`);
 
-      if (slotName !== '' && ArrayIndexOf$1.call(slots, slotName) === -1) {
+      if (slotName !== '' && ArrayIndexOf$1$1.call(slots, slotName) === -1) {
         // TODO [#1297]: this should never really happen because the compiler should always validate
         // eslint-disable-next-line lwc-internal/no-production-assert
         logError(`Ignoring unknown provided slot name "${slotName}" in ${vm}. Check for a typo on the slot attribute.`, vm);
@@ -5325,7 +9628,7 @@
 
   function evaluateTemplate(vm, html) {
     {
-      assert$1.isTrue(isFunction$1(html), `evaluateTemplate() second argument must be an imported template instead of ${toString$1(html)}`);
+      assert$1$1.isTrue(isFunction$1(html), `evaluateTemplate() second argument must be an imported template instead of ${toString$1(html)}`);
     }
 
     const isUpdatingTemplateInception = isUpdatingTemplate;
@@ -5369,7 +9672,7 @@
 
           vm.cmpTemplate = html; // Create a brand new template cache for the swapped templated.
 
-          context.tplCache = create$1(null); // Update the synthetic shadow attributes on the host element if necessary.
+          context.tplCache = create$1$1(null); // Update the synthetic shadow attributes on the host element if necessary.
           // PHIL: handle Light DOM
 
           if (lightDom || renderer.syntheticShadow) {
@@ -5398,7 +9701,7 @@
         } = context;
 
         if (!isNull$1(styleVNode)) {
-          ArrayUnshift$2.call(vnodes, styleVNode);
+          ArrayUnshift$2$1.call(vnodes, styleVNode);
         }
       });
     }, () => {
@@ -5412,7 +9715,7 @@
     });
 
     {
-      assert$1.invariant(isArray$2(vnodes), `Compiler should produce html functions that always return an array.`);
+      assert$1$1.invariant(isArray$2(vnodes), `Compiler should produce html functions that always return an array.`);
     }
 
     return vnodes;
@@ -5426,9 +9729,9 @@
 
 
   function addErrorComponentStack(vm, error) {
-    if (!isFrozen$1(error) && isUndefined$1(error.wcStack)) {
+    if (!isFrozen$1$1(error) && isUndefined$1$1(error.wcStack)) {
       const wcStack = getErrorComponentStack(vm);
-      defineProperty$1(error, 'wcStack', {
+      defineProperty$1$1(error, 'wcStack', {
         get() {
           return wcStack;
         }
@@ -5501,7 +9804,7 @@
 
       vmBeingConstructed = vmBeingConstructedInception;
 
-      if (!isUndefined$1(error)) {
+      if (!isUndefined$1$1(error)) {
         addErrorComponentStack(vm, error); // re-throwing the original error annotated after restoring the context
 
         throw error; // eslint-disable-line no-unsafe-finally
@@ -5551,7 +9854,7 @@
       owner
     } = vm;
 
-    if (!isUndefined$1(renderedCallback)) {
+    if (!isUndefined$1$1(renderedCallback)) {
       runWithBoundaryProtection(vm, owner, () => {
         {
           startMeasure('renderedCallback', vm);
@@ -5576,7 +9879,7 @@
     runWithBoundaryProtection(vm, owner, noop$2, () => {
       // job
       if ("development" !== 'production') {
-        assert$1.isTrue(isFunction$1(fn), `Invalid event handler for event '${event.type}' on ${vm}.`);
+        assert$1$1.isTrue(isFunction$1(fn), `Invalid event handler for event '${event.type}' on ${vm}.`);
       }
 
       callHook(thisValue, fn, [event]);
@@ -5613,7 +9916,7 @@
     // create the component instance
     invokeComponentConstructor(vm, Ctor);
 
-    if (isUndefined$1(vm.component)) {
+    if (isUndefined$1$1(vm.component)) {
       throw new ReferenceError(`Invalid construction for ${Ctor}, you must extend LightningElement.`);
     }
   }
@@ -5633,7 +9936,7 @@
 
   function renderComponent(vm) {
     {
-      assert$1.invariant(vm.isDirty, `${vm} is not dirty.`);
+      assert$1$1.invariant(vm.isDirty, `${vm} is not dirty.`);
     }
 
     vm.tro.reset();
@@ -5642,7 +9945,7 @@
     vm.isScheduled = false;
 
     {
-      assert$1.invariant(isArray$2(vnodes), `${vm}.render() should always return an array of vnodes instead of ${vnodes}`);
+      assert$1$1.invariant(isArray$2(vnodes), `${vm}.render() should always return an array of vnodes instead of ${vnodes}`);
     }
 
     return vnodes;
@@ -5651,9 +9954,9 @@
   function markComponentAsDirty(vm) {
     {
       const vmBeingRendered = getVMBeingRendered();
-      assert$1.isFalse(vm.isDirty, `markComponentAsDirty() for ${vm} should not be called when the component is already dirty.`);
-      assert$1.isFalse(isInvokingRender, `markComponentAsDirty() for ${vm} cannot be called during rendering of ${vmBeingRendered}.`);
-      assert$1.isFalse(isUpdatingTemplate, `markComponentAsDirty() for ${vm} cannot be called while updating template of ${vmBeingRendered}.`);
+      assert$1$1.isFalse(vm.isDirty, `markComponentAsDirty() for ${vm} should not be called when the component is already dirty.`);
+      assert$1$1.isFalse(isInvokingRender, `markComponentAsDirty() for ${vm} cannot be called during rendering of ${vmBeingRendered}.`);
+      assert$1$1.isFalse(isUpdatingTemplate, `markComponentAsDirty() for ${vm} cannot be called while updating template of ${vmBeingRendered}.`);
     }
 
     vm.isDirty = true;
@@ -5668,7 +9971,7 @@
 
     let wrappedListener = cmpEventListenerMap.get(listener);
 
-    if (isUndefined$1(wrappedListener)) {
+    if (isUndefined$1$1(wrappedListener)) {
       wrappedListener = function (event) {
         invokeEventListener(vm, listener, undefined, event);
       };
@@ -5686,11 +9989,11 @@
    */
 
 
-  const Services = create$1(null);
+  const Services = create$1$1(null);
 
   function invokeServiceHook(vm, cbs) {
     {
-      assert$1.isTrue(isArray$2(cbs) && cbs.length > 0, `Optimize invokeServiceHook() to be invoked only when needed`);
+      assert$1$1.isTrue(isArray$2(cbs) && cbs.length > 0, `Optimize invokeServiceHook() to be invoked only when needed`);
     }
 
     const {
@@ -5722,7 +10025,7 @@
   let idx = 0;
   /** The internal slot used to associate different objects the engine manipulates with the VM */
 
-  const ViewModelReflection = createHiddenField$1('ViewModel', 'engine');
+  const ViewModelReflection = createHiddenField$1$1('ViewModel', 'engine');
 
   function callHook(cmp, fn, args = []) {
     return fn.apply(cmp, args);
@@ -5793,7 +10096,7 @@
 
   function removeVM(vm) {
     {
-      assert$1.isTrue(vm.state === VMState.connected || vm.state === VMState.disconnected, `${vm} must have been connected.`);
+      assert$1$1.isTrue(vm.state === VMState.connected || vm.state === VMState.disconnected, `${vm} must have been connected.`);
     }
 
     resetComponentStateWhenRemoved(vm);
@@ -5825,10 +10128,10 @@
       children: EmptyArray,
       aChildren: EmptyArray,
       velements: EmptyArray,
-      cmpProps: create$1(null),
-      cmpFields: create$1(null),
-      cmpSlots: create$1(null),
-      oar: create$1(null),
+      cmpProps: create$1$1(null),
+      cmpFields: create$1$1(null),
+      cmpSlots: create$1$1(null),
+      oar: create$1$1(null),
       cmpTemplate: null,
       context: {
         hostAttribute: undefined,
@@ -5876,7 +10179,7 @@
   }
 
   function getAssociatedVM(obj) {
-    const vm = getHiddenField$1(obj, ViewModelReflection);
+    const vm = getHiddenField$1$1(obj, ViewModelReflection);
 
     {
       assertIsVM(vm);
@@ -5886,10 +10189,10 @@
   }
 
   function getAssociatedVMIfPresent(obj) {
-    const maybeVm = getHiddenField$1(obj, ViewModelReflection);
+    const maybeVm = getHiddenField$1$1(obj, ViewModelReflection);
 
     {
-      if (!isUndefined$1(maybeVm)) {
+      if (!isUndefined$1$1(maybeVm)) {
         assertIsVM(maybeVm);
       }
     }
@@ -5898,7 +10201,7 @@
   }
 
   function rehydrate(vm) {
-    if (isTrue$1$1(vm.isDirty)) {
+    if (isTrue$1$1$1(vm.isDirty)) {
       const children = renderComponent(vm);
       patchShadowRoot(vm, children);
     }
@@ -5944,7 +10247,7 @@
   }
 
   function runRenderedCallback(vm) {
-    if (isTrue$1$1(vm.renderer.ssr)) {
+    if (isTrue$1$1$1(vm.renderer.ssr)) {
       return;
     }
 
@@ -5965,7 +10268,7 @@
     startGlobalMeasure(GlobalMeasurementPhase.REHYDRATE);
 
     {
-      assert$1.invariant(rehydrateQueue.length, `If rehydrateQueue was scheduled, it is because there must be at least one VM on this pending queue instead of ${rehydrateQueue}.`);
+      assert$1$1.invariant(rehydrateQueue.length, `If rehydrateQueue was scheduled, it is because there must be at least one VM on this pending queue instead of ${rehydrateQueue}.`);
     }
 
     const vms = rehydrateQueue.sort((a, b) => a.idx - b.idx);
@@ -5983,7 +10286,7 @@
             addCallbackToNextTick(flushRehydrationQueue);
           }
 
-          ArrayUnshift$2.apply(rehydrateQueue, ArraySlice$2.call(vms, i + 1));
+          ArrayUnshift$2$1.apply(rehydrateQueue, ArraySlice$2$1.call(vms, i + 1));
         } // we need to end the measure before throwing.
 
 
@@ -6024,7 +10327,7 @@
       connectedCallback
     } = vm.def;
 
-    if (!isUndefined$1(connectedCallback)) {
+    if (!isUndefined$1$1(connectedCallback)) {
       {
         startMeasure('connectedCallback', vm);
       }
@@ -6038,12 +10341,12 @@
   }
 
   function hasWireAdapters(vm) {
-    return getOwnPropertyNames$1(vm.def.wire).length > 0;
+    return getOwnPropertyNames$1$1(vm.def.wire).length > 0;
   }
 
   function runDisconnectedCallback(vm) {
     {
-      assert$1.isTrue(vm.state !== VMState.disconnected, `${vm} must be inserted.`);
+      assert$1$1.isTrue(vm.state !== VMState.disconnected, `${vm} must be inserted.`);
     }
 
     if (isFalse$1$1(vm.isDirty)) {
@@ -6072,7 +10375,7 @@
       disconnectedCallback
     } = vm.def;
 
-    if (!isUndefined$1(disconnectedCallback)) {
+    if (!isUndefined$1$1(disconnectedCallback)) {
       {
         startMeasure('disconnectedCallback', vm);
       }
@@ -6102,12 +10405,12 @@
       //   slotted into it, as  a result, the custom element was never
       //   initialized.
 
-      if (!isUndefined$1(elm)) {
+      if (!isUndefined$1$1(elm)) {
         const childVM = getAssociatedVMIfPresent(elm); // The VM associated with the element might be associated undefined
         // in the case where the VM failed in the middle of its creation,
         // eg: constructor throwing before invoking super().
 
-        if (!isUndefined$1(childVM)) {
+        if (!isUndefined$1$1(childVM)) {
           resetComponentStateWhenRemoved(childVM);
         }
       }
@@ -6133,9 +10436,9 @@
     for (let i = 0, len = vnodes.length; i < len; i += 1) {
       const vnode = vnodes[i];
 
-      if (!isNull$1(vnode) && isArray$2(vnode.children) && !isUndefined$1(vnode.elm)) {
+      if (!isNull$1(vnode) && isArray$2(vnode.children) && !isUndefined$1$1(vnode.elm)) {
         // vnode is a VElement with children
-        if (isUndefined$1(vnode.ctor)) {
+        if (isUndefined$1$1(vnode.ctor)) {
           // it is a VElement, just keep looking (recursively)
           recursivelyDisconnectChildren(vnode.children);
         } else {
@@ -6159,7 +10462,7 @@
     for (let i = 0, len = children.length; i < len; i++) {
       const child = children[i];
 
-      if (!isNull$1(child) && !isUndefined$1(child.elm)) {
+      if (!isNull$1(child) && !isUndefined$1$1(child.elm)) {
         renderer.remove(child.elm, cmpRoot);
       }
     }
@@ -6170,7 +10473,7 @@
   }
 
   function scheduleRehydration(vm) {
-    if (isTrue$1$1(vm.renderer.ssr) || isTrue$1$1(vm.isScheduled)) {
+    if (isTrue$1$1$1(vm.renderer.ssr) || isTrue$1$1$1(vm.isScheduled)) {
       return;
     }
 
@@ -6180,14 +10483,14 @@
       addCallbackToNextTick(flushRehydrationQueue);
     }
 
-    ArrayPush$1.call(rehydrateQueue, vm);
+    ArrayPush$1$1.call(rehydrateQueue, vm);
   }
 
   function getErrorBoundaryVM(vm) {
     let currentVm = vm;
 
     while (!isNull$1(currentVm)) {
-      if (!isUndefined$1(currentVm.def.errorCallback)) {
+      if (!isUndefined$1$1(currentVm.def.errorCallback)) {
         return currentVm;
       }
 
@@ -6200,13 +10503,13 @@
 
   function allocateInSlot(vm, children) {
     {
-      assert$1.invariant(isObject$2(vm.cmpSlots), `When doing manual allocation, there must be a cmpSlots object available.`);
+      assert$1$1.invariant(isObject$2(vm.cmpSlots), `When doing manual allocation, there must be a cmpSlots object available.`);
     }
 
     const {
       cmpSlots: oldSlots
     } = vm;
-    const cmpSlots = vm.cmpSlots = create$1(null);
+    const cmpSlots = vm.cmpSlots = create$1$1(null);
 
     for (let i = 0, len = children.length; i < len; i += 1) {
       const vnode = children[i];
@@ -6224,19 +10527,19 @@
       // starts with a numeric character from compiler. In this case, we add a unique
       // notation for slotted vnodes keys, e.g.: `@foo:1:1`
 
-      if (!isUndefined$1(vnode.key)) {
+      if (!isUndefined$1$1(vnode.key)) {
         vnode.key = `@${slotName}:${vnode.key}`;
       }
 
-      ArrayPush$1.call(vnodes, vnode);
+      ArrayPush$1$1.call(vnodes, vnode);
     }
 
     if (isFalse$1$1(vm.isDirty)) {
       // We need to determine if the old allocation is really different from the new one
       // and mark the vm as dirty
-      const oldKeys = keys$1(oldSlots);
+      const oldKeys = keys$1$1(oldSlots);
 
-      if (oldKeys.length !== keys$1(cmpSlots).length) {
+      if (oldKeys.length !== keys$1$1(cmpSlots).length) {
         markComponentAsDirty(vm);
         return;
       }
@@ -6244,7 +10547,7 @@
       for (let i = 0, len = oldKeys.length; i < len; i += 1) {
         const key = oldKeys[i];
 
-        if (isUndefined$1(cmpSlots[key]) || oldSlots[key].length !== cmpSlots[key].length) {
+        if (isUndefined$1$1(cmpSlots[key]) || oldSlots[key].length !== cmpSlots[key].length) {
           markComponentAsDirty(vm);
           return;
         }
@@ -6273,11 +10576,11 @@
     } finally {
       post();
 
-      if (!isUndefined$1(error)) {
+      if (!isUndefined$1$1(error)) {
         addErrorComponentStack(vm, error);
         const errorBoundaryVm = isNull$1(owner) ? undefined : getErrorBoundaryVM(owner);
 
-        if (isUndefined$1(errorBoundaryVm)) {
+        if (isUndefined$1$1(errorBoundaryVm)) {
           throw error; // eslint-disable-line no-unsafe-finally
         }
 
@@ -6320,7 +10623,7 @@
         bubbles: true,
         composed: true
       });
-      defineProperties$1(this, {
+      defineProperties$1$1(this, {
         setNewContext: {
           value: setNewContext
         },
@@ -6396,7 +10699,7 @@
     } = wireDef;
     const adapterContextToken = getAdapterToken(adapter);
 
-    if (isUndefined$1(adapterContextToken)) {
+    if (isUndefined$1$1(adapterContextToken)) {
       return; // no provider found, nothing to be done
     }
 
@@ -6409,7 +10712,7 @@
       }
     } = vm; // waiting for the component to be connected to formally request the context via the token
 
-    ArrayPush$1.call(wiredConnecting, () => {
+    ArrayPush$1$1.call(wiredConnecting, () => {
       // This event is responsible for connecting the host element with another
       // element in the composed path that is providing contextual data. The provider
       // must be listening for a special dom event with the name corresponding to the value of
@@ -6425,7 +10728,7 @@
         setDisconnectedCallback(disconnectCallback) {
           // adds this callback into the disconnect bucket so it gets disconnected from parent
           // the the element hosting the wire is disconnected
-          ArrayPush$1.call(wiredDisconnecting, disconnectCallback);
+          ArrayPush$1$1.call(wiredDisconnecting, disconnectCallback);
         }
 
       });
@@ -6444,14 +10747,14 @@
     const {
       component
     } = vm;
-    const dataCallback = isUndefined$1(method) ? createFieldDataCallback(vm, name) : createMethodDataCallback(vm, method);
+    const dataCallback = isUndefined$1$1(method) ? createFieldDataCallback(vm, name) : createMethodDataCallback(vm, method);
     let context;
     let connector; // Workaround to pass the component element associated to this wire adapter instance.
 
-    defineProperty$1(dataCallback, DeprecatedWiredElementHost, {
+    defineProperty$1$1(dataCallback, DeprecatedWiredElementHost, {
       value: vm.elm
     });
-    defineProperty$1(dataCallback, DeprecatedWiredParamsMeta, {
+    defineProperty$1$1(dataCallback, DeprecatedWiredParamsMeta, {
       value: dynamic
     });
     runWithBoundaryProtection(vm, vm, noop$3, () => {
@@ -6487,7 +10790,7 @@
     } // if the adapter needs contextualization, we need to watch for new context and push it alongside the config
 
 
-    if (!isUndefined$1(adapter.contextSchema)) {
+    if (!isUndefined$1$1(adapter.contextSchema)) {
       createContextWatcher(vm, wireDef, newContext => {
         // every time the context is pushed into this component,
         // this callback will be invoked with the new computed context
@@ -6556,13 +10859,13 @@
       const wireDef = WireMetaMap.get(descriptor);
 
       {
-        assert$1.invariant(wireDef, `Internal Error: invalid wire definition found.`);
+        assert$1$1.invariant(wireDef, `Internal Error: invalid wire definition found.`);
       }
 
-      if (!isUndefined$1(wireDef)) {
+      if (!isUndefined$1$1(wireDef)) {
         const adapterInstance = createConnector(vm, fieldNameOrMethod, wireDef);
-        ArrayPush$1.call(wiredConnecting, () => adapterInstance.connect());
-        ArrayPush$1.call(wiredDisconnecting, () => adapterInstance.disconnect());
+        ArrayPush$1$1.call(wiredConnecting, () => adapterInstance.connect());
+        ArrayPush$1$1.call(wiredDisconnecting, () => adapterInstance.disconnect());
       }
     }
   }
@@ -6599,14 +10902,14 @@
   // PHIL: we make the style sheet identifiable by an ID, not just
 
 
-  const globalStylesheets = create(null);
+  const globalStylesheets = create$2(null);
   const globalStylesheetsParentElement = document.head || document.body || document; // PHIL: to handle the ID of stylesheets
 
   let ssidNext = 1;
   const styleList = Symbol('styleList'); // TODO [#0]: Evaluate how we can extract the `$shadowToken$` property name in a shared package
   // to avoid having to synchronize it between the different modules.
 
-  const useSyntheticShadow = hasOwnProperty.call(Element.prototype, '$shadowToken$');
+  const useSyntheticShadow = hasOwnProperty$2.call(Element.prototype, '$shadowToken$');
 
   function findShadowRoot(elm) {
     for (let e = elm; e != null; e = e.parentNode) {
@@ -6623,7 +10926,7 @@
     syntheticShadow: useSyntheticShadow,
 
     createElement(tagName, namespace) {
-      return isUndefined(namespace) ? document.createElement(tagName) : document.createElementNS(namespace, tagName);
+      return isUndefined$1(namespace) ? document.createElement(tagName) : document.createElementNS(namespace, tagName);
     },
 
     createText(content) {
@@ -6658,7 +10961,7 @@
       {
         if (node instanceof Element && !(key in node)) {
           // TODO [#1297]: Move this validation to the compiler
-          assert.fail(`Unknown public property "${key}" of element <${node.tagName}>. This is likely a typo on the corresponding attribute "${getAttrNameFromPropName(key)}".`);
+          assert$1.fail(`Unknown public property "${key}" of element <${node.tagName}>. This is likely a typo on the corresponding attribute "${getAttrNameFromPropName(key)}".`);
         }
       }
 
@@ -6666,15 +10969,15 @@
     },
 
     getAttribute(element, name, namespace) {
-      return isUndefined(namespace) ? element.getAttribute(name) : element.getAttributeNS(namespace, name);
+      return isUndefined$1(namespace) ? element.getAttribute(name) : element.getAttributeNS(namespace, name);
     },
 
     setAttribute(element, name, value, namespace) {
-      return isUndefined(namespace) ? element.setAttribute(name, value) : element.setAttributeNS(namespace, name, value);
+      return isUndefined$1(namespace) ? element.setAttribute(name, value) : element.setAttributeNS(namespace, name, value);
     },
 
     removeAttribute(element, name, namespace) {
-      if (isUndefined(namespace)) {
+      if (isUndefined$1(namespace)) {
         element.removeAttribute(name);
       } else {
         element.removeAttributeNS(namespace, name);
@@ -6759,7 +11062,7 @@
     },
 
     assertInstanceOfHTMLElement(elm, msg) {
-      assert.invariant(elm instanceof HTMLElement, msg);
+      assert$1.invariant(elm instanceof HTMLElement, msg);
     }
 
   };
@@ -6770,7 +11073,7 @@
     const def = getComponentInternalDef(Ctor); // generating the hash table for attributes to avoid duplicate fields and facilitate validation
     // and false positives in case of inheritance.
 
-    const attributeToPropMap = create(null);
+    const attributeToPropMap = create$2(null);
 
     for (const propName in def.props) {
       attributeToPropMap[getAttrNameFromPropName(propName)] = propName;
@@ -6803,7 +11106,7 @@
 
         const propName = attributeToPropMap[attrName];
 
-        if (isUndefined(propName)) {
+        if (isUndefined$1(propName)) {
           // Ignore unknown attributes.
           return;
         }
@@ -6823,7 +11126,7 @@
 
     }, // Specify attributes for which we want to reflect changes back to their corresponding
     // properties via attributeChangedCallback.
-    _a.observedAttributes = keys(attributeToPropMap), _a;
+    _a.observedAttributes = keys$2(attributeToPropMap), _a;
   }
   /*
    * Copyright (c) 2018, salesforce.com, inc.
@@ -6833,17 +11136,17 @@
    */
 
 
-  const ConnectingSlot = createHiddenField('connecting', 'engine');
-  const DisconnectingSlot = createHiddenField('disconnecting', 'engine');
+  const ConnectingSlot = createHiddenField$1('connecting', 'engine');
+  const DisconnectingSlot = createHiddenField$1('disconnecting', 'engine');
 
   function callNodeSlot(node, slot) {
     {
-      assert.isTrue(node, `callNodeSlot() should not be called for a non-object`);
+      assert$1.isTrue(node, `callNodeSlot() should not be called for a non-object`);
     }
 
-    const fn = getHiddenField(node, slot);
+    const fn = getHiddenField$1(node, slot);
 
-    if (!isUndefined(fn)) {
+    if (!isUndefined$1(fn)) {
       fn(node);
     }
 
@@ -6853,29 +11156,29 @@
 
 
   const {
-    appendChild,
-    insertBefore,
-    removeChild,
-    replaceChild
+    appendChild: appendChild$1,
+    insertBefore: insertBefore$1,
+    removeChild: removeChild$1,
+    replaceChild: replaceChild$1
   } = Node.prototype;
-  assign(Node.prototype, {
+  assign$2(Node.prototype, {
     appendChild(newChild) {
-      const appendedNode = appendChild.call(this, newChild);
+      const appendedNode = appendChild$1.call(this, newChild);
       return callNodeSlot(appendedNode, ConnectingSlot);
     },
 
     insertBefore(newChild, referenceNode) {
-      const insertedNode = insertBefore.call(this, newChild, referenceNode);
+      const insertedNode = insertBefore$1.call(this, newChild, referenceNode);
       return callNodeSlot(insertedNode, ConnectingSlot);
     },
 
     removeChild(oldChild) {
-      const removedNode = removeChild.call(this, oldChild);
+      const removedNode = removeChild$1.call(this, oldChild);
       return callNodeSlot(removedNode, DisconnectingSlot);
     },
 
     replaceChild(newChild, oldChild) {
-      const replacedNode = replaceChild.call(this, newChild, oldChild);
+      const replacedNode = replaceChild$1.call(this, newChild, oldChild);
       callNodeSlot(replacedNode, DisconnectingSlot);
       callNodeSlot(newChild, ConnectingSlot);
       return replacedNode;
@@ -6899,7 +11202,7 @@
 
     let ce = ComponentConstructorToCustomElementConstructorMap.get(Ctor);
 
-    if (isUndefined(ce)) {
+    if (isUndefined$1(ce)) {
       ce = buildCustomElementConstructor(Ctor);
       ComponentConstructorToCustomElementConstructorMap.set(Ctor, ce);
     }
@@ -6917,14 +11220,14 @@
    */
 
 
-  defineProperty(BaseLightningElement, 'CustomElementConstructor', {
+  defineProperty$2(BaseLightningElement, 'CustomElementConstructor', {
     get() {
       return getCustomElementConstructor(this);
     }
 
   });
-  freeze(BaseLightningElement);
-  seal(BaseLightningElement.prototype);
+  freeze$2(BaseLightningElement);
+  seal$2(BaseLightningElement.prototype);
 
   /**
    * Copyright (C) 2018 salesforce.com, inc.
@@ -6941,39 +11244,39 @@
    * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/MIT
    */
   const {
-    assign: assign$2,
+    assign: assign$3,
     create: create$3,
-    defineProperties: defineProperties$2,
-    defineProperty: defineProperty$2,
-    freeze: freeze$2,
+    defineProperties: defineProperties$3,
+    defineProperty: defineProperty$3,
+    freeze: freeze$3,
     getOwnPropertyDescriptor: getOwnPropertyDescriptor$3,
     getOwnPropertyNames: getOwnPropertyNames$3,
     getPrototypeOf: getPrototypeOf$3,
     hasOwnProperty: hasOwnProperty$3,
-    isFrozen: isFrozen$2,
-    keys: keys$2,
-    seal: seal$2,
-    setPrototypeOf: setPrototypeOf$2
+    isFrozen: isFrozen$3,
+    keys: keys$3,
+    seal: seal$3,
+    setPrototypeOf: setPrototypeOf$3
   } = Object;
   const {
-    filter: ArrayFilter$2,
-    find: ArrayFind$2,
+    filter: ArrayFilter$3,
+    find: ArrayFind$3,
     indexOf: ArrayIndexOf$3,
-    join: ArrayJoin$2,
+    join: ArrayJoin$3,
     map: ArrayMap$3,
     push: ArrayPush$4,
-    reduce: ArrayReduce$2,
-    reverse: ArrayReverse$2,
+    reduce: ArrayReduce$3,
+    reverse: ArrayReverse$3,
     slice: ArraySlice$3,
     splice: ArraySplice$3,
     unshift: ArrayUnshift$3,
-    forEach: forEach$2
+    forEach: forEach$3
   } = Array.prototype;
   const {
-    charCodeAt: StringCharCodeAt$2,
-    replace: StringReplace$2,
-    slice: StringSlice$2,
-    toLowerCase: StringToLowerCase$2
+    charCodeAt: StringCharCodeAt$3,
+    replace: StringReplace$3,
+    slice: StringSlice$3,
+    toLowerCase: StringToLowerCase$3
   } = String.prototype;
   /*
    * Copyright (c) 2018, salesforce.com, inc.
@@ -6993,15 +11296,15 @@
    */
 
 
-  const AriaPropertyNames$2 = ['ariaActiveDescendant', 'ariaAtomic', 'ariaAutoComplete', 'ariaBusy', 'ariaChecked', 'ariaColCount', 'ariaColIndex', 'ariaColSpan', 'ariaControls', 'ariaCurrent', 'ariaDescribedBy', 'ariaDetails', 'ariaDisabled', 'ariaErrorMessage', 'ariaExpanded', 'ariaFlowTo', 'ariaHasPopup', 'ariaHidden', 'ariaInvalid', 'ariaKeyShortcuts', 'ariaLabel', 'ariaLabelledBy', 'ariaLevel', 'ariaLive', 'ariaModal', 'ariaMultiLine', 'ariaMultiSelectable', 'ariaOrientation', 'ariaOwns', 'ariaPlaceholder', 'ariaPosInSet', 'ariaPressed', 'ariaReadOnly', 'ariaRelevant', 'ariaRequired', 'ariaRoleDescription', 'ariaRowCount', 'ariaRowIndex', 'ariaRowSpan', 'ariaSelected', 'ariaSetSize', 'ariaSort', 'ariaValueMax', 'ariaValueMin', 'ariaValueNow', 'ariaValueText', 'role'];
+  const AriaPropertyNames$3 = ['ariaActiveDescendant', 'ariaAtomic', 'ariaAutoComplete', 'ariaBusy', 'ariaChecked', 'ariaColCount', 'ariaColIndex', 'ariaColSpan', 'ariaControls', 'ariaCurrent', 'ariaDescribedBy', 'ariaDetails', 'ariaDisabled', 'ariaErrorMessage', 'ariaExpanded', 'ariaFlowTo', 'ariaHasPopup', 'ariaHidden', 'ariaInvalid', 'ariaKeyShortcuts', 'ariaLabel', 'ariaLabelledBy', 'ariaLevel', 'ariaLive', 'ariaModal', 'ariaMultiLine', 'ariaMultiSelectable', 'ariaOrientation', 'ariaOwns', 'ariaPlaceholder', 'ariaPosInSet', 'ariaPressed', 'ariaReadOnly', 'ariaRelevant', 'ariaRequired', 'ariaRoleDescription', 'ariaRowCount', 'ariaRowIndex', 'ariaRowSpan', 'ariaSelected', 'ariaSetSize', 'ariaSort', 'ariaValueMax', 'ariaValueMin', 'ariaValueNow', 'ariaValueText', 'role'];
   const AttrNameToPropNameMap$3 = create$3(null);
   const PropNameToAttrNameMap$3 = create$3(null); // Synthetic creation of all AOM property descriptors for Custom Elements
 
-  forEach$2.call(AriaPropertyNames$2, propName => {
+  forEach$3.call(AriaPropertyNames$3, propName => {
     // Typescript infers the wrong function type for this particular overloaded method:
     // https://github.com/Microsoft/TypeScript/issues/27972
     // @ts-ignore type-mismatch
-    const attrName = StringToLowerCase$2.call(StringReplace$2.call(propName, /^aria/, 'aria-'));
+    const attrName = StringToLowerCase$3.call(StringReplace$3.call(propName, /^aria/, 'aria-'));
     AttrNameToPropNameMap$3[attrName] = propName;
     PropNameToAttrNameMap$3[propName] = attrName;
   });
@@ -7013,7 +11316,7 @@
    */
   // Inspired from: https://mathiasbynens.be/notes/globalthis
 
-  const _globalThis$2 = function () {
+  const _globalThis$3 = function () {
     // On recent browsers, `globalThis` is already defined. In this case return it directly.
     if (typeof globalThis === 'object') {
       return globalThis;
@@ -7062,8 +11365,8 @@
    */
 
 
-  const hasNativeSymbolsSupport$2 = Symbol('x').toString() === 'Symbol(x)';
-  const HTML_ATTRIBUTES_TO_PROPERTY$2 = {
+  const hasNativeSymbolsSupport$4 = Symbol('x').toString() === 'Symbol(x)';
+  const HTML_ATTRIBUTES_TO_PROPERTY$3 = {
     accesskey: 'accessKey',
     readonly: 'readOnly',
     tabindex: 'tabIndex',
@@ -7081,7 +11384,7 @@
     usemap: 'useMap',
     for: 'htmlFor'
   };
-  keys$2(HTML_ATTRIBUTES_TO_PROPERTY$2).forEach(attrName => {});
+  keys$3(HTML_ATTRIBUTES_TO_PROPERTY$3).forEach(attrName => {});
   /** version: 1.7.10 */
 
   function stylesheet(hostSelector, shadowSelector, nativeShadow) {

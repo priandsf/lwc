@@ -24,7 +24,7 @@ function rollupConfig({ target }) {
     return {
         input,
         output: {
-            file: path.join(outputDir, (isCompat ? 'lwc-components-compat' : 'lwc-components') + (isProduction ? ".min.js" : ".js")),
+            file: path.join(outputDir, (isCompat ? 'lwc-components-synthetic-compat' : 'lwc-components-synthetic') + (isProduction ? ".min.js" : ".js")),
             format: 'iife',
         },
         plugins: [
@@ -32,7 +32,7 @@ function rollupConfig({ target }) {
                 mainFields: ['module', 'main'],
                 browser: true,
             }),
-            /*isCompat && syntheticShadow(),*/
+            syntheticShadow(),
             lwcCompiler(),
             replace({ 'process.env.NODE_ENV': JSON.stringify(env) }),
             isCompat && compat(),
@@ -42,5 +42,6 @@ function rollupConfig({ target }) {
 }
 
 module.exports = [
+    //rollupConfig({ target: 'es5' }),
     rollupConfig({ target: 'es2017' })
 ];

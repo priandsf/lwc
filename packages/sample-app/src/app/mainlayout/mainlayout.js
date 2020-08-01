@@ -46,4 +46,5 @@ export default class MainLayout extends LightningElement {
     }
 }
 
-customElements.define("app-body", buildCustomElementConstructor(MainLayout));
+//customElements.define("app-body", buildCustomElementConstructor(MainLayout));
+customElements.define("app-body", MainLayout.CustomElementConstructor);
