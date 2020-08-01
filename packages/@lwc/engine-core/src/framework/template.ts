@@ -112,7 +112,8 @@ export function evaluateTemplate(vm: VM, html: Template): Array<VNode | null> {
         },
         () => {
             // job
-            const { component, context, cmpSlots, cmpTemplate, tro, renderer } = vm;
+            // PHIL: handle Light DOM
+            const { lightDom, component, context, cmpSlots, cmpTemplate, tro, renderer } = vm;
             tro.observe(() => {
                 // Reset the cache memoizer for template when needed.
                 if (html !== cmpTemplate) {
@@ -140,7 +141,8 @@ export function evaluateTemplate(vm: VM, html: Template): Array<VNode | null> {
                     context.tplCache = create(null);
 
                     // Update the synthetic shadow attributes on the host element if necessary.
-                    if (renderer.syntheticShadow) {
+                    // PHIL: handle Light DOM
+                    if (lightDom || renderer.syntheticShadow) {
                         updateSyntheticShadowAttributes(vm, html);
                     }
 

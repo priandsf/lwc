@@ -1,0 +1,6 @@
+span.top::after {
+    content: "(Top Slot)";
+}
+span.bottom::after {
+    content: "(Bottom Slot)";
+}

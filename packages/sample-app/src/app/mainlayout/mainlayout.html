@@ -1,0 +1,87 @@
+<template>
+    <h1>Light DOM example</h1>
+    <button type="button" onclick={toggleReset}>Reset</button>
+    <button type="button" onclick={toggleLightContainers}>Light Containers</button>
+    <button type="button" onclick={toggleShadowContainers}>Shadow Containers</button>
+    <button type="button" onclick={toggleLightCounters}>Light Counters</button>
+    <button type="button" onclick={toggleShadowCounters}>Shadow Counters</button>
+    <button type="button" onclick={toggleSlots}>Slots</button>
+    <button type="button" onclick={toggleNoSlots}>No Slots</button>
+
+    <table>
+        <tr>
+            <th if:true={showLightContainer}>Light Containers</th>
+            <th if:true={showShadowContainer}>Shadow Containers</th>
+        </tr>
+        <tr>
+            <td if:true={showLL}>
+                <div class="counterTitle">Light Counters</div>
+                <app-container-light>
+                    <div slot="top">
+                        <app-counter-blue-light></app-counter-blue-light>
+                    </div>
+                    <div slot="bottom">
+                        <app-counter-red-light></app-counter-red-light>
+                    </div>
+                </app-container-light>
+            </td>
+            <td if:true={showSL}>
+                <div class="counterTitle">Light Counters</div>
+                <app-container-shadow>
+                    <div slot="top">
+                        <app-counter-blue-light></app-counter-blue-light>
+                    </div>
+                    <div slot="bottom">
+                        <app-counter-red-light></app-counter-red-light>
+                    </div>
+                </app-container-shadow>
+            </td>
+        </tr>
+        <tr>
+            <td if:true={showLS}>
+                <div class="counterTitle">Shadow Counters</div>
+                <app-container-light>
+                    <div slot="top">
+                        <app-counter-blue-shadow></app-counter-blue-shadow>
+                    </div>
+                    <div slot="bottom">
+                        <app-counter-red-shadow></app-counter-red-shadow>
+                    </div>
+                </app-container-light>
+            </td>
+            <td if:true={showSS}>
+                <div class="counterTitle">Shadow Counters</div>
+                <app-container-shadow>
+                    <div slot="top">
+                        <app-counter-blue-shadow></app-counter-blue-shadow>
+                    </div>
+                    <div slot="bottom">
+                        <app-counter-red-shadow></app-counter-red-shadow>
+                    </div>
+                </app-container-shadow>
+            </td>
+        </tr>
+    </table>
+
+    <h2>About the Application</h2>
+    <div style="width: 50em">
+        <p>
+            This application is made of a light dom component (Main Layout) that renders 4 container components. One the left column, the containers use light dom
+            while the containers on the right columns use shadow dom. <br/>
+            Each container has 2 slots, top and botton, in which are rendered 'Colored Counter' components. The containers also display the 'Colored Counter' components
+            outside of a slot ("No Slot"). Similarly the 'Colored Counter' components can use light or shadow dom. This finally shows an hierarchy of light dom and
+            shadow dom components, intermingled.
+        </p>
+        <p>
+            Use the browser developer tool to inpect the DOM. It shows where the style definitions are injected, whenever it is on the shadow root on the main document
+            head.
+        </p>
+        <p>
+            The <button type="buttons">buttons</button> at the top toggle some of the containers/components. Shwoing less components helps to understand how the style
+            tags are inserted in the DOM.
+        </p>
+    </div>
+
+    <img src="static/images/lightdom.png"></img>
+
+</template>

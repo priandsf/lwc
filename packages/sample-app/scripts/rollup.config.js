@@ -15,7 +15,7 @@ const syntheticShadow = require('./synthetic-shadow');
 const env = process.env.NODE_ENV || 'development';
 
 const input = path.resolve(__dirname, '../src/main.js');
-const outputDir = path.resolve(__dirname, '../public/js');
+const outputDir = path.resolve(__dirname, '../public/static/js');
 
 function rollupConfig({ target }) {
     const isCompat = target === 'es5';

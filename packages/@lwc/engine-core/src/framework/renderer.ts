@@ -44,7 +44,9 @@ export interface Renderer<N = HostNode, E = HostElement> {
     getElementsByTagName(element: E, tagNameOrWildCard: string): HTMLCollection;
     getElementsByClassName(element: E, names: string): HTMLCollection;
     isConnected(node: N): boolean;
-    insertGlobalStylesheet(content: string): void;
+    // PHIL: handle Light DOM
+    // Added the current element for adding styles to the proper root
+    insertGlobalStylesheet(content: string, element?: E): void;
     assertInstanceOfHTMLElement?(elm: any, msg: string): void;
 }
 

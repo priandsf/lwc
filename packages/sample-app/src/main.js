@@ -15,4 +15,4 @@ import { registerWireService } from 'wire-service';
 registerWireService(register)
 
 // Import this web components to get them loaded and registered
-import Body from "app/body";
+import Main from "app/mainlayout";

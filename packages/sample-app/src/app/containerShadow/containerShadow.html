@@ -1,0 +1,21 @@
+<template>
+    <div if:true={showslots}>
+        <span class="top"></span>
+        <slot name="top"></slot>
+    </div>
+    <br/>
+    <div if:true={showslots}>
+        <span class="bottom"></span>
+        <slot name="bottom"></slot>
+    </div>
+
+    <br/>
+    <div if:true={shownoslots}>
+        (No Slot)
+        <app-counter-blue-light></app-counter-blue-light>
+        <app-counter-blue-shadow></app-counter-blue-shadow>
+        <app-counter-red-light></app-counter-red-light>
+        <app-counter-red-shadow></app-counter-red-shadow>
+    </div>
+
+</template>

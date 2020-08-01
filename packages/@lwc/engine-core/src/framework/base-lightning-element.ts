@@ -39,9 +39,6 @@ import { logError } from '../shared/logger';
 import { getComponentTag } from '../shared/format';
 import { HTMLElementConstructor } from './base-bridge-element';
 
-// PHIL
-import { useLightDom } from './utils';
-
 /**
  * This operation is called with a descriptor of an standard html property
  * that a Custom Element can support (including AOM properties), which
@@ -195,7 +192,7 @@ function BaseLightningElementConstructor(this: LightningElement): LightningEleme
     }
 
     const component = this;
-    const cmpRoot = useLightDom(this) ? elm : renderer.attachShadow(elm, {
+    const cmpRoot = vm.lightDom ? elm : renderer.attachShadow(elm, {
         mode,
         delegatesFocus: !!ctor.delegatesFocus,
         '$$lwc-synthetic-mode$$': true,

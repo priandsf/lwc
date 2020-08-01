@@ -41,13 +41,13 @@ function isCompat(req) {
 }
 
 function staticPath(...args) {
-    return path.join(__dirname+"/..", 'public', ...args);
+    return path.join(__dirname+"/..", 'public', 'static', ...args);
 }
 
 function renderTemplate(template,isCompat) {
     const lwccomponents = (isCompat ? 'lwc-components-compat' : 'lwc-components') + (production ? ".min.js" : ".js");
     return template
-        .replace('{{lwc-components}}', lwccomponents);
+        .replace('static/js/lwc-components.js', `/static/js/${lwccomponents}`);
 }
 
 

@@ -52,12 +52,3 @@ export function guid(): string {
 
     return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
 }
-
-
-//PHIL
-export function useLightDom(elm: any) {
-    const lightDOM = !!(elm.USE_LIGHTDOM && elm.USE_LIGHTDOM())
-    // eslint-disable-next-line no-console
-    console.log(`Light DOM: ${lightDOM}`);
-    return lightDOM;
-}

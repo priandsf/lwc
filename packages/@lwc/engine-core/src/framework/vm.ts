@@ -148,6 +148,9 @@ export interface VM<N = HostNode, E = HostElement> {
         fn: (...args: any[]) => any,
         args?: any[]
     ) => any;
+    // PHIL: Defines if the VM uses the LightDOM or the ShadomDOM
+    /** The component can optionaly use the light DOM */
+    lightDom: boolean;
 }
 
 type VMAssociable = HostNode | LightningElement | ComponentInterface;
@@ -234,6 +237,11 @@ export function removeVM(vm: VM) {
     resetComponentStateWhenRemoved(vm);
 }
 
+// PHIL: check if the component should use the LighDOM or the ShadowDOM
+function useLightDom(def: ComponentDef) {
+    return !!(def.ctor as any).USE_LIGHTDOM;
+}
+
 export function createVM<HostNode, HostElement>(
     elm: HostElement,
     def: ComponentDef,
@@ -282,6 +290,9 @@ export function createVM<HostNode, HostElement>(
         callHook,
         setHook,
         getHook,
+
+        // PHIL: Initialize the use of LightDOM for the component using a static class member
+        lightDom: useLightDom(def),
     };
 
     vm.tro = getTemplateReactiveObserver(vm);

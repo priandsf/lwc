@@ -6,8 +6,7 @@
  */
 import { assert, isArray, isNull, isTrue, isUndefined } from '@lwc/shared';// PHIL: added light dom
 
-// Added by PHIL for the synthetic DOM handling
-import { EmptyArray, useLightDom } from './utils';
+import { EmptyArray } from './utils';
 import {
     rerenderVM,
     createVM,
@@ -55,9 +54,9 @@ function setSyntheticShadowToken(elm: Element, shadowToken: string | undefined) 
     (elm as any)[ShadowTokenPrivateKey] = shadowToken;
 }
 
-function setElementShadowToken(elm: Element, token: string | undefined) {
-    // PHIL
-    if(useLightDom(elm)) {
+function setElementShadowToken(elm: Element, token: string | undefined, lightDom: boolean) {
+    // PHIL: handle Light DOM
+    if(lightDom) {
         setSyntheticShadowToken(elm,token);
     } else {
         (elm as any).$shadowToken$ = token;
@@ -125,7 +124,8 @@ enum LWCDOMMode {
 
 export function fallbackElmHook(elm: Element, vnode: VElement) {
     const { owner } = vnode;
-    if (isTrue(owner.renderer.syntheticShadow)) {
+    // PHIL: handle Light DOM
+    if (isTrue(owner.lightDom) || isTrue(owner.renderer.syntheticShadow)) {
         const {
             data: { context },
         } = vnode;
@@ -140,7 +140,8 @@ export function fallbackElmHook(elm: Element, vnode: VElement) {
         }
         // when running in synthetic shadow mode, we need to set the shadowToken value
         // into each element from the template, so they can be styled accordingly.
-        setElementShadowToken(elm, shadowAttribute);
+        // PHIL: handle Light DOM
+        setElementShadowToken(elm, shadowAttribute, isTrue(owner.lightDom));
     }
     if (process.env.NODE_ENV !== 'production') {
         const {
@@ -198,7 +199,8 @@ export function allocateChildrenHook(vnode: VCustomElement) {
     const children = vnode.aChildren || vnode.children;
 
     vm.aChildren = children;
-    if (isTrue(vm.renderer.syntheticShadow)) {
+    // PHIL: handle Light DOM
+    if (isTrue(vm.lightDom) || isTrue(vm.renderer.syntheticShadow)) {
         // slow path
         allocateInSlot(vm, children);
         // save the allocated children in case this vnode is reused.
@@ -218,11 +220,13 @@ export function createViewModelHook(elm: HTMLElement, vnode: VCustomElement) {
     const { sel, mode, ctor, owner } = vnode;
     const def = getComponentInternalDef(ctor);
     setElementProto(elm, def);
-    if (isTrue(owner.renderer.syntheticShadow)) {
+    // PHIL: handle Light DOM
+    if (isTrue(owner.lightDom) || isTrue(owner.renderer.syntheticShadow)) {
         const { shadowAttribute } = owner.context;
         // when running in synthetic shadow mode, we need to set the shadowToken value
         // into each element from the template, so they can be styled accordingly.
-        setElementShadowToken(elm, shadowAttribute);
+        // PHIL: handle Light DOM
+        setElementShadowToken(elm, shadowAttribute, isTrue(owner.lightDom));
     }
     createVM(elm, def, {
         mode,

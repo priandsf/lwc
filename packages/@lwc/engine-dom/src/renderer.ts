@@ -8,12 +8,26 @@
 import { assert, hasOwnProperty, isUndefined, create } from '@lwc/shared';
 import { getAttrNameFromPropName, Renderer } from '@lwc/engine-core';
 
-const globalStylesheets: { [content: string]: true } = create(null);
+// PHIL: we make the style sheet identifiable by an ID, not just
+const globalStylesheets: { [content: string]: string } = create(null);
 const globalStylesheetsParentElement: Element = document.head || document.body || document;
+
+// PHIL: to handle the ID of stylesheets
+let ssidNext = 1;
+const styleList = Symbol('styleList');
 
 // TODO [#0]: Evaluate how we can extract the `$shadowToken$` property name in a shared package
 // to avoid having to synchronize it between the different modules.
 export const useSyntheticShadow = hasOwnProperty.call(Element.prototype, '$shadowToken$');
+
+function findShadowRoot(elm: Element): DocumentFragment|undefined {
+    for(let e:any=elm; e!=null; e=e.parentNode) {
+        if(e instanceof DocumentFragment) {
+            return e;
+        }
+    }
+    return undefined;
+}
 
 export const renderer: Renderer<Node, Element> = {
     ssr: false,
@@ -146,18 +160,31 @@ export const renderer: Renderer<Node, Element> = {
         return node.isConnected;
     },
 
-    insertGlobalStylesheet(content: string): void {
-        if (!isUndefined(globalStylesheets[content])) {
-            return;
+    // PHIL: This function has been rewritten to add scoped styles either at the document level
+    // or at the shadow root, if applicable
+    insertGlobalStylesheet(content: string, element?: Element): void {
+        // Look if the element id with a shadow root
+        let styleRoot;
+        let doc: (Document|DocumentFragment|undefined);
+        if(element!=null) {
+            doc = findShadowRoot(element);
+        }
+        if(!doc) {
+            doc = document;
+            styleRoot = globalStylesheetsParentElement;
+        } else {
+            styleRoot = doc;
         }
 
-        globalStylesheets[content] = true;
-
-        const elm = document.createElement('style');
-        elm.type = 'text/css';
-        elm.textContent = content;
-
-        globalStylesheetsParentElement.appendChild(elm);
+        const ssid = globalStylesheets[content] || (globalStylesheets[content]=`lwc-ssid${ssidNext++}`);
+        const set: Set<String> = ((doc as any)[styleList] as Set<String>) || ((doc as any)[styleList] = new Set<String>());
+        if(!set.has(ssid)) {
+            const elm = document.createElement('style');
+            elm.type = 'text/css';
+            elm.textContent = content;
+            styleRoot.insertBefore(elm,styleRoot.firstChild); //styleRoot.prepend(elm); // Not for IE....
+            set.add(ssid);
+        }
     },
 
     assertInstanceOfHTMLElement(elm: any, msg: string) {

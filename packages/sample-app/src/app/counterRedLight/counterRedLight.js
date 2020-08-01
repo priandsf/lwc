@@ -2,7 +2,7 @@ import { LightningElement } from 'lwc';
 
 export default class Counter extends LightningElement {
 
-    USE_LIGHTDOM() { return true; }
+    static USE_LIGHTDOM = true;
 
     counter = 0;
 

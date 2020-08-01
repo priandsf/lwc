@@ -1,4 +1,4 @@
-# Simple LightDOM demo with LWC
+# Simple LightDOM for LWC
 
 This demo is a POC shows the same application using slots and scopes, using different modes: native shadow dom, synthetic shadow and light dom.
 

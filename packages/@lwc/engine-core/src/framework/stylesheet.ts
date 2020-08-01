@@ -99,18 +99,22 @@ function evaluateStylesheetsContent(
 export function getStylesheetsContent(vm: VM, template: Template): string[] {
     const { stylesheets, stylesheetTokens: tokens } = template;
     const { syntheticShadow } = vm.renderer;
+    // PHIL: handle Light DOM
+    const { lightDom } = vm;
 
     let content: string[] = [];
 
     if (!isUndefined(stylesheets) && !isUndefined(tokens)) {
-        const hostSelector = syntheticShadow ? `[${tokens.hostAttribute}]` : '';
-        const shadowSelector = syntheticShadow ? `[${tokens.shadowAttribute}]` : '';
+        // PHIL: handle Light DOM
+        const hostSelector = (lightDom || syntheticShadow) ? `[${tokens.hostAttribute}]` : '';
+        const shadowSelector = (lightDom || syntheticShadow) ? `[${tokens.shadowAttribute}]` : '';
 
+        // PHIL: handle Light DOM
         content = evaluateStylesheetsContent(
             stylesheets,
             hostSelector,
             shadowSelector,
-            !syntheticShadow
+            !(lightDom || syntheticShadow)
         );
     }
 
@@ -118,11 +122,11 @@ export function getStylesheetsContent(vm: VM, template: Template): string[] {
 }
 
 export function createStylesheet(vm: VM, stylesheets: string[]): VNode | null {
-    const { renderer } = vm;
+    const { lightDom, renderer } = vm;
 
-    if (renderer.syntheticShadow) {
+    if (lightDom || renderer.syntheticShadow) {
         for (let i = 0; i < stylesheets.length; i++) {
-            renderer.insertGlobalStylesheet(stylesheets[i]);
+            renderer.insertGlobalStylesheet(stylesheets[i],vm.elm);
         }
 
         return null;

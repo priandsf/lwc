@@ -27,7 +27,8 @@
         "rollup-plugin-copy": "^3.1.0",
         "rollup-plugin-node-resolve": "^5.2.0",
         "rollup-plugin-replace": "~2.1.0",
-        "rollup-plugin-terser": "^5.1.2"
+        "rollup-plugin-terser": "^5.1.2",
+        "gh-pages": "3.1.0"
     },
     "engines": {
         "node": ">=10.13.0",
@@ -37,6 +38,8 @@
     "scripts": {
         "make": "cross-env rollup -c ./scripts/rollup.config.js",
         "serve": "node index.js",
-        "start": "concurrently --kill-others \"yarn make --watch\" \"yarn serve\""
+        "start": "concurrently --kill-others \"yarn make --watch\" \"yarn serve\"",
+        "deploy-static": "gh-pages -d public -u priand@salesforce.com -r git@git.soma.salesforce.com:priand/pages-lwc-lightdom.git -m \"LWC static site\" && yarn static-url",
+        "static-url": "echo \"https://git.soma.salesforce.com/pages/priand/pages-lwc-lightdom\""
     }
 }
