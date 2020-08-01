@@ -12,10 +12,10 @@
     <br/>
     <div if:true={shownoslots}>
         (No Slot)
-        <app-counter-blue-light></app-counter-blue-light>
-        <app-counter-blue-shadow></app-counter-blue-shadow>
-        <app-counter-red-light></app-counter-red-light>
-        <app-counter-red-shadow></app-counter-red-shadow>
+        <app-counter-blue-light if:true={showLightCounter}></app-counter-blue-light>
+        <app-counter-blue-shadow if:true={showShadowCounter}></app-counter-blue-shadow>
+        <app-counter-red-light if:true={showLightCounter}></app-counter-red-light>
+        <app-counter-red-shadow if:true={showShadowCounter}></app-counter-red-shadow>
     </div>
 
 </template>

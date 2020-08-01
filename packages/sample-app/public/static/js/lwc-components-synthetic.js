@@ -11702,15 +11702,15 @@
       key: 7
     }, []), $cmp.shownoslots ? api_element("div", {
       key: 12
-    }, [api_text("(No Slot)"), api_custom_element("app-counter-blue-light", _appCounterBlueLight, {
+    }, [api_text("(No Slot)"), $cmp.showLightCounter ? api_custom_element("app-counter-blue-light", _appCounterBlueLight, {
       key: 8
-    }, []), api_custom_element("app-counter-blue-shadow", _appCounterBlueShadow, {
+    }, []) : null, $cmp.showShadowCounter ? api_custom_element("app-counter-blue-shadow", _appCounterBlueShadow, {
       key: 9
-    }, []), api_custom_element("app-counter-red-light", _appCounterRedLight, {
+    }, []) : null, $cmp.showLightCounter ? api_custom_element("app-counter-red-light", _appCounterRedLight, {
       key: 10
-    }, []), api_custom_element("app-counter-red-shadow", _appCounterRedShadow, {
+    }, []) : null, $cmp.showShadowCounter ? api_custom_element("app-counter-red-shadow", _appCounterRedShadow, {
       key: 11
-    }, [])]) : null];
+    }, []) : null]) : null];
   }
 
   var _tmpl$4 = registerTemplate(tmpl$4);
@@ -11765,22 +11765,24 @@
     setParam(p, !isParam(p));
   }
 
-  class Layout extends BaseLightningElement {
+  class LayoutLight extends BaseLightningElement {
     constructor(...args) {
       super(...args);
       this.showslots = isParam('slots');
       this.shownoslots = isParam('no-slots');
+      this.showLightCounter = isParam('light-counters');
+      this.showShadowCounter = isParam('shadow-counters');
     }
 
   }
 
-  Layout.USE_LIGHTDOM = true;
+  LayoutLight.USE_LIGHTDOM = true;
 
-  registerDecorators(Layout, {
-    fields: ["showslots", "shownoslots"]
+  registerDecorators(LayoutLight, {
+    fields: ["showslots", "shownoslots", "showLightCounter", "showShadowCounter"]
   });
 
-  var _appContainerLight = registerComponent(Layout, {
+  var _appContainerLight = registerComponent(LayoutLight, {
     tmpl: _tmpl$4
   });
 
@@ -11826,15 +11828,15 @@
       key: 7
     }, []), $cmp.shownoslots ? api_element("div", {
       key: 12
-    }, [api_text("(No Slot)"), api_custom_element("app-counter-blue-light", _appCounterBlueLight, {
+    }, [api_text("(No Slot)"), $cmp.showLightCounter ? api_custom_element("app-counter-blue-light", _appCounterBlueLight, {
       key: 8
-    }, []), api_custom_element("app-counter-blue-shadow", _appCounterBlueShadow, {
+    }, []) : null, $cmp.showShadowCounter ? api_custom_element("app-counter-blue-shadow", _appCounterBlueShadow, {
       key: 9
-    }, []), api_custom_element("app-counter-red-light", _appCounterRedLight, {
+    }, []) : null, $cmp.showLightCounter ? api_custom_element("app-counter-red-light", _appCounterRedLight, {
       key: 10
-    }, []), api_custom_element("app-counter-red-shadow", _appCounterRedShadow, {
+    }, []) : null, $cmp.showShadowCounter ? api_custom_element("app-counter-red-shadow", _appCounterRedShadow, {
       key: 11
-    }, [])]) : null];
+    }, []) : null]) : null];
   }
 
   var _tmpl$5 = registerTemplate(tmpl$5);
@@ -11854,12 +11856,14 @@
       super(...args);
       this.showslots = isParam('slots');
       this.shownoslots = isParam('no-slots');
+      this.showLightCounter = isParam('light-counters');
+      this.showShadowCounter = isParam('shadow-counters');
     }
 
   }
 
   registerDecorators(LayoutShadow, {
-    fields: ["showslots", "shownoslots"]
+    fields: ["showslots", "shownoslots", "showLightCounter", "showShadowCounter"]
   });
 
   var _appContainerShadow = registerComponent(LayoutShadow, {
