@@ -16,3 +16,8 @@ registerWireService(register)
 
 // Import this web components to get them loaded and registered
 import Main from "app/mainlayout";
+
+// Enable one of these with sto test the slot propagation
+// Also add for the second on synthetic shadow (as synthetic shadow does yet work with light DOM, the page is simplified)
+//import Main from "slots/main";
+//import Main from "slots/mainSynthetic";

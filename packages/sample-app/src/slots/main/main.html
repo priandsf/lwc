@@ -1,0 +1,24 @@
+<template>
+    <h1>Testing slot propagation</h1>
+    
+    <h2>All Light DOM</h2>
+    <slots-container-light>
+        <div>Banner 1 LL</div>
+    </slots-container-light>
+
+    <h2>All Shadow DOM</h2>
+    <slots-container-shadow>
+        <div>Banner 2 SS</div>
+    </slots-container-shadow>
+
+    <h2>Shadow container, Light DOM</h2>
+    <slots-container-shadow-light>
+        <div>Banner 3 SL</div>
+    </slots-container-shadow-light>
+
+    <h2>Light container, Shadow DOM</h2>
+    <slots-container-light-shadow>
+        <div>Banner 4 LS</div>
+    </slots-container-light-shadow>
+
+</template>
