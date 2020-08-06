@@ -1,9 +1,13 @@
 import { LightningElement } from 'lwc';
 import { isParam } from '../../util'
 
-export default class LayoutLight extends LightningElement {
+// Test chaining prototype
+class BaseLayoutLight extends LightningElement {
 
     static USE_LIGHTDOM = true;
+}
+
+export default class LayoutLight extends BaseLayoutLight {
 
     showslots = isParam('slots')
     shownoslots = isParam('no-slots')

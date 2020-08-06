@@ -11765,7 +11765,11 @@
     setParam(p, !isParam(p));
   }
 
-  class LayoutLight extends BaseLightningElement {
+  class BaseLayoutLight extends BaseLightningElement {}
+
+  BaseLayoutLight.USE_LIGHTDOM = true;
+
+  class LayoutLight extends BaseLayoutLight {
     constructor(...args) {
       super(...args);
       this.showslots = isParam('slots');
@@ -11775,8 +11779,6 @@
     }
 
   }
-
-  LayoutLight.USE_LIGHTDOM = true;
 
   registerDecorators(LayoutLight, {
     fields: ["showslots", "shownoslots", "showLightCounter", "showShadowCounter"]
