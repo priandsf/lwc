@@ -1,0 +1,12 @@
+<template>
+
+    <h3 class="my-4">Products</h3>
+    <div class="list-group">
+        <template if:true={categories.data}>
+            <template for:each={categories.data} for:item="category">
+                <commerce-category-item key={category} category={category}></commerce-category-item>
+            </template>
+        </template>
+    </div>
+
+</template>

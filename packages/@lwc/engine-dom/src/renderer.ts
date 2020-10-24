@@ -20,6 +20,18 @@ const globalStylesheetsParentElement: Element = document.head || document.body |
 
 let getCustomElement, defineCustomElement, HTMLElementConstructor;
 
+
+// Coming from SSR
+// Read the existing styles from the document
+// Note that this adds some bootstrap code time
+// We could only do that if SSR was performed?
+(function readExistingStyles() {
+    const styles = globalStylesheetsParentElement.getElementsByTagName('style');
+    for(let i=0; i<styles.length; i++) {
+        globalStylesheets[styles[i].innerText] = true;
+    }
+})();
+
 function isCustomElementRegistryAvailable() {
     if (typeof customElements === 'undefined') {
         return false;
@@ -78,6 +90,12 @@ if (isCustomElementRegistryAvailable()) {
     HTMLElementConstructor.prototype = HTMLElement.prototype;
 }
 
+function removeAllChildNodes(parent: Node) :void {
+    while (parent.firstChild) {
+        parent.removeChild(parent.firstChild);
+    }
+}
+
 // TODO [#0]: Evaluate how we can extract the `$shadowToken$` property name in a shared package
 // to avoid having to synchronize it between the different modules.
 export const useSyntheticShadow = hasOwnProperty.call(Element.prototype, '$shadowToken$');
@@ -109,6 +127,18 @@ export const renderer: Renderer<Node, Element> = {
     },
 
     attachShadow(element: Element, options: ShadowRootInit): ShadowRoot {
+        // Poorman client side hydration
+        // We simply remove the existing content so it will be recreated
+        // To identify the ssr root, we could also set a ssr-root attribute
+        if(element.shadowRoot) {
+            // There was a shadow root - clear up its content
+            removeAllChildNodes(element.shadowRoot);
+        }
+        // Ok, there is not yet a shodow root
+        // We remove the content only when in synthetic shadow, else the light dom contains the slots
+        if(useSyntheticShadow) {
+            removeAllChildNodes(element);
+        }
         return element.attachShadow(options);
     },
 

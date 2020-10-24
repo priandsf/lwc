@@ -4310,11 +4310,6 @@ function stylesheet(hostSelector, shadowSelector, nativeShadow) {
 }
 var _implicitStylesheets = [stylesheet];
 
-function stylesheet$1(hostSelector, shadowSelector, nativeShadow) {
-  return [".blue", shadowSelector, " {color: blue;}\n"].join('');
-}
-var _implicitStylesheets$1 = [stylesheet$1];
-
 /* proxy-compat-disable */
 
 /*
@@ -7619,6 +7614,64 @@ defineProperty$1$1(BaseLightningElementConstructor, 'CustomElementConstructor', 
 
 
 const BaseLightningElement = BaseLightningElementConstructor;
+
+function internalWireFieldDecorator(key) {
+  return {
+    get() {
+      const vm = getAssociatedVM(this);
+      componentValueObserved(vm, key);
+      return vm.cmpFields[key];
+    },
+
+    set(value) {
+      const vm = getAssociatedVM(this);
+      /**
+       * Reactivity for wired fields is provided in wiring.
+       * We intentionally add reactivity here since this is just
+       * letting the author to do the wrong thing, but it will keep our
+       * system to be backward compatible.
+       */
+
+      if (value !== vm.cmpFields[key]) {
+        vm.cmpFields[key] = value;
+        componentValueMutated(vm, key);
+      }
+    },
+
+    enumerable: true,
+    configurable: true
+  };
+}
+
+function internalTrackDecorator(key) {
+  return {
+    get() {
+      const vm = getAssociatedVM(this);
+      componentValueObserved(vm, key);
+      return vm.cmpFields[key];
+    },
+
+    set(newValue) {
+      const vm = getAssociatedVM(this);
+
+      {
+        const vmBeingRendered = getVMBeingRendered();
+        assert$1$1.invariant(!isInvokingRender, `${vmBeingRendered}.render() method has side effects on the state of ${vm}.${toString$1(key)}`);
+        assert$1$1.invariant(!isUpdatingTemplate, `Updating the template of ${vmBeingRendered} has side effects on the state of ${vm}.${toString$1(key)}`);
+      }
+
+      const reactiveOrAnyValue = reactiveMembrane.getProxy(newValue);
+
+      if (reactiveOrAnyValue !== vm.cmpFields[key]) {
+        vm.cmpFields[key] = reactiveOrAnyValue;
+        componentValueMutated(vm, key);
+      }
+    },
+
+    enumerable: true,
+    configurable: true
+  };
+}
 /**
  * Copyright (C) 2018 salesforce.com, inc.
  */
@@ -7793,6 +7846,172 @@ if (!_globalThis$1$1$1.lwcRuntimeFlags) {
 }
 
 const runtimeFlags$1 = _globalThis$1$1$1.lwcRuntimeFlags; // This function is not supported for use within components and is meant for
+
+function createPublicPropertyDescriptor(key) {
+  return {
+    get() {
+      const vm = getAssociatedVM(this);
+
+      if (isBeingConstructed(vm)) {
+        {
+          logError(`Can’t read the value of property \`${toString$1(key)}\` from the constructor because the owner component hasn’t set the value yet. Instead, use the constructor to set a default value for the property.`, vm);
+        }
+
+        return;
+      }
+
+      componentValueObserved(vm, key);
+      return vm.cmpProps[key];
+    },
+
+    set(newValue) {
+      const vm = getAssociatedVM(this);
+
+      {
+        const vmBeingRendered = getVMBeingRendered();
+        assert$1$1.invariant(!isInvokingRender, `${vmBeingRendered}.render() method has side effects on the state of ${vm}.${toString$1(key)}`);
+        assert$1$1.invariant(!isUpdatingTemplate, `Updating the template of ${vmBeingRendered} has side effects on the state of ${vm}.${toString$1(key)}`);
+      }
+
+      vm.cmpProps[key] = newValue;
+      componentValueMutated(vm, key);
+    },
+
+    enumerable: true,
+    configurable: true
+  };
+}
+
+class AccessorReactiveObserver extends ReactiveObserver {
+  constructor(vm, set) {
+    super(() => {
+      if (isFalse$1$1(this.debouncing)) {
+        this.debouncing = true;
+        addCallbackToNextTick(() => {
+          if (isTrue$1$1$1(this.debouncing)) {
+            const {
+              value
+            } = this;
+            const {
+              isDirty: dirtyStateBeforeSetterCall,
+              component,
+              idx
+            } = vm;
+            set.call(component, value); // de-bouncing after the call to the original setter to prevent
+            // infinity loop if the setter itself is mutating things that
+            // were accessed during the previous invocation.
+
+            this.debouncing = false;
+
+            if (isTrue$1$1$1(vm.isDirty) && isFalse$1$1(dirtyStateBeforeSetterCall) && idx > 0) {
+              // immediate rehydration due to a setter driven mutation, otherwise
+              // the component will get rendered on the second tick, which it is not
+              // desirable.
+              rerenderVM(vm);
+            }
+          }
+        });
+      }
+    });
+    this.debouncing = false;
+  }
+
+  reset(value) {
+    super.reset();
+    this.debouncing = false;
+
+    if (arguments.length > 0) {
+      this.value = value;
+    }
+  }
+
+}
+
+function createPublicAccessorDescriptor(key, descriptor) {
+  const {
+    get,
+    set,
+    enumerable,
+    configurable
+  } = descriptor;
+
+  if (!isFunction$1(get)) {
+    {
+      assert$1$1.invariant(isFunction$1(get), `Invalid compiler output for public accessor ${toString$1(key)} decorated with @api`);
+    }
+
+    throw new Error();
+  }
+
+  return {
+    get() {
+      {
+        // Assert that the this value is an actual Component with an associated VM.
+        getAssociatedVM(this);
+      }
+
+      return get.call(this);
+    },
+
+    set(newValue) {
+      const vm = getAssociatedVM(this);
+
+      {
+        const vmBeingRendered = getVMBeingRendered();
+        assert$1$1.invariant(!isInvokingRender, `${vmBeingRendered}.render() method has side effects on the state of ${vm}.${toString$1(key)}`);
+        assert$1$1.invariant(!isUpdatingTemplate, `Updating the template of ${vmBeingRendered} has side effects on the state of ${vm}.${toString$1(key)}`);
+      }
+
+      if (set) {
+        if (runtimeFlags$1.ENABLE_REACTIVE_SETTER) {
+          let ro = vm.oar[key];
+
+          if (isUndefined$1$1(ro)) {
+            ro = vm.oar[key] = new AccessorReactiveObserver(vm, set);
+          } // every time we invoke this setter from outside (through this wrapper setter)
+          // we should reset the value and then debounce just in case there is a pending
+          // invocation the next tick that is not longer relevant since the value is changing
+          // from outside.
+
+
+          ro.reset(newValue);
+          ro.observe(() => {
+            set.call(this, newValue);
+          });
+        } else {
+          set.call(this, newValue);
+        }
+      } else {
+        assert$1$1.fail(`Invalid attempt to set a new value for property ${toString$1(key)} of ${vm} that does not has a setter decorated with @api.`);
+      }
+    },
+
+    enumerable,
+    configurable
+  };
+}
+
+function createObservedFieldPropertyDescriptor(key) {
+  return {
+    get() {
+      const vm = getAssociatedVM(this);
+      componentValueObserved(vm, key);
+      return vm.cmpFields[key];
+    },
+
+    set(newValue) {
+      const vm = getAssociatedVM(this);
+
+      if (newValue !== vm.cmpFields[key]) {
+        vm.cmpFields[key] = newValue;
+        componentValueMutated(vm, key);
+      }
+    },
+
+    enumerable: true,
+    configurable: true
+  };
+}
 /*
  * Copyright (c) 2018, salesforce.com, inc.
  * All rights reserved.
@@ -7810,7 +8029,213 @@ var PropType;
   PropType[PropType["GetSet"] = 3] = "GetSet";
 })(PropType || (PropType = {}));
 
+function validateObservedField(Ctor, fieldName, descriptor) {
+  {
+    if (!isUndefined$1$1(descriptor)) {
+      assert$1$1.fail(`Compiler Error: Invalid field ${fieldName} declaration.`);
+    }
+  }
+}
+
+function validateFieldDecoratedWithTrack(Ctor, fieldName, descriptor) {
+  {
+    if (!isUndefined$1$1(descriptor)) {
+      assert$1$1.fail(`Compiler Error: Invalid @track ${fieldName} declaration.`);
+    }
+  }
+}
+
+function validateFieldDecoratedWithWire(Ctor, fieldName, descriptor) {
+  {
+    if (!isUndefined$1$1(descriptor)) {
+      assert$1$1.fail(`Compiler Error: Invalid @wire(...) ${fieldName} field declaration.`);
+    }
+  }
+}
+
+function validateMethodDecoratedWithWire(Ctor, methodName, descriptor) {
+  {
+    if (isUndefined$1$1(descriptor) || !isFunction$1(descriptor.value) || isFalse$1$1(descriptor.writable)) {
+      assert$1$1.fail(`Compiler Error: Invalid @wire(...) ${methodName} method declaration.`);
+    }
+  }
+}
+
+function validateFieldDecoratedWithApi(Ctor, fieldName, descriptor) {
+  {
+    if (!isUndefined$1$1(descriptor)) {
+      assert$1$1.fail(`Compiler Error: Invalid @api ${fieldName} field declaration.`);
+    }
+  }
+}
+
+function validateAccessorDecoratedWithApi(Ctor, fieldName, descriptor) {
+  {
+    if (isUndefined$1$1(descriptor)) {
+      assert$1$1.fail(`Compiler Error: Invalid @api get ${fieldName} accessor declaration.`);
+    } else if (isFunction$1(descriptor.set)) {
+      assert$1$1.isTrue(isFunction$1(descriptor.get), `Compiler Error: Missing getter for property ${toString$1(fieldName)} decorated with @api in ${Ctor}. You cannot have a setter without the corresponding getter.`);
+    } else if (!isFunction$1(descriptor.get)) {
+      assert$1$1.fail(`Compiler Error: Missing @api get ${fieldName} accessor declaration.`);
+    }
+  }
+}
+
+function validateMethodDecoratedWithApi(Ctor, methodName, descriptor) {
+  {
+    if (isUndefined$1$1(descriptor) || !isFunction$1(descriptor.value) || isFalse$1$1(descriptor.writable)) {
+      assert$1$1.fail(`Compiler Error: Invalid @api ${methodName} method declaration.`);
+    }
+  }
+}
+/**
+ * INTERNAL: This function can only be invoked by compiled code. The compiler
+ * will prevent this function from being imported by user-land code.
+ */
+
+
+function registerDecorators(Ctor, meta) {
+  const proto = Ctor.prototype;
+  const {
+    publicProps,
+    publicMethods,
+    wire,
+    track,
+    fields
+  } = meta;
+  const apiMethods = create$1$1(null);
+  const apiFields = create$1$1(null);
+  const wiredMethods = create$1$1(null);
+  const wiredFields = create$1$1(null);
+  const observedFields = create$1$1(null);
+  const apiFieldsConfig = create$1$1(null);
+  let descriptor;
+
+  if (!isUndefined$1$1(publicProps)) {
+    for (const fieldName in publicProps) {
+      const propConfig = publicProps[fieldName];
+      apiFieldsConfig[fieldName] = propConfig.config;
+      descriptor = getOwnPropertyDescriptor$1$1(proto, fieldName);
+
+      if (propConfig.config > 0) {
+        // accessor declaration
+        {
+          validateAccessorDecoratedWithApi(Ctor, fieldName, descriptor);
+        }
+
+        if (isUndefined$1$1(descriptor)) {
+          throw new Error();
+        }
+
+        descriptor = createPublicAccessorDescriptor(fieldName, descriptor);
+      } else {
+        // field declaration
+        {
+          validateFieldDecoratedWithApi(Ctor, fieldName, descriptor);
+        }
+
+        descriptor = createPublicPropertyDescriptor(fieldName);
+      }
+
+      apiFields[fieldName] = descriptor;
+      defineProperty$1$1(proto, fieldName, descriptor);
+    }
+  }
+
+  if (!isUndefined$1$1(publicMethods)) {
+    forEach$1$1.call(publicMethods, methodName => {
+      descriptor = getOwnPropertyDescriptor$1$1(proto, methodName);
+
+      {
+        validateMethodDecoratedWithApi(Ctor, methodName, descriptor);
+      }
+
+      if (isUndefined$1$1(descriptor)) {
+        throw new Error();
+      }
+
+      apiMethods[methodName] = descriptor;
+    });
+  }
+
+  if (!isUndefined$1$1(wire)) {
+    for (const fieldOrMethodName in wire) {
+      const {
+        adapter,
+        method,
+        config: configCallback,
+        dynamic = []
+      } = wire[fieldOrMethodName];
+      descriptor = getOwnPropertyDescriptor$1$1(proto, fieldOrMethodName);
+
+      if (method === 1) {
+        {
+          assert$1$1.isTrue(adapter, `@wire on method "${fieldOrMethodName}": adapter id must be truthy.`);
+          validateMethodDecoratedWithWire(Ctor, fieldOrMethodName, descriptor);
+        }
+
+        if (isUndefined$1$1(descriptor)) {
+          throw new Error();
+        }
+
+        wiredMethods[fieldOrMethodName] = descriptor;
+        storeWiredMethodMeta(descriptor, adapter, configCallback, dynamic);
+      } else {
+        {
+          assert$1$1.isTrue(adapter, `@wire on field "${fieldOrMethodName}": adapter id must be truthy.`);
+          validateFieldDecoratedWithWire(Ctor, fieldOrMethodName, descriptor);
+        }
+
+        descriptor = internalWireFieldDecorator(fieldOrMethodName);
+        wiredFields[fieldOrMethodName] = descriptor;
+        storeWiredFieldMeta(descriptor, adapter, configCallback, dynamic);
+        defineProperty$1$1(proto, fieldOrMethodName, descriptor);
+      }
+    }
+  }
+
+  if (!isUndefined$1$1(track)) {
+    for (const fieldName in track) {
+      descriptor = getOwnPropertyDescriptor$1$1(proto, fieldName);
+
+      {
+        validateFieldDecoratedWithTrack(Ctor, fieldName, descriptor);
+      }
+
+      descriptor = internalTrackDecorator(fieldName);
+      defineProperty$1$1(proto, fieldName, descriptor);
+    }
+  }
+
+  if (!isUndefined$1$1(fields)) {
+    for (let i = 0, n = fields.length; i < n; i++) {
+      const fieldName = fields[i];
+      descriptor = getOwnPropertyDescriptor$1$1(proto, fieldName);
+
+      {
+        validateObservedField(Ctor, fieldName, descriptor);
+      }
+
+      observedFields[fieldName] = createObservedFieldPropertyDescriptor(fieldName);
+    }
+  }
+
+  setDecoratorsMeta(Ctor, {
+    apiMethods,
+    apiFields,
+    apiFieldsConfig,
+    wiredMethods,
+    wiredFields,
+    observedFields
+  });
+  return Ctor;
+}
+
 const signedDecoratorToMetaMap = new Map();
+
+function setDecoratorsMeta(Ctor, meta) {
+  signedDecoratorToMetaMap.set(Ctor, meta);
+}
 
 const defaultMeta = {
   apiMethods: EmptyObject,
@@ -10543,6 +10968,36 @@ function getAdapterToken(adapter) {
   return AdapterToTokenMap.get(adapter);
 }
 
+function storeWiredMethodMeta(descriptor, adapter, configCallback, dynamic) {
+  // support for callable adapters
+  if (adapter.adapter) {
+    adapter = adapter.adapter;
+  }
+
+  const method = descriptor.value;
+  const def = {
+    adapter,
+    method,
+    configCallback,
+    dynamic
+  };
+  WireMetaMap.set(descriptor, def);
+}
+
+function storeWiredFieldMeta(descriptor, adapter, configCallback, dynamic) {
+  // support for callable adapters
+  if (adapter.adapter) {
+    adapter = adapter.adapter;
+  }
+
+  const def = {
+    adapter,
+    configCallback,
+    dynamic
+  };
+  WireMetaMap.set(descriptor, def);
+}
+
 function installWireAdapters(vm) {
   const {
     context,
@@ -10602,7 +11057,18 @@ function disconnectWireAdapters(vm) {
 
 const globalStylesheets = create$2(null);
 const globalStylesheetsParentElement = document.head || document.body || document;
-let getCustomElement, defineCustomElement, HTMLElementConstructor$1;
+let getCustomElement, defineCustomElement, HTMLElementConstructor$1; // Coming from SSR
+// Read the existing styles from the document
+// Note that this adds some bootstrap code time
+// We could only do that if SSR was performed?
+
+(function readExistingStyles() {
+  const styles = globalStylesheetsParentElement.getElementsByTagName('style');
+
+  for (let i = 0; i < styles.length; i++) {
+    globalStylesheets[styles[i].innerText] = true;
+  }
+})();
 
 function isCustomElementRegistryAvailable() {
   if (typeof customElements === 'undefined') {
@@ -10669,6 +11135,12 @@ if (isCustomElementRegistryAvailable()) {
   };
 
   HTMLElementConstructor$1.prototype = HTMLElement.prototype;
+}
+
+function removeAllChildNodes(parent) {
+  while (parent.firstChild) {
+    parent.removeChild(parent.firstChild);
+  }
 } // TODO [#0]: Evaluate how we can extract the `$shadowToken$` property name in a shared package
 // to avoid having to synchronize it between the different modules.
 
@@ -10699,6 +11171,20 @@ const renderer = {
   },
 
   attachShadow(element, options) {
+    // Poorman client side hydration
+    // We simply remove the existing content so it will be recreated
+    // To identify the ssr root, we could also set a ssr-root attribute
+    if (element.shadowRoot) {
+      // There was a shadow root - clear up its content
+      removeAllChildNodes(element.shadowRoot);
+    } // Ok, there is not yet a shodow root
+    // We remove the content only when in synthetic shadow, else the light dom contains the slots
+
+
+    if (useSyntheticShadow) {
+      removeAllChildNodes(element);
+    }
+
     return element.attachShadow(options);
   },
 
@@ -10967,17 +11453,35 @@ freeze$2(BaseLightningElement);
 seal$2(BaseLightningElement.prototype);
 /* version: 1.8.5 */
 
+function stylesheet$1(hostSelector, shadowSelector, nativeShadow) {
+  return [".blue", shadowSelector, " {color: blue;}\n"].join('');
+}
+var _implicitStylesheets$1 = [stylesheet$1];
+
 function tmpl($api, $cmp, $slotset, $ctx) {
   const {
     t: api_text,
+    d: api_dynamic,
+    b: api_bind,
     h: api_element
   } = $api;
+  const {
+    _m0
+  } = $ctx;
   return [api_element("div", {
     classMap: {
       "blue": true
     },
-    key: 0
-  }, [api_text("Blue Text")])];
+    key: 1
+  }, [api_text("Blue Text, clicked $"), api_dynamic($cmp.clicked), api_text(", "), api_element("button", {
+    attrs: {
+      "type": "button"
+    },
+    key: 0,
+    on: {
+      "click": _m0 || ($ctx._m0 = api_bind($cmp.onClick))
+    }
+  }, [api_text("Click Me!")])])];
 }
 
 var _tmpl = registerTemplate(tmpl);
@@ -10987,13 +11491,27 @@ if (_implicitStylesheets$1) {
   tmpl.stylesheets.push.apply(tmpl.stylesheets, _implicitStylesheets$1);
 }
 tmpl.stylesheetTokens = {
-  hostAttribute: "app-squareBlue_squareBlue-host",
-  shadowAttribute: "app-squareBlue_squareBlue"
+  hostAttribute: "demo-squareBlue_squareBlue-host",
+  shadowAttribute: "demo-squareBlue_squareBlue"
 };
 
-class SquareBlue extends BaseLightningElement {}
+class SquareBlue extends BaseLightningElement {
+  constructor(...args) {
+    super(...args);
+    this.clicked = 0;
+  }
 
-var _appSquareBlue = registerComponent(SquareBlue, {
+  onClick() {
+    this.clicked++;
+  }
+
+}
+
+registerDecorators(SquareBlue, {
+  fields: ["clicked"]
+});
+
+var _demoSquareBlue = registerComponent(SquareBlue, {
   tmpl: _tmpl
 });
 
@@ -11005,14 +11523,27 @@ var _implicitStylesheets$2 = [stylesheet$2];
 function tmpl$1($api, $cmp, $slotset, $ctx) {
   const {
     t: api_text,
+    d: api_dynamic,
+    b: api_bind,
     h: api_element
   } = $api;
+  const {
+    _m0
+  } = $ctx;
   return [api_element("div", {
     classMap: {
       "red": true
     },
-    key: 0
-  }, [api_text("Red Text")])];
+    key: 1
+  }, [api_text("Red Text, clicked $"), api_dynamic($cmp.clicked), api_text(", "), api_element("button", {
+    attrs: {
+      "type": "button"
+    },
+    key: 0,
+    on: {
+      "click": _m0 || ($ctx._m0 = api_bind($cmp.onClick))
+    }
+  }, [api_text("Click Me!")])])];
 }
 
 var _tmpl$1 = registerTemplate(tmpl$1);
@@ -11022,13 +11553,27 @@ if (_implicitStylesheets$2) {
   tmpl$1.stylesheets.push.apply(tmpl$1.stylesheets, _implicitStylesheets$2);
 }
 tmpl$1.stylesheetTokens = {
-  hostAttribute: "app-squareRed_squareRed-host",
-  shadowAttribute: "app-squareRed_squareRed"
+  hostAttribute: "demo-squareRed_squareRed-host",
+  shadowAttribute: "demo-squareRed_squareRed"
 };
 
-class SquareBlue$1 extends BaseLightningElement {}
+class SquareBlue$1 extends BaseLightningElement {
+  constructor(...args) {
+    super(...args);
+    this.clicked = 0;
+  }
 
-var _appSquareRed = registerComponent(SquareBlue$1, {
+  onClick() {
+    this.clicked++;
+  }
+
+}
+
+registerDecorators(SquareBlue$1, {
+  fields: ["clicked"]
+});
+
+var _demoSquareRed = registerComponent(SquareBlue$1, {
   tmpl: _tmpl$1
 });
 
@@ -11040,11 +11585,519 @@ function tmpl$2($api, $cmp, $slotset, $ctx) {
   } = $api;
   return [api_element("h1", {
     key: 0
-  }, [api_text("Rendering Example")]), api_custom_element("app-square-blue", _appSquareBlue, {
+  }, [api_text("Rendering Example")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
     key: 1
-  }, []), api_custom_element("app-square-red", _appSquareRed, {
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
     key: 2
-  }, [])];
+  }, []), api_element("table", {
+    key: 256
+  }, [api_element("tbody", {
+    key: 255
+  }, [api_element("tr", {
+    key: 23
+  }, [api_element("td", {
+    key: 6
+  }, [api_element("h2", {
+    key: 3
+  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 4
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 5
+  }, [])]), api_element("td", {
+    key: 10
+  }, [api_element("h2", {
+    key: 7
+  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 8
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 9
+  }, [])]), api_element("td", {
+    key: 14
+  }, [api_element("h2", {
+    key: 11
+  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 12
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 13
+  }, [])]), api_element("td", {
+    key: 18
+  }, [api_element("h2", {
+    key: 15
+  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 16
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 17
+  }, [])]), api_element("td", {
+    key: 22
+  }, [api_element("h2", {
+    key: 19
+  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 20
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 21
+  }, [])])]), api_element("tr", {
+    key: 44
+  }, [api_element("td", {
+    key: 27
+  }, [api_element("h2", {
+    key: 24
+  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 25
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 26
+  }, [])]), api_element("td", {
+    key: 31
+  }, [api_element("h2", {
+    key: 28
+  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 29
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 30
+  }, [])]), api_element("td", {
+    key: 35
+  }, [api_element("h2", {
+    key: 32
+  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 33
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 34
+  }, [])]), api_element("td", {
+    key: 39
+  }, [api_element("h2", {
+    key: 36
+  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 37
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 38
+  }, [])]), api_element("td", {
+    key: 43
+  }, [api_element("h2", {
+    key: 40
+  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 41
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 42
+  }, [])])]), api_element("tr", {
+    key: 65
+  }, [api_element("td", {
+    key: 48
+  }, [api_element("h2", {
+    key: 45
+  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 46
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 47
+  }, [])]), api_element("td", {
+    key: 52
+  }, [api_element("h2", {
+    key: 49
+  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 50
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 51
+  }, [])]), api_element("td", {
+    key: 56
+  }, [api_element("h2", {
+    key: 53
+  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 54
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 55
+  }, [])]), api_element("td", {
+    key: 60
+  }, [api_element("h2", {
+    key: 57
+  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 58
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 59
+  }, [])]), api_element("td", {
+    key: 64
+  }, [api_element("h2", {
+    key: 61
+  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 62
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 63
+  }, [])])]), api_element("tr", {
+    key: 86
+  }, [api_element("td", {
+    key: 69
+  }, [api_element("h2", {
+    key: 66
+  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 67
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 68
+  }, [])]), api_element("td", {
+    key: 73
+  }, [api_element("h2", {
+    key: 70
+  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 71
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 72
+  }, [])]), api_element("td", {
+    key: 77
+  }, [api_element("h2", {
+    key: 74
+  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 75
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 76
+  }, [])]), api_element("td", {
+    key: 81
+  }, [api_element("h2", {
+    key: 78
+  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 79
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 80
+  }, [])]), api_element("td", {
+    key: 85
+  }, [api_element("h2", {
+    key: 82
+  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 83
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 84
+  }, [])])]), api_element("tr", {
+    key: 107
+  }, [api_element("td", {
+    key: 90
+  }, [api_element("h2", {
+    key: 87
+  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 88
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 89
+  }, [])]), api_element("td", {
+    key: 94
+  }, [api_element("h2", {
+    key: 91
+  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 92
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 93
+  }, [])]), api_element("td", {
+    key: 98
+  }, [api_element("h2", {
+    key: 95
+  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 96
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 97
+  }, [])]), api_element("td", {
+    key: 102
+  }, [api_element("h2", {
+    key: 99
+  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 100
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 101
+  }, [])]), api_element("td", {
+    key: 106
+  }, [api_element("h2", {
+    key: 103
+  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 104
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 105
+  }, [])])]), api_element("tr", {
+    key: 128
+  }, [api_element("td", {
+    key: 111
+  }, [api_element("h2", {
+    key: 108
+  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 109
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 110
+  }, [])]), api_element("td", {
+    key: 115
+  }, [api_element("h2", {
+    key: 112
+  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 113
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 114
+  }, [])]), api_element("td", {
+    key: 119
+  }, [api_element("h2", {
+    key: 116
+  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 117
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 118
+  }, [])]), api_element("td", {
+    key: 123
+  }, [api_element("h2", {
+    key: 120
+  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 121
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 122
+  }, [])]), api_element("td", {
+    key: 127
+  }, [api_element("h2", {
+    key: 124
+  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 125
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 126
+  }, [])])]), api_element("tr", {
+    key: 149
+  }, [api_element("td", {
+    key: 132
+  }, [api_element("h2", {
+    key: 129
+  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 130
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 131
+  }, [])]), api_element("td", {
+    key: 136
+  }, [api_element("h2", {
+    key: 133
+  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 134
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 135
+  }, [])]), api_element("td", {
+    key: 140
+  }, [api_element("h2", {
+    key: 137
+  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 138
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 139
+  }, [])]), api_element("td", {
+    key: 144
+  }, [api_element("h2", {
+    key: 141
+  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 142
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 143
+  }, [])]), api_element("td", {
+    key: 148
+  }, [api_element("h2", {
+    key: 145
+  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 146
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 147
+  }, [])])]), api_element("tr", {
+    key: 170
+  }, [api_element("td", {
+    key: 153
+  }, [api_element("h2", {
+    key: 150
+  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 151
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 152
+  }, [])]), api_element("td", {
+    key: 157
+  }, [api_element("h2", {
+    key: 154
+  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 155
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 156
+  }, [])]), api_element("td", {
+    key: 161
+  }, [api_element("h2", {
+    key: 158
+  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 159
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 160
+  }, [])]), api_element("td", {
+    key: 165
+  }, [api_element("h2", {
+    key: 162
+  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 163
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 164
+  }, [])]), api_element("td", {
+    key: 169
+  }, [api_element("h2", {
+    key: 166
+  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 167
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 168
+  }, [])])]), api_element("tr", {
+    key: 191
+  }, [api_element("td", {
+    key: 174
+  }, [api_element("h2", {
+    key: 171
+  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 172
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 173
+  }, [])]), api_element("td", {
+    key: 178
+  }, [api_element("h2", {
+    key: 175
+  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 176
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 177
+  }, [])]), api_element("td", {
+    key: 182
+  }, [api_element("h2", {
+    key: 179
+  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 180
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 181
+  }, [])]), api_element("td", {
+    key: 186
+  }, [api_element("h2", {
+    key: 183
+  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 184
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 185
+  }, [])]), api_element("td", {
+    key: 190
+  }, [api_element("h2", {
+    key: 187
+  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 188
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 189
+  }, [])])]), api_element("tr", {
+    key: 212
+  }, [api_element("td", {
+    key: 195
+  }, [api_element("h2", {
+    key: 192
+  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 193
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 194
+  }, [])]), api_element("td", {
+    key: 199
+  }, [api_element("h2", {
+    key: 196
+  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 197
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 198
+  }, [])]), api_element("td", {
+    key: 203
+  }, [api_element("h2", {
+    key: 200
+  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 201
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 202
+  }, [])]), api_element("td", {
+    key: 207
+  }, [api_element("h2", {
+    key: 204
+  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 205
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 206
+  }, [])]), api_element("td", {
+    key: 211
+  }, [api_element("h2", {
+    key: 208
+  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 209
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 210
+  }, [])])]), api_element("tr", {
+    key: 233
+  }, [api_element("td", {
+    key: 216
+  }, [api_element("h2", {
+    key: 213
+  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 214
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 215
+  }, [])]), api_element("td", {
+    key: 220
+  }, [api_element("h2", {
+    key: 217
+  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 218
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 219
+  }, [])]), api_element("td", {
+    key: 224
+  }, [api_element("h2", {
+    key: 221
+  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 222
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 223
+  }, [])]), api_element("td", {
+    key: 228
+  }, [api_element("h2", {
+    key: 225
+  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 226
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 227
+  }, [])]), api_element("td", {
+    key: 232
+  }, [api_element("h2", {
+    key: 229
+  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 230
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 231
+  }, [])])]), api_element("tr", {
+    key: 254
+  }, [api_element("td", {
+    key: 237
+  }, [api_element("h2", {
+    key: 234
+  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 235
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 236
+  }, [])]), api_element("td", {
+    key: 241
+  }, [api_element("h2", {
+    key: 238
+  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 239
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 240
+  }, [])]), api_element("td", {
+    key: 245
+  }, [api_element("h2", {
+    key: 242
+  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 243
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 244
+  }, [])]), api_element("td", {
+    key: 249
+  }, [api_element("h2", {
+    key: 246
+  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 247
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 248
+  }, [])]), api_element("td", {
+    key: 253
+  }, [api_element("h2", {
+    key: 250
+  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+    key: 251
+  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
+    key: 252
+  }, [])])])])])];
 }
 
 var _tmpl$2 = registerTemplate(tmpl$2);
@@ -11054,14 +12107,910 @@ if (_implicitStylesheets) {
   tmpl$2.stylesheets.push.apply(tmpl$2.stylesheets, _implicitStylesheets);
 }
 tmpl$2.stylesheetTokens = {
-  hostAttribute: "app-mainlayout_mainlayout-host",
-  shadowAttribute: "app-mainlayout_mainlayout"
+  hostAttribute: "demo-main_main-host",
+  shadowAttribute: "demo-main_main"
 };
 
-class MainLayout extends BaseLightningElement {}
+class Main extends BaseLightningElement {}
 
-var MainLayout$1 = registerComponent(MainLayout, {
+var DemoMain = registerComponent(Main, {
   tmpl: _tmpl$2
+});
+
+function tmpl$3($api, $cmp, $slotset, $ctx) {
+  const {
+    t: api_text,
+    h: api_element,
+    gid: api_scoped_id
+  } = $api;
+  return [api_element("nav", {
+    classMap: {
+      "navbar": true,
+      "navbar-expand-lg": true,
+      "navbar-dark": true,
+      "bg-dark": true,
+      "fixed-top": true
+    },
+    key: 11
+  }, [api_element("div", {
+    classMap: {
+      "container": true
+    },
+    key: 10
+  }, [api_element("a", {
+    classMap: {
+      "navbar-brand": true
+    },
+    attrs: {
+      "href": "home"
+    },
+    key: 0
+  }, [api_text("Commerce Demo")]), api_element("button", {
+    classMap: {
+      "navbar-toggler": true
+    },
+    attrs: {
+      "type": "button",
+      "data-toggle": "collapse",
+      "data-target": "#navbarResponsive",
+      "aria-controls": `${api_scoped_id("navbarResponsive")}`,
+      "aria-expanded": "false",
+      "aria-label": "Toggle navigation"
+    },
+    key: 2
+  }, [api_element("span", {
+    classMap: {
+      "navbar-toggler-icon": true
+    },
+    key: 1
+  }, [])]), api_element("div", {
+    classMap: {
+      "collapse": true,
+      "navbar-collapse": true
+    },
+    attrs: {
+      "id": api_scoped_id("navbarResponsive")
+    },
+    key: 9
+  }, [api_element("ul", {
+    classMap: {
+      "navbar-nav": true,
+      "ml-auto": true
+    },
+    key: 8
+  }, [api_element("li", {
+    classMap: {
+      "nav-item": true,
+      "active": true
+    },
+    key: 4
+  }, [api_element("a", {
+    classMap: {
+      "nav-link": true
+    },
+    attrs: {
+      "href": "/"
+    },
+    key: 3
+  }, [api_text("Home")])]), api_element("li", {
+    classMap: {
+      "nav-item": true
+    },
+    key: 7
+  }, [!$cmp.ssr ? api_element("a", {
+    classMap: {
+      "nav-link": true
+    },
+    attrs: {
+      "href": "/home?ssr"
+    },
+    key: 5
+  }, [api_text("SSR Version")]) : null, $cmp.ssr ? api_element("a", {
+    classMap: {
+      "nav-link": true
+    },
+    attrs: {
+      "href": "/home"
+    },
+    key: 6
+  }, [api_text("Pure Client Version")]) : null])])])])])];
+}
+
+var _tmpl$3 = registerTemplate(tmpl$3);
+tmpl$3.stylesheets = [];
+tmpl$3.stylesheetTokens = {
+  hostAttribute: "commerce-header_header-host",
+  shadowAttribute: "commerce-header_header"
+};
+
+const SSR = typeof process !== 'undefined' && typeof process.versions.node !== 'undefined';
+function isSsr() {
+  return SSR;
+}
+const SSRCONTEXT = '__B2C_SSRCONTEXT__';
+function getSsrContext() {
+  if (SSR) {
+    return global[SSRCONTEXT];
+  }
+
+  return undefined;
+}
+
+/**
+ * Some url utilities.
+ */
+function hasQueryParameter(key) {
+  if (getSsrContext()) {
+    return getSsrContext().query.hasOwnProperty(key);
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.has(key);
+}
+function getQueryParameter(key) {
+  if (getSsrContext()) {
+    return getSsrContext().query[key];
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get(key);
+}
+function queryString(params) {
+  // The order of the parameters is predictable
+  return params ? Object.keys(params).sort().map(function (k) {
+    const pk = params[k];
+    return encodeURIComponent(k) + (pk !== undefined ? '=' + encodeURIComponent(pk) : '');
+  }).join('&') : "";
+}
+function composeUrl(path, params = {}) {
+  let url = path; // Propagate the SSR parameter
+
+  const ssr = hasQueryParameter('ssr');
+
+  if (ssr) {
+    params['ssr'] = undefined;
+  }
+
+  let qs = queryString(params);
+
+  if (qs) {
+    url += '?' + qs;
+  }
+
+  return url;
+}
+function getBaseUrl() {
+  if (getSsrContext()) {
+    return getSsrContext().baseUrl;
+  }
+
+  return '';
+}
+
+class Header extends BaseLightningElement {
+  get ssr() {
+    return hasQueryParameter('ssr');
+  }
+
+}
+
+var _commerceHeader = registerComponent(Header, {
+  tmpl: _tmpl$3
+});
+
+function tmpl$4($api, $cmp, $slotset, $ctx) {
+  const {
+    c: api_custom_element,
+    h: api_element,
+    s: api_slot
+  } = $api;
+  return [api_element("header", {
+    key: 1
+  }, [api_custom_element("commerce-header", _commerceHeader, {
+    key: 0
+  }, [])]), api_element("main", {
+    classMap: {
+      "container": true
+    },
+    key: 3
+  }, [api_slot("", {
+    key: 2
+  }, [], $slotset)])];
+}
+
+var _tmpl$4 = registerTemplate(tmpl$4);
+tmpl$4.slots = [""];
+tmpl$4.stylesheets = [];
+tmpl$4.stylesheetTokens = {
+  hostAttribute: "commerce-page_page-host",
+  shadowAttribute: "commerce-page_page"
+};
+
+class Page extends BaseLightningElement {}
+
+var _commercePage = registerComponent(Page, {
+  tmpl: _tmpl$4
+});
+
+function tmpl$5($api, $cmp, $slotset, $ctx) {
+  const {
+    d: api_dynamic,
+    h: api_element
+  } = $api;
+  return [api_element("a", {
+    classMap: {
+      "list-group-item": true
+    },
+    attrs: {
+      "href": $cmp.link
+    },
+    key: 0
+  }, [api_dynamic($cmp.category)])];
+}
+
+var _tmpl$5 = registerTemplate(tmpl$5);
+tmpl$5.stylesheets = [];
+tmpl$5.stylesheetTokens = {
+  hostAttribute: "commerce-categoryItem_categoryItem-host",
+  shadowAttribute: "commerce-categoryItem_categoryItem"
+};
+
+class LeftNav extends BaseLightningElement {
+  constructor() {
+    super();
+    this.category = void 0;
+  }
+
+  get link() {
+    return composeUrl('/home', {
+      category: this.category
+    });
+  }
+
+}
+
+registerDecorators(LeftNav, {
+  publicProps: {
+    category: {
+      config: 0
+    }
+  }
+});
+
+var _commerceCategoryItem = registerComponent(LeftNav, {
+  tmpl: _tmpl$5
+});
+
+function tmpl$6($api, $cmp, $slotset, $ctx) {
+  const {
+    t: api_text,
+    h: api_element,
+    k: api_key,
+    c: api_custom_element,
+    i: api_iterator
+  } = $api;
+  return [api_element("h3", {
+    classMap: {
+      "my-4": true
+    },
+    key: 0
+  }, [api_text("Products")]), api_element("div", {
+    classMap: {
+      "list-group": true
+    },
+    key: 2
+  }, $cmp.categories.data ? api_iterator($cmp.categories.data, function (category) {
+    return api_custom_element("commerce-category-item", _commerceCategoryItem, {
+      props: {
+        "category": category
+      },
+      key: api_key(1, category)
+    }, []);
+  }) : [])];
+}
+
+var _tmpl$6 = registerTemplate(tmpl$6);
+tmpl$6.stylesheets = [];
+tmpl$6.stylesheetTokens = {
+  hostAttribute: "commerce-leftnav_leftnav-host",
+  shadowAttribute: "commerce-leftnav_leftnav"
+};
+
+const INITIAL_STATE = '__B2C_INITIAL_STATE__'; //
+// This method is used by the wire adapter to detect if a key changed
+//
+
+function keyAsString(key) {
+  if (key === undefined || key === null) {
+    return '';
+  }
+
+  if (Array.isArray(key)) {
+    return key.join('|');
+  }
+
+  return String(key);
+}
+const SSR$1 = isSsr(); //
+// Initialize the global state manager for the client
+// We assume that the store is only be initialized once this way, e.g. fragments coming
+// later will be ignored. We might revisit that if needed
+//
+
+let GLOBALSTATE_CLIENT;
+
+if (!SSR$1) {
+  if (typeof window[INITIAL_STATE] !== 'undefined') {
+    GLOBALSTATE_CLIENT = window[INITIAL_STATE];
+    delete window[INITIAL_STATE];
+  } else {
+    GLOBALSTATE_CLIENT = {};
+  }
+}
+/**
+ * Simple in memory store.
+ *
+ * This is a centralized client side state manager that stores data and notify subscribers on changes.
+ * An instance of a store is generally dedicated to one type of data management, like a cart of a set of products.
+ *
+ * A store can hold a single JS object or a set of objects referemced by a key. For example, a typical commerce
+ * application will have one cart object, and multiple products referenced by their id. A single object is
+ * in fact an object with a undefined, null or empty string key.
+ *
+ * The store uses a lazy loading mechanism, which attempts to load the data on its first access. To do this,
+ * it uses a 'loader' that is invoked when the data should be loaded. This function returns a Promise that
+ * resolves when the data, or a load error, is available.
+ *
+ * An object is created in the store as soon as it is accessed for the first time. It always contains the
+ * following properties:
+ *   - data
+ *     The actually object data, like a product. It can be null if the data hasn't been loaded yet, or if
+ *     there was an error when loading the object.
+ *   - error
+ *     An error object if the store failed to load the object. It can be null if the data hasn't been loaded yet,
+ *     or if the object loaded properly.
+ *   - loaded
+ *     Set when an attempt to load the object was completed, which resulted in some data or an error.
+ *   - loading
+ *     Contains a promise if the data is being loaded. Most applications will simply check if the value
+ *     is not null/undefined to display a loading icon. The promise is provided to support advanced use cases
+ *     like Server Side Rendering
+ *
+ * Each object in the store can have subscribers that will be notified when the object is updated. When an
+ * object has no longer subscribers, it is removed from the store. To keep it alive, one can create a fake
+ * subscriber to keep a reference active.
+ * When the an object is changed, because the data was loaded, or changed programmatically, all the subscribers
+ * are notified. Also, when a subscriber sunscribes to an object that is already in the store, then it
+ * receives an initial notification.
+ *
+ */
+
+
+class Store {
+  constructor(name, options) {
+    this.options = options || {};
+    this.name = name;
+
+    if (!SSR$1) {
+      const globalState = GLOBALSTATE_CLIENT;
+
+      if (typeof globalState[name] === 'undefined') {
+        globalState[name] = {};
+      }
+
+      this._container = globalState[name];
+    } else {
+      this._container = undefined;
+    }
+  }
+
+  _storeContainer() {
+    if (this._container) {
+      return this._container;
+    }
+
+    const globalState = getSsrContext().states;
+
+    if (typeof globalState[this.name] === 'undefined') {
+      globalState[this.name] = {};
+    }
+
+    return globalState[this.name];
+  }
+
+  _getObject(container, key, load) {
+    const k = keyAsString(key);
+    let e = container[k];
+
+    if (e === undefined) {
+      e = container[k] = {
+        data: undefined,
+        error: undefined,
+        loaded: false,
+        loading: undefined,
+        subscribers: []
+      };
+    }
+
+    if (load && !e.loaded) {
+      this._loadObject(key, e);
+    }
+
+    return e;
+  }
+
+  _loadObject(key, e, loader) {
+    if (!loader) loader = this.options.loader;
+
+    if (!e.loading && loader) {
+      e.loading = loader(key).then(value => {
+        e.data = value;
+        e.error = undefined;
+        e.loaded = true;
+        e.loading = undefined;
+
+        this._notify(e);
+
+        return e;
+      }).catch(error => {
+        e.data = undefined;
+        e.error = error.message;
+        e.loaded = true;
+        e.loading = undefined;
+
+        this._notify(e);
+
+        return e;
+      });
+
+      if (SSR$1 && e.loading) {
+        getSsrContext().loading.push(e.loading);
+      }
+    }
+  }
+
+  _notify(e) {
+    if (e) {
+      e.subscribers.forEach(l => {
+        if (l) l(this._exportObject(e));
+      });
+    }
+  }
+
+  _exportObject(container) {
+    const {
+      data,
+      error,
+      loading,
+      loaded
+    } = container;
+    return {
+      data,
+      error,
+      loading,
+      loaded
+    };
+  } //
+  // Public methods
+  //
+
+
+  hasObject(key) {
+    const k = keyAsString(key);
+    return this._storeContainer()[k] !== undefined;
+  }
+
+  getObject(key) {
+    return this._exportObject(this._getObject(this._storeContainer(), key, true));
+  }
+
+  async getObjectAsync(key) {
+    const e = this._getObject(this._storeContainer(), key, true);
+
+    if (!e.loaded && e.loading) {
+      await e.loading;
+    }
+
+    return this._exportObject(e);
+  }
+
+  setObject(key, data, error) {
+    const e = this._getObject(this._storeContainer(), key, false); // Should it throw an exception if the loading flag is set, and thus the assignment failed?
+
+
+    if (!e.loading) {
+      Object.assign(e, {
+        data,
+        error,
+        loaded: true
+      });
+
+      this._notify(e);
+    }
+  }
+
+  removeObject(key) {
+    const container = this._storeContainer();
+
+    const k = keyAsString(key);
+    const e = container[k];
+
+    if (e && e.subscribers.length === 0) {
+      delete container[k];
+    }
+  }
+
+  loadObject(key, loader) {
+    const e = this._getObject(this._storeContainer(), key, false);
+
+    if (!e.loading) {
+      this._loadObject(key, e, loader);
+    }
+
+    return e;
+  }
+
+  subscribe(l, key) {
+    const e = this._getObject(this._storeContainer(), key, true);
+
+    e.subscribers.push(l);
+    if (l) l(e);
+  }
+
+  unsubscribe(l, key) {
+    const container = this._storeContainer();
+
+    const k = keyAsString(key);
+    const e = container[k];
+
+    if (e) {
+      const index = e.subscribers.indexOf(l);
+
+      if (index >= 0) {
+        e.subscribers.splice(index, 1);
+      }
+
+      if (e.subscribers.length === 0) {
+        if (typeof this.options.discard !== 'undefined') {
+          if (this.options.discard === false) {
+            return;
+          } // We could have a function that discards using a MRU, or whatever...
+          // This can be extended in many ways
+
+        }
+
+        delete container[k];
+      }
+    }
+  }
+
+  notify(key) {
+    const e = this._storeContainer()[keyAsString(key)];
+
+    if (e) {
+      this._notify(e);
+    }
+  }
+
+}
+
+function createStore(name, loader) {
+  return new Store(name, loader);
+}
+
+async function connGetCategories() {
+  const r = await fetch(getBaseUrl() + '/api/categories');
+  return await r.json();
+}
+async function connGetProductsByCategory(category) {
+  const r = await fetch(getBaseUrl() + `/api/products?category=${encodeURIComponent(category)}`);
+  return await r.json();
+}
+
+const categoriesStore = createStore('CategoriesStore', {
+  loader: getCategories
+});
+const productsStore = createStore('ProductsStore', {
+  loader: getProductsByCategory
+});
+async function getCategories() {
+  const categories = await connGetCategories();
+  return categories;
+}
+async function getProductsByCategory(category) {
+  const products = await connGetProductsByCategory(category);
+  return products;
+}
+
+class LeftNav$1 extends BaseLightningElement {
+  constructor() {
+    super();
+    this.categories = void 0;
+
+    this.onStateChangeBind = categories => {
+      this.categories = categories;
+    };
+  }
+
+  connectedCallback() {
+    categoriesStore.subscribe(this.onStateChangeBind);
+  }
+
+  disconnectedCallback() {
+    categoriesStore.unsubscribe(this.onStateChangeBind);
+  }
+
+}
+
+registerDecorators(LeftNav$1, {
+  fields: ["categories"]
+});
+
+var _commerceLeftnav = registerComponent(LeftNav$1, {
+  tmpl: _tmpl$6
+});
+
+function tmpl$7($api, $cmp, $slotset, $ctx) {
+  const {
+    h: api_element,
+    d: api_dynamic,
+    t: api_text,
+    b: api_bind
+  } = $api;
+  const {
+    _m0
+  } = $ctx;
+  return [api_element("div", {
+    classMap: {
+      "card": true
+    },
+    styleMap: {
+      "height": "580px"
+    },
+    key: 10
+  }, [api_element("a", {
+    attrs: {
+      "href": $cmp.productPage
+    },
+    key: 1
+  }, [api_element("img", {
+    classMap: {
+      "card-img-top": true,
+      "product-list-image": true
+    },
+    attrs: {
+      "src": $cmp.product.ProductImagePath1,
+      "alt": ""
+    },
+    key: 0
+  }, [])]), api_element("div", {
+    classMap: {
+      "card-body": true
+    },
+    key: 7
+  }, [api_element("h4", {
+    classMap: {
+      "card-title": true
+    },
+    key: 3
+  }, [api_element("span", {
+    key: 2
+  }, [api_dynamic($cmp.product.Name)])]), api_element("h5", {
+    key: 4
+  }, [api_text("$"), api_dynamic($cmp.product.ListPrice)]), $cmp.product ? api_element("a", {
+    attrs: {
+      "href": "#"
+    },
+    key: 5,
+    on: {
+      "click": _m0 || ($ctx._m0 = api_bind($cmp.infoClick))
+    }
+  }, [api_text("More information...")]) : null, api_element("p", {
+    classMap: {
+      "card-text": true
+    },
+    key: 6
+  }, [api_dynamic($cmp.product.Description)])]), api_element("div", {
+    classMap: {
+      "card-footer": true
+    },
+    key: 9
+  }, [api_element("span", {
+    key: 8
+  }, [api_dynamic($cmp.product.ProductCategory)])])])];
+}
+
+var _tmpl$7 = registerTemplate(tmpl$7);
+tmpl$7.stylesheets = [];
+tmpl$7.stylesheetTokens = {
+  hostAttribute: "commerce-homeProductcard_homeProductcard-host",
+  shadowAttribute: "commerce-homeProductcard_homeProductcard"
+};
+
+class ProductCard extends BaseLightningElement {
+  constructor(...args) {
+    super(...args);
+    this.product = void 0;
+  }
+
+  get productPage() {
+    return this.product && this.product.id ? "product?pid=" + encodeURIComponent(this.product.id) : "";
+  }
+
+  infoClick() {
+    const json = JSON.stringify(this.product, null, '  ');
+    alert(json);
+  }
+
+}
+
+registerDecorators(ProductCard, {
+  publicProps: {
+    product: {
+      config: 0
+    }
+  }
+});
+
+var _commerceHomeProductcard = registerComponent(ProductCard, {
+  tmpl: _tmpl$7
+});
+
+function tmpl$8($api, $cmp, $slotset, $ctx) {
+  const {
+    t: api_text,
+    h: api_element,
+    c: api_custom_element,
+    k: api_key,
+    i: api_iterator
+  } = $api;
+  return [!$cmp.hasCategory ? api_element("div", {
+    classMap: {
+      "row": true
+    },
+    key: 1
+  }, [api_element("h3", {
+    classMap: {
+      "my-4": true
+    },
+    key: 0
+  }, [api_text("Welcome to LWC Commerce!")]), api_text("Please select a product category on the left")]) : null, $cmp.hasCategory ? api_element("div", {
+    classMap: {
+      "row": true
+    },
+    key: 9
+  }, [$cmp.hasProducts ? api_element("div", {
+    classMap: {
+      "row": true
+    },
+    key: 3
+  }, [api_element("h3", {
+    classMap: {
+      "my-4": true
+    },
+    key: 2
+  }, [api_text("Search Results:")])]) : null, $cmp.hasProducts ? $cmp.hasProducts ? api_element("div", {
+    classMap: {
+      "row": true
+    },
+    key: 6
+  }, api_iterator($cmp.products.data, function (product) {
+    return api_element("div", {
+      classMap: {
+        "col-lg-4": true,
+        "col-md-6": true,
+        "mb-4": true
+      },
+      key: api_key(5, product.ProductCode)
+    }, [api_custom_element("commerce-home-productcard", _commerceHomeProductcard, {
+      props: {
+        "product": product
+      },
+      key: 4
+    }, [])]);
+  })) : null : null, !$cmp.hasProducts ? $cmp.loading ? api_element("div", {
+    classMap: {
+      "row": true
+    },
+    key: 7
+  }, [api_text("Loading...")]) : null : null, !$cmp.hasProducts ? !$cmp.loading ? api_element("div", {
+    classMap: {
+      "row": true
+    },
+    key: 8
+  }, [api_text("No product is available, please change the selection")]) : null : null]) : null];
+}
+
+var _tmpl$8 = registerTemplate(tmpl$8);
+tmpl$8.stylesheets = [];
+tmpl$8.stylesheetTokens = {
+  hostAttribute: "commerce-homeProductlist_homeProductlist-host",
+  shadowAttribute: "commerce-homeProductlist_homeProductlist"
+};
+
+class ProductList extends BaseLightningElement {
+  constructor() {
+    super();
+    this.category = void 0;
+    this.products = void 0;
+    this.category = getQueryParameter("category");
+
+    this.onStateChangeBind = products => {
+      this.products = products;
+    };
+  }
+
+  connectedCallback() {
+    productsStore.subscribe(this.onStateChangeBind, this.category);
+  }
+
+  disconnectedCallback() {
+    productsStore.unsubscribe(this.onStateChangeBind);
+  }
+
+  get hasProducts() {
+    return this.products.data && this.products.data.length > 0;
+  }
+
+  get hasCategory() {
+    return !!this.category;
+  }
+
+}
+
+registerDecorators(ProductList, {
+  fields: ["category", "products"]
+});
+
+var _commerceHomeProductlist = registerComponent(ProductList, {
+  tmpl: _tmpl$8
+});
+
+function tmpl$9($api, $cmp, $slotset, $ctx) {
+  const {
+    c: api_custom_element,
+    h: api_element
+  } = $api;
+  return [api_custom_element("commerce-page", _commercePage, {
+    key: 6
+  }, [api_element("div", {
+    classMap: {
+      "container": true
+    },
+    key: 5
+  }, [api_element("div", {
+    classMap: {
+      "row": true
+    },
+    key: 4
+  }, [api_element("div", {
+    classMap: {
+      "col-lg-3": true
+    },
+    key: 1
+  }, [api_custom_element("commerce-leftnav", _commerceLeftnav, {
+    key: 0
+  }, [])]), api_element("div", {
+    classMap: {
+      "col-lg-9": true
+    },
+    key: 3
+  }, [api_custom_element("commerce-home-productlist", _commerceHomeProductlist, {
+    key: 2
+  }, [])])])])])];
+}
+
+var _tmpl$9 = registerTemplate(tmpl$9);
+tmpl$9.stylesheets = [];
+tmpl$9.stylesheetTokens = {
+  hostAttribute: "commerce-homeMain_homeMain-host",
+  shadowAttribute: "commerce-homeMain_homeMain"
+};
+
+class Main$1 extends BaseLightningElement {}
+
+var CommerceHome = registerComponent(Main$1, {
+  tmpl: _tmpl$9
 });
 
 /*
@@ -11070,4 +13019,5 @@ var MainLayout$1 = registerComponent(MainLayout, {
     SPDX-License-Identifier: BSD-3-Clause
     For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
 */
-customElements.define("app-body", MainLayout$1.CustomElementConstructor);
+customElements.define("demo-main", DemoMain.CustomElementConstructor);
+customElements.define("commerce-home", CommerceHome.CustomElementConstructor);

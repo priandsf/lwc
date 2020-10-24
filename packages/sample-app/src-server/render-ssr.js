@@ -33,6 +33,7 @@ const MAX_ITERATIONS = 8;
 // The same context can be reused in multiple iterations, the store can keep its data between renderings
 //
 async function renderSsr({
+    req,
     module,
     exportName,
     tagName,
@@ -47,6 +48,8 @@ async function renderSsr({
 
     // This context is made available locally in a global (__SSRCONTEXT__)
     const ssrContext = {
+        query: req.query,
+        baseUrl: 'http://localhost:3005',
         loading: [],
         states: {}
     }
@@ -59,8 +62,10 @@ async function renderSsr({
                 props = await ctor.getServerInitialProps(context);
             }
 
+            const r = renderComponent(tagName, ctor, props, {syntheticShadow:true, renderStruct: true})
             const result = {
-                html: renderComponent(tagName, ctor, props),
+                html: r.html,
+                styles: r.styles,
                 store: ssrContext.states
             }
 

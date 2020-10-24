@@ -12,7 +12,7 @@ import {
 } from '@lwc/engine-core';
 import { isString, isFunction, isObject, isNull } from '@lwc/shared';
 
-import { renderer } from '../renderer';
+import { renderer, globalStylesheets } from '../renderer';
 import { serializeElement } from '../serializer';
 import { HostElement, HostNodeType } from '../types';
 
@@ -27,11 +27,13 @@ const FakeRootElement: HostElement = {
     eventListeners: {},
 };
 
+// Could expose a different method here
 export function renderComponent(
     tagName: string,
     Ctor: typeof LightningElement,
-    props: { [name: string]: any } = {}
-): string {
+    props: { [name: string]: any } = {},
+    options: { syntheticShadow?: boolean, renderStruct?: boolean } = {},
+): string | {html: string, styles: string[]} {
     if (!isString(tagName)) {
         throw new TypeError(
             `"renderComponent" expects a string as the first parameter but instead received ${tagName}.`
@@ -50,6 +52,14 @@ export function renderComponent(
         );
     }
 
+    if (!isObject(options) || isNull(options)) {
+        throw new TypeError(
+            `"renderComponent" expects an object as the fourth parameter but instead received ${options}.`
+        );
+    }
+
+    // PM: should find a more elegant way 
+    renderer.syntheticShadow = !!options.syntheticShadow;
     const element = renderer.createElement(tagName);
 
     const def = getComponentInternalDef(Ctor);
@@ -69,5 +79,14 @@ export function renderComponent(
 
     connectRootElement(element);
 
-    return serializeElement(element);
+    const html = serializeElement(element,options);
+
+    if(options.renderStruct) {
+        const styles = Array.from(globalStylesheets);
+        return {
+            html,
+            styles
+        }
+    }
+    return html;
 }

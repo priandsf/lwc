@@ -19,6 +19,9 @@ import { HostNode, HostElement, HostAttribute, HostNodeType } from './types';
 import { classNameToTokenList, tokenListToClassName } from './utils/classes';
 import { styleTextToCssDeclaration, cssDeclarationToStyleText } from './utils/style';
 
+// PM: should it be in the renderer itself?
+export const globalStylesheets = new Set<string>();
+
 function unsupportedMethod(name: string): () => never {
     return function () {
         throw new TypeError(`"${name}" is not supported in this environment`);
@@ -319,9 +322,14 @@ export const renderer: Renderer<HostNode, HostElement> = {
         return !isNull(node.parent);
     },
 
-    insertGlobalStylesheet() {
+    insertGlobalStylesheet(content: string) {
         // Noop on SSR (for now). This need to be reevaluated whenever we will implement support for
         // synthetic shadow.
+        // We can check for synthetic shadow as well, although future Light DOM can generate scoped styles as well
+        if (globalStylesheets.has(content)) {
+            return;
+        }
+        globalStylesheets.add(content);
     },
 
     addEventListener() {

@@ -31,39 +31,41 @@ function staticPath(...args) {
 // -- Middlewares -----------------------------------------------------------------------
 app.use('/static', express.static(staticPath()));
 
-// SSR
-// https://salesforce.quip.com/UIlHA82pHsH0
-app.get('/*', (req, res) => {
-    if (req.query.ssr !== undefined) {
-        const context = {
-            baseUrl: `http://localhost:${port}`
-        };
-        renderSsr({
-            module: '../dist/lwc-components-server.js',
-            exportName: 'Main',
-            tagName: 'app-body',
-            context
-        }).then( ({html,store}) => {
-            //console.log(`${fragment}`)
-            res.send(
-                renderTemplate({
-                    title: 'SSR for Commerce',
-                    storeData: store,
-                    scripts: ['static/js/declarative-shadow-poorlyfill.js','static/js/lwc-components.js'],
-                    fragment: html,
-                }),
-            );
-        });
-    } else {
-        res.send(
-            renderTemplate({
-                title: 'Pure Client',
-                scripts: ['static/js/lwc-components.js'],
-            }),
-        );
-    }
+
+// -- Services --------------------------------------------------------------------------
+const {getCategories,getProductsByCategory} = require('./services/products')
+
+app.get('/api/categories', (req, res) => {
+    const categories = getCategories();
+    res.setHeader('Content-Type', 'application/json');
+    res.send(categories);
 });
 
+app.get('/api/products', (req, res) => {
+    const cat = req.query['category'];
+    const products = getProductsByCategory(cat);
+    res.setHeader('Content-Type', 'application/json');
+    res.send(products);
+});
+
+
+// SSR
+// https://salesforce.quip.com/UIlHA82pHsH0
+app.get('/home', (req, res) => {
+    renderRoute(req,res,'commerce-home')
+});
+app.get('/*', (req, res) => {
+    renderRoute(req,res,'demo-main')
+});
+
+function initialize(server) {
+    server.get('/api/sample-product', function(req, res) {
+        let pid = req.query['pid'];
+        let product = store.products[pid];
+        res.setHeader('Content-Type', 'application/json');
+        res.send({ body: product });
+    });
+}
 
 // -- Server Start -----------------------------------------------------------------------
 module.exports.start = () => {
@@ -77,40 +79,70 @@ module.exports.start = () => {
 };
 
 
-//function htmlTemplate({ title = '', fragment = '', scripts = [] }) {
-    function renderTemplate(args) {
-        return `
-            <!DOCTYPE html>
-            <html lang="en" data-framework="lwc">
-            <head>
-                <meta charset="UTF-8">
-                <title>${args.title}</title>
-            
-                <style>
-                    main > .container {
-                        padding: 60px 15px 0;
-                    }
-                    html * {
-                        font-family: verdana,arial,sans-serif;
-                    }
-                </style>
-            </head>
-            <body>
-                ${
-                    args.fragment ?  `${args.fragment}` : `<app-body></app-body>`
-                }
-                ${args.scripts.map((script) => `<script src="${script}"></script>`)}    
-            </body>
-        
-            </html>    
-        `
+function renderRoute(req, res, tagName) {
+    if (req.query.ssr !== undefined) {
+        const context = {
+            baseUrl: `http://localhost:${port}`
+        };
+        renderSsr({
+            req,
+            module: '../dist/lwc-components-server.js',
+            exportName: 'Main',
+            tagName,
+            context
+        }).then( ({html,styles,store}) => {
+            //console.log(`${fragment}`)
+            res.send(
+                renderTemplate({
+                    title: 'SSR for Commerce',
+                    storeData: store,
+                    scripts: ['static/js/declarative-shadow-poorlyfill.js','static/js/lwc-components.js'],
+                    tagName,
+                    styles,
+                    fragment: html,
+                }),
+            );
+        });
+    } else {
+        res.send(
+            renderTemplate({
+                title: 'Pure Client',
+                scripts: ['static/js/lwc-components.js'],
+                tagName,
+            }),
+        );
     }
+}
 
-    // <body>
-    // ${args.storeData ? `<script>window['__B2C_INITIAL_STATE__']=${JSON.stringify(args.storeData,null,'  ')}</script>` : ''}
-    // ${
-    //     args.fragment ?  `${args.fragment}` : `<app-main></app-main>`
-    // }
-    // ${args.scripts.map((script) => `<script src="${script}"></script>`)}    
-    // </body>
+function renderTemplate(args) {
+    return `
+        <!DOCTYPE html>
+        <html lang="en" data-framework="lwc">
+        <head>
+            <meta charset="UTF-8">
+            <title>${args.title}</title>
+        
+            <style>
+                main > .container {
+                    padding: 60px 15px 0;
+                }
+                html * {
+                    font-family: verdana,arial,sans-serif;
+                }
+            </style>
+            <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" crossorigin="anonymous">
+            <link rel="stylesheet" href="/static/css/global.css">
+            ${args.styles ? args.styles.map((style) => `<style type="text/css">${style}</style>`).join('\n') : ''}    
+        </head>
+        <body>
+            ${args.storeData ? `<script>window['__B2C_INITIAL_STATE__']=${JSON.stringify(args.storeData)}</script>` : ''}
+            ${
+                args.fragment ?  `${args.fragment}` : `<${args.tagName}></${args.tagName}>`
+            }
+            ${args.scripts && args.scripts.map((script) => `<script src="${script}"></script>`).join('\n')}    
+        </body>
+    
+        </html>    
+    `
+}
 
