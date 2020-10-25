@@ -4305,11 +4305,6 @@ defineProperty(Element.prototype, '$domManual$', {
 });
 /** version: 1.8.5 */
 
-function stylesheet(hostSelector, shadowSelector, nativeShadow) {
-  return ["h1", shadowSelector, " {font-size:22px;}\n.counterTitle", shadowSelector, " {font-size:18px;margin-bottom: 1em;}\n.counter", shadowSelector, " {color: blue;}\nbutton", shadowSelector, " {margin-right: 5px;margin-bottom: 10px;}\ntable", shadowSelector, " {font-size:14px;color:#333333;border-width: 1px;border-color: #666666;border-collapse: collapse;margin-left: 4em;}\ntable", shadowSelector, " th", shadowSelector, " {font-size:18px;border-width: 1px;padding: 8px;border-style: solid;border-color: #666666;background-color: #dedede;}\ntable", shadowSelector, " td", shadowSelector, " {border-width: 1px;padding: 2em;border-style: solid;border-color: #666666;background-color: #ffffff;}\n"].join('');
-}
-var _implicitStylesheets = [stylesheet];
-
 /* proxy-compat-disable */
 
 /*
@@ -11453,6 +11448,11 @@ freeze$2(BaseLightningElement);
 seal$2(BaseLightningElement.prototype);
 /* version: 1.8.5 */
 
+function stylesheet(hostSelector, shadowSelector, nativeShadow) {
+  return ["h1", shadowSelector, " {font-size:22px;}\n.counterTitle", shadowSelector, " {font-size:18px;margin-bottom: 1em;}\n.counter", shadowSelector, " {color: blue;}\nbutton", shadowSelector, " {margin-right: 5px;margin-bottom: 10px;}\ntable", shadowSelector, " {font-size:14px;color:#333333;border-width: 1px;border-color: #666666;border-collapse: collapse;margin-left: 4em;}\ntable", shadowSelector, " th", shadowSelector, " {font-size:18px;border-width: 1px;padding: 8px;border-style: solid;border-color: #666666;background-color: #dedede;}\ntable", shadowSelector, " td", shadowSelector, " {border-width: 1px;padding: 2em;border-style: solid;border-color: #666666;background-color: #ffffff;}\n"].join('');
+}
+var _implicitStylesheets = [stylesheet];
+
 function stylesheet$1(hostSelector, shadowSelector, nativeShadow) {
   return [".blue", shadowSelector, " {color: blue;}\n"].join('');
 }
@@ -11579,545 +11579,188 @@ var _demoSquareRed = registerComponent(SquareBlue$1, {
 
 function tmpl$2($api, $cmp, $slotset, $ctx) {
   const {
-    t: api_text,
+    d: api_dynamic,
     h: api_element,
-    c: api_custom_element
+    c: api_custom_element,
+    t: api_text,
+    b: api_bind
   } = $api;
-  return [api_element("h1", {
+  const {
+    _m0
+  } = $ctx;
+  return [api_element("h2", {
     key: 0
-  }, [api_text("Rendering Example")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
+  }, [api_dynamic($cmp.title)]), api_custom_element("demo-square-blue", _demoSquareBlue, {
     key: 1
   }, []), api_custom_element("demo-square-red", _demoSquareRed, {
     key: 2
-  }, []), api_element("table", {
-    key: 256
-  }, [api_element("tbody", {
-    key: 255
-  }, [api_element("tr", {
-    key: 23
-  }, [api_element("td", {
-    key: 6
-  }, [api_element("h2", {
-    key: 3
-  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 4
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 5
-  }, [])]), api_element("td", {
-    key: 10
-  }, [api_element("h2", {
-    key: 7
-  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 8
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 9
-  }, [])]), api_element("td", {
-    key: 14
-  }, [api_element("h2", {
-    key: 11
-  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 12
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 13
-  }, [])]), api_element("td", {
-    key: 18
-  }, [api_element("h2", {
-    key: 15
-  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 16
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 17
-  }, [])]), api_element("td", {
-    key: 22
-  }, [api_element("h2", {
-    key: 19
-  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 20
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 21
-  }, [])])]), api_element("tr", {
-    key: 44
-  }, [api_element("td", {
-    key: 27
-  }, [api_element("h2", {
-    key: 24
-  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 25
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 26
-  }, [])]), api_element("td", {
-    key: 31
-  }, [api_element("h2", {
-    key: 28
-  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 29
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 30
-  }, [])]), api_element("td", {
-    key: 35
-  }, [api_element("h2", {
-    key: 32
-  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 33
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 34
-  }, [])]), api_element("td", {
-    key: 39
-  }, [api_element("h2", {
-    key: 36
-  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 37
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 38
-  }, [])]), api_element("td", {
-    key: 43
-  }, [api_element("h2", {
-    key: 40
-  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 41
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 42
-  }, [])])]), api_element("tr", {
-    key: 65
-  }, [api_element("td", {
-    key: 48
-  }, [api_element("h2", {
-    key: 45
-  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 46
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 47
-  }, [])]), api_element("td", {
-    key: 52
-  }, [api_element("h2", {
-    key: 49
-  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 50
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 51
-  }, [])]), api_element("td", {
-    key: 56
-  }, [api_element("h2", {
-    key: 53
-  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 54
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 55
-  }, [])]), api_element("td", {
-    key: 60
-  }, [api_element("h2", {
-    key: 57
-  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 58
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 59
-  }, [])]), api_element("td", {
-    key: 64
-  }, [api_element("h2", {
-    key: 61
-  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 62
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 63
-  }, [])])]), api_element("tr", {
-    key: 86
-  }, [api_element("td", {
-    key: 69
-  }, [api_element("h2", {
-    key: 66
-  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 67
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 68
-  }, [])]), api_element("td", {
-    key: 73
-  }, [api_element("h2", {
-    key: 70
-  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 71
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 72
-  }, [])]), api_element("td", {
-    key: 77
-  }, [api_element("h2", {
-    key: 74
-  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 75
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 76
-  }, [])]), api_element("td", {
-    key: 81
-  }, [api_element("h2", {
-    key: 78
-  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 79
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 80
-  }, [])]), api_element("td", {
-    key: 85
-  }, [api_element("h2", {
-    key: 82
-  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 83
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 84
-  }, [])])]), api_element("tr", {
-    key: 107
-  }, [api_element("td", {
-    key: 90
-  }, [api_element("h2", {
-    key: 87
-  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 88
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 89
-  }, [])]), api_element("td", {
-    key: 94
-  }, [api_element("h2", {
-    key: 91
-  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 92
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 93
-  }, [])]), api_element("td", {
-    key: 98
-  }, [api_element("h2", {
-    key: 95
-  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 96
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 97
-  }, [])]), api_element("td", {
-    key: 102
-  }, [api_element("h2", {
-    key: 99
-  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 100
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 101
-  }, [])]), api_element("td", {
-    key: 106
-  }, [api_element("h2", {
-    key: 103
-  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 104
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 105
-  }, [])])]), api_element("tr", {
-    key: 128
-  }, [api_element("td", {
-    key: 111
-  }, [api_element("h2", {
-    key: 108
-  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 109
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 110
-  }, [])]), api_element("td", {
-    key: 115
-  }, [api_element("h2", {
-    key: 112
-  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 113
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 114
-  }, [])]), api_element("td", {
-    key: 119
-  }, [api_element("h2", {
-    key: 116
-  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 117
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 118
-  }, [])]), api_element("td", {
-    key: 123
-  }, [api_element("h2", {
-    key: 120
-  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 121
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 122
-  }, [])]), api_element("td", {
-    key: 127
-  }, [api_element("h2", {
-    key: 124
-  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 125
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 126
-  }, [])])]), api_element("tr", {
-    key: 149
-  }, [api_element("td", {
-    key: 132
-  }, [api_element("h2", {
-    key: 129
-  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 130
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 131
-  }, [])]), api_element("td", {
-    key: 136
-  }, [api_element("h2", {
-    key: 133
-  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 134
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 135
-  }, [])]), api_element("td", {
-    key: 140
-  }, [api_element("h2", {
-    key: 137
-  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 138
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 139
-  }, [])]), api_element("td", {
-    key: 144
-  }, [api_element("h2", {
-    key: 141
-  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 142
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 143
-  }, [])]), api_element("td", {
-    key: 148
-  }, [api_element("h2", {
-    key: 145
-  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 146
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 147
-  }, [])])]), api_element("tr", {
-    key: 170
-  }, [api_element("td", {
-    key: 153
-  }, [api_element("h2", {
-    key: 150
-  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 151
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 152
-  }, [])]), api_element("td", {
-    key: 157
-  }, [api_element("h2", {
-    key: 154
-  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 155
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 156
-  }, [])]), api_element("td", {
-    key: 161
-  }, [api_element("h2", {
-    key: 158
-  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 159
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 160
-  }, [])]), api_element("td", {
-    key: 165
-  }, [api_element("h2", {
-    key: 162
-  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 163
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 164
-  }, [])]), api_element("td", {
-    key: 169
-  }, [api_element("h2", {
-    key: 166
-  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 167
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 168
-  }, [])])]), api_element("tr", {
-    key: 191
-  }, [api_element("td", {
-    key: 174
-  }, [api_element("h2", {
-    key: 171
-  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 172
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 173
-  }, [])]), api_element("td", {
-    key: 178
-  }, [api_element("h2", {
-    key: 175
-  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 176
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 177
-  }, [])]), api_element("td", {
-    key: 182
-  }, [api_element("h2", {
-    key: 179
-  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 180
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 181
-  }, [])]), api_element("td", {
-    key: 186
-  }, [api_element("h2", {
-    key: 183
-  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 184
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 185
-  }, [])]), api_element("td", {
-    key: 190
-  }, [api_element("h2", {
-    key: 187
-  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 188
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 189
-  }, [])])]), api_element("tr", {
-    key: 212
-  }, [api_element("td", {
-    key: 195
-  }, [api_element("h2", {
-    key: 192
-  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 193
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 194
-  }, [])]), api_element("td", {
-    key: 199
-  }, [api_element("h2", {
-    key: 196
-  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 197
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 198
-  }, [])]), api_element("td", {
-    key: 203
-  }, [api_element("h2", {
-    key: 200
-  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 201
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 202
-  }, [])]), api_element("td", {
-    key: 207
-  }, [api_element("h2", {
-    key: 204
-  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 205
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 206
-  }, [])]), api_element("td", {
-    key: 211
-  }, [api_element("h2", {
-    key: 208
-  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 209
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 210
-  }, [])])]), api_element("tr", {
-    key: 233
-  }, [api_element("td", {
-    key: 216
-  }, [api_element("h2", {
-    key: 213
-  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 214
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 215
-  }, [])]), api_element("td", {
-    key: 220
-  }, [api_element("h2", {
-    key: 217
-  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 218
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 219
-  }, [])]), api_element("td", {
-    key: 224
-  }, [api_element("h2", {
-    key: 221
-  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 222
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 223
-  }, [])]), api_element("td", {
-    key: 228
-  }, [api_element("h2", {
-    key: 225
-  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 226
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 227
-  }, [])]), api_element("td", {
-    key: 232
-  }, [api_element("h2", {
-    key: 229
-  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 230
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 231
-  }, [])])]), api_element("tr", {
-    key: 254
-  }, [api_element("td", {
-    key: 237
-  }, [api_element("h2", {
-    key: 234
-  }, [api_text("Block 1")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 235
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 236
-  }, [])]), api_element("td", {
-    key: 241
-  }, [api_element("h2", {
-    key: 238
-  }, [api_text("Block 2")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 239
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 240
-  }, [])]), api_element("td", {
-    key: 245
-  }, [api_element("h2", {
-    key: 242
-  }, [api_text("Block 3")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 243
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 244
-  }, [])]), api_element("td", {
-    key: 249
-  }, [api_element("h2", {
-    key: 246
-  }, [api_text("Block 4")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 247
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 248
-  }, [])]), api_element("td", {
-    key: 253
-  }, [api_element("h2", {
-    key: 250
-  }, [api_text("Block 5")]), api_custom_element("demo-square-blue", _demoSquareBlue, {
-    key: 251
-  }, []), api_custom_element("demo-square-red", _demoSquareRed, {
-    key: 252
-  }, [])])])])])];
+  }, []), api_element("a", {
+    attrs: {
+      "href": "#"
+    },
+    key: 3,
+    on: {
+      "click": _m0 || ($ctx._m0 = api_bind($cmp.infoClick))
+    }
+  }, [api_text("Details...")])];
 }
 
 var _tmpl$2 = registerTemplate(tmpl$2);
 tmpl$2.stylesheets = [];
-
-if (_implicitStylesheets) {
-  tmpl$2.stylesheets.push.apply(tmpl$2.stylesheets, _implicitStylesheets);
-}
 tmpl$2.stylesheetTokens = {
-  hostAttribute: "demo-main_main-host",
-  shadowAttribute: "demo-main_main"
+  hostAttribute: "demo-block_block-host",
+  shadowAttribute: "demo-block_block"
 };
 
-class Main extends BaseLightningElement {}
+class Block extends BaseLightningElement {
+  constructor(...args) {
+    super(...args);
+    this.row = void 0;
+    this.col = void 0;
+  }
 
-var DemoMain = registerComponent(Main, {
+  get title() {
+    return `Block ${this.row}-${this.col}`;
+  }
+
+  infoClick() {
+    const json = {
+      row: this.row,
+      col: this.col
+    };
+    alert(JSON.stringify(json, null, '  '));
+  }
+
+}
+
+registerDecorators(Block, {
+  publicProps: {
+    row: {
+      config: 0
+    },
+    col: {
+      config: 0
+    }
+  }
+});
+
+var _demoBlock = registerComponent(Block, {
   tmpl: _tmpl$2
 });
 
 function tmpl$3($api, $cmp, $slotset, $ctx) {
+  const {
+    t: api_text,
+    h: api_element,
+    c: api_custom_element,
+    k: api_key,
+    i: api_iterator
+  } = $api;
+  return [api_element("div", {
+    classMap: {
+      "d-flex": true,
+      "flex-column": true,
+      "flex-md-row": true,
+      "p-3": true,
+      "px-md-4": true,
+      "mb-3": true,
+      "bg-white": true,
+      "border-bottom": true,
+      "shadow-sm": true
+    },
+    key: 4
+  }, [api_element("h5", {
+    classMap: {
+      "my-0": true,
+      "mr-md-auto": true,
+      "font-weight-normal": true
+    },
+    key: 0
+  }, [api_text("SSR DEMO")]), api_element("a", {
+    classMap: {
+      "my-0": true,
+      "mr-md-auto": true,
+      "p-2": true,
+      "text-dark": true
+    },
+    attrs: {
+      "href": "/demo?ssr"
+    },
+    key: 1
+  }, [api_text("SSR")]), api_element("a", {
+    classMap: {
+      "my-0": true,
+      "mr-md-auto": true,
+      "p-2": true,
+      "text-dark": true
+    },
+    attrs: {
+      "href": "/demo"
+    },
+    key: 2
+  }, [api_text("NO SSR")]), api_element("a", {
+    classMap: {
+      "my-0": true,
+      "mr-md-auto": true,
+      "p-2": true,
+      "text-dark": true
+    },
+    attrs: {
+      "href": "/"
+    },
+    key: 3
+  }, [api_text("Commerce Demo")])]), api_element("h1", {
+    key: 6
+  }, [api_element("blockquote", {
+    key: 5
+  }, [])]), api_element("table", {
+    key: 10
+  }, api_iterator($cmp.rows, function (row) {
+    return api_element("tr", {
+      key: api_key(9, row)
+    }, api_iterator($cmp.cols, function (col) {
+      return api_element("td", {
+        key: api_key(8, col)
+      }, [api_custom_element("demo-block", _demoBlock, {
+        props: {
+          "row": row,
+          "col": col
+        },
+        key: 7
+      }, [])]);
+    }));
+  }))];
+}
+
+var _tmpl$3 = registerTemplate(tmpl$3);
+tmpl$3.stylesheets = [];
+
+if (_implicitStylesheets) {
+  tmpl$3.stylesheets.push.apply(tmpl$3.stylesheets, _implicitStylesheets);
+}
+tmpl$3.stylesheetTokens = {
+  hostAttribute: "demo-main_main-host",
+  shadowAttribute: "demo-main_main"
+};
+
+class Main extends BaseLightningElement {
+  constructor(...args) {
+    super(...args);
+    this.rows = [1, 2, 3, 4, 5, 6];
+    this.cols = [1, 2, 3, 4];
+  }
+
+}
+
+registerDecorators(Main, {
+  fields: ["rows", "cols"]
+});
+
+var DemoMain = registerComponent(Main, {
+  tmpl: _tmpl$3
+});
+
+function tmpl$4($api, $cmp, $slotset, $ctx) {
   const {
     t: api_text,
     h: api_element,
@@ -12142,7 +11785,7 @@ function tmpl$3($api, $cmp, $slotset, $ctx) {
       "navbar-brand": true
     },
     attrs: {
-      "href": "home"
+      "href": "/"
     },
     key: 0
   }, [api_text("Commerce Demo")]), api_element("button", {
@@ -12180,45 +11823,45 @@ function tmpl$3($api, $cmp, $slotset, $ctx) {
     key: 8
   }, [api_element("li", {
     classMap: {
-      "nav-item": true,
-      "active": true
+      "nav-item": true
     },
-    key: 4
-  }, [api_element("a", {
+    key: 5
+  }, [!$cmp.ssr ? api_element("a", {
+    classMap: {
+      "nav-link": true
+    },
+    attrs: {
+      "href": "/?ssr"
+    },
+    key: 3
+  }, [api_text("SSR")]) : null, $cmp.ssr ? api_element("a", {
     classMap: {
       "nav-link": true
     },
     attrs: {
       "href": "/"
     },
-    key: 3
-  }, [api_text("Home")])]), api_element("li", {
+    key: 4
+  }, [api_text("NO SSR")]) : null]), api_element("li", {
     classMap: {
-      "nav-item": true
+      "nav-item": true,
+      "active": true
     },
     key: 7
-  }, [!$cmp.ssr ? api_element("a", {
+  }, [api_element("a", {
     classMap: {
       "nav-link": true
     },
     attrs: {
-      "href": "/home?ssr"
-    },
-    key: 5
-  }, [api_text("SSR Version")]) : null, $cmp.ssr ? api_element("a", {
-    classMap: {
-      "nav-link": true
-    },
-    attrs: {
-      "href": "/home"
+      "href": "/demo"
     },
     key: 6
-  }, [api_text("Pure Client Version")]) : null])])])])])];
+  }, [api_text("Tech Demo")])])])])])])];
 }
 
-var _tmpl$3 = registerTemplate(tmpl$3);
-tmpl$3.stylesheets = [];
-tmpl$3.stylesheetTokens = {
+var _tmpl$4 = registerTemplate(tmpl$4);
+tmpl$4.stylesheets = [];
+tmpl$4.stylesheetTokens = {
   hostAttribute: "commerce-header_header-host",
   shadowAttribute: "commerce-header_header"
 };
@@ -12295,10 +11938,10 @@ class Header extends BaseLightningElement {
 }
 
 var _commerceHeader = registerComponent(Header, {
-  tmpl: _tmpl$3
+  tmpl: _tmpl$4
 });
 
-function tmpl$4($api, $cmp, $slotset, $ctx) {
+function tmpl$5($api, $cmp, $slotset, $ctx) {
   const {
     c: api_custom_element,
     h: api_element,
@@ -12318,10 +11961,10 @@ function tmpl$4($api, $cmp, $slotset, $ctx) {
   }, [], $slotset)])];
 }
 
-var _tmpl$4 = registerTemplate(tmpl$4);
-tmpl$4.slots = [""];
-tmpl$4.stylesheets = [];
-tmpl$4.stylesheetTokens = {
+var _tmpl$5 = registerTemplate(tmpl$5);
+tmpl$5.slots = [""];
+tmpl$5.stylesheets = [];
+tmpl$5.stylesheetTokens = {
   hostAttribute: "commerce-page_page-host",
   shadowAttribute: "commerce-page_page"
 };
@@ -12329,10 +11972,10 @@ tmpl$4.stylesheetTokens = {
 class Page extends BaseLightningElement {}
 
 var _commercePage = registerComponent(Page, {
-  tmpl: _tmpl$4
+  tmpl: _tmpl$5
 });
 
-function tmpl$5($api, $cmp, $slotset, $ctx) {
+function tmpl$6($api, $cmp, $slotset, $ctx) {
   const {
     d: api_dynamic,
     h: api_element
@@ -12348,9 +11991,9 @@ function tmpl$5($api, $cmp, $slotset, $ctx) {
   }, [api_dynamic($cmp.category)])];
 }
 
-var _tmpl$5 = registerTemplate(tmpl$5);
-tmpl$5.stylesheets = [];
-tmpl$5.stylesheetTokens = {
+var _tmpl$6 = registerTemplate(tmpl$6);
+tmpl$6.stylesheets = [];
+tmpl$6.stylesheetTokens = {
   hostAttribute: "commerce-categoryItem_categoryItem-host",
   shadowAttribute: "commerce-categoryItem_categoryItem"
 };
@@ -12362,7 +12005,7 @@ class LeftNav extends BaseLightningElement {
   }
 
   get link() {
-    return composeUrl('/home', {
+    return composeUrl('/', {
       category: this.category
     });
   }
@@ -12378,10 +12021,10 @@ registerDecorators(LeftNav, {
 });
 
 var _commerceCategoryItem = registerComponent(LeftNav, {
-  tmpl: _tmpl$5
+  tmpl: _tmpl$6
 });
 
-function tmpl$6($api, $cmp, $slotset, $ctx) {
+function tmpl$7($api, $cmp, $slotset, $ctx) {
   const {
     t: api_text,
     h: api_element,
@@ -12409,11 +12052,11 @@ function tmpl$6($api, $cmp, $slotset, $ctx) {
   }) : [])];
 }
 
-var _tmpl$6 = registerTemplate(tmpl$6);
-tmpl$6.stylesheets = [];
-tmpl$6.stylesheetTokens = {
-  hostAttribute: "commerce-leftnav_leftnav-host",
-  shadowAttribute: "commerce-leftnav_leftnav"
+var _tmpl$7 = registerTemplate(tmpl$7);
+tmpl$7.stylesheets = [];
+tmpl$7.stylesheetTokens = {
+  hostAttribute: "commerce-categoryNav_categoryNav-host",
+  shadowAttribute: "commerce-categoryNav_categoryNav"
 };
 
 const INITIAL_STATE = '__B2C_INITIAL_STATE__'; //
@@ -12746,11 +12389,11 @@ registerDecorators(LeftNav$1, {
   fields: ["categories"]
 });
 
-var _commerceLeftnav = registerComponent(LeftNav$1, {
-  tmpl: _tmpl$6
+var _commerceCategoryNav = registerComponent(LeftNav$1, {
+  tmpl: _tmpl$7
 });
 
-function tmpl$7($api, $cmp, $slotset, $ctx) {
+function tmpl$8($api, $cmp, $slotset, $ctx) {
   const {
     h: api_element,
     d: api_dynamic,
@@ -12820,11 +12463,11 @@ function tmpl$7($api, $cmp, $slotset, $ctx) {
   }, [api_dynamic($cmp.product.ProductCategory)])])])];
 }
 
-var _tmpl$7 = registerTemplate(tmpl$7);
-tmpl$7.stylesheets = [];
-tmpl$7.stylesheetTokens = {
-  hostAttribute: "commerce-homeProductcard_homeProductcard-host",
-  shadowAttribute: "commerce-homeProductcard_homeProductcard"
+var _tmpl$8 = registerTemplate(tmpl$8);
+tmpl$8.stylesheets = [];
+tmpl$8.stylesheetTokens = {
+  hostAttribute: "commerce-productcard_productcard-host",
+  shadowAttribute: "commerce-productcard_productcard"
 };
 
 class ProductCard extends BaseLightningElement {
@@ -12852,11 +12495,11 @@ registerDecorators(ProductCard, {
   }
 });
 
-var _commerceHomeProductcard = registerComponent(ProductCard, {
-  tmpl: _tmpl$7
+var _commerceProductcard = registerComponent(ProductCard, {
+  tmpl: _tmpl$8
 });
 
-function tmpl$8($api, $cmp, $slotset, $ctx) {
+function tmpl$9($api, $cmp, $slotset, $ctx) {
   const {
     t: api_text,
     h: api_element,
@@ -12874,26 +12517,31 @@ function tmpl$8($api, $cmp, $slotset, $ctx) {
       "my-4": true
     },
     key: 0
-  }, [api_text("Welcome to LWC Commerce!")]), api_text("Please select a product category on the left")]) : null, $cmp.hasCategory ? api_element("div", {
+  }, [api_text("Welcome to LWC Commerce!")])]) : null, !$cmp.hasCategory ? api_element("div", {
     classMap: {
       "row": true
     },
-    key: 9
+    key: 2
+  }, [api_text("Please select a product category on the left")]) : null, $cmp.hasCategory ? api_element("div", {
+    classMap: {
+      "row": true
+    },
+    key: 10
   }, [$cmp.hasProducts ? api_element("div", {
     classMap: {
       "row": true
     },
-    key: 3
+    key: 4
   }, [api_element("h3", {
     classMap: {
       "my-4": true
     },
-    key: 2
+    key: 3
   }, [api_text("Search Results:")])]) : null, $cmp.hasProducts ? $cmp.hasProducts ? api_element("div", {
     classMap: {
       "row": true
     },
-    key: 6
+    key: 7
   }, api_iterator($cmp.products.data, function (product) {
     return api_element("div", {
       classMap: {
@@ -12901,31 +12549,31 @@ function tmpl$8($api, $cmp, $slotset, $ctx) {
         "col-md-6": true,
         "mb-4": true
       },
-      key: api_key(5, product.ProductCode)
-    }, [api_custom_element("commerce-home-productcard", _commerceHomeProductcard, {
+      key: api_key(6, product.ProductCode)
+    }, [api_custom_element("commerce-productcard", _commerceProductcard, {
       props: {
         "product": product
       },
-      key: 4
+      key: 5
     }, [])]);
   })) : null : null, !$cmp.hasProducts ? $cmp.loading ? api_element("div", {
     classMap: {
       "row": true
     },
-    key: 7
+    key: 8
   }, [api_text("Loading...")]) : null : null, !$cmp.hasProducts ? !$cmp.loading ? api_element("div", {
     classMap: {
       "row": true
     },
-    key: 8
+    key: 9
   }, [api_text("No product is available, please change the selection")]) : null : null]) : null];
 }
 
-var _tmpl$8 = registerTemplate(tmpl$8);
-tmpl$8.stylesheets = [];
-tmpl$8.stylesheetTokens = {
-  hostAttribute: "commerce-homeProductlist_homeProductlist-host",
-  shadowAttribute: "commerce-homeProductlist_homeProductlist"
+var _tmpl$9 = registerTemplate(tmpl$9);
+tmpl$9.stylesheets = [];
+tmpl$9.stylesheetTokens = {
+  hostAttribute: "commerce-productlist_productlist-host",
+  shadowAttribute: "commerce-productlist_productlist"
 };
 
 class ProductList extends BaseLightningElement {
@@ -12962,11 +12610,11 @@ registerDecorators(ProductList, {
   fields: ["category", "products"]
 });
 
-var _commerceHomeProductlist = registerComponent(ProductList, {
-  tmpl: _tmpl$8
+var _commerceProductlist = registerComponent(ProductList, {
+  tmpl: _tmpl$9
 });
 
-function tmpl$9($api, $cmp, $slotset, $ctx) {
+function tmpl$a($api, $cmp, $slotset, $ctx) {
   const {
     c: api_custom_element,
     h: api_element
@@ -12988,29 +12636,29 @@ function tmpl$9($api, $cmp, $slotset, $ctx) {
       "col-lg-3": true
     },
     key: 1
-  }, [api_custom_element("commerce-leftnav", _commerceLeftnav, {
+  }, [api_custom_element("commerce-category-nav", _commerceCategoryNav, {
     key: 0
   }, [])]), api_element("div", {
     classMap: {
       "col-lg-9": true
     },
     key: 3
-  }, [api_custom_element("commerce-home-productlist", _commerceHomeProductlist, {
+  }, [api_custom_element("commerce-productlist", _commerceProductlist, {
     key: 2
   }, [])])])])])];
 }
 
-var _tmpl$9 = registerTemplate(tmpl$9);
-tmpl$9.stylesheets = [];
-tmpl$9.stylesheetTokens = {
-  hostAttribute: "commerce-homeMain_homeMain-host",
-  shadowAttribute: "commerce-homeMain_homeMain"
+var _tmpl$a = registerTemplate(tmpl$a);
+tmpl$a.stylesheets = [];
+tmpl$a.stylesheetTokens = {
+  hostAttribute: "commerce-main_main-host",
+  shadowAttribute: "commerce-main_main"
 };
 
 class Main$1 extends BaseLightningElement {}
 
-var CommerceHome = registerComponent(Main$1, {
-  tmpl: _tmpl$9
+var CommerceMain = registerComponent(Main$1, {
+  tmpl: _tmpl$a
 });
 
 /*
@@ -13020,4 +12668,4 @@ var CommerceHome = registerComponent(Main$1, {
     For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
 */
 customElements.define("demo-main", DemoMain.CustomElementConstructor);
-customElements.define("commerce-home", CommerceHome.CustomElementConstructor);
+customElements.define("commerce-main", CommerceMain.CustomElementConstructor);

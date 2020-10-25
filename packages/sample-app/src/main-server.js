@@ -4,4 +4,5 @@
     SPDX-License-Identifier: BSD-3-Clause
     For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
 */
-export { default as Main } from 'app/main';
+export { default as CommerceMain } from 'commerce/main';
+export { default as DemoMain } from 'demo/main';

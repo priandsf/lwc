@@ -7,6 +7,9 @@
     "url": "https://github.com/salesforce/lwc.git"
   },
   "scripts": {
+    "start": "node ./packages/sample-app/index.js",
+    "publish-heroku": "git push heroku ssr-commerce:master",
+
     "prepare": "yarn build",
     "clean": "lerna run clean && lerna clean --yes && rm -rf node_modules",
     "lint": "eslint packages/ scripts/ --ext=js,ts",

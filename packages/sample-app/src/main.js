@@ -8,7 +8,7 @@
 import "@lwc/synthetic-shadow"
 
 import DemoMain from "demo/main";
-import CommerceHome from "commerce/homeMain";
+import CommerceMain from "commerce/main";
 
 customElements.define("demo-main", DemoMain.CustomElementConstructor);
-customElements.define("commerce-home", CommerceHome.CustomElementConstructor);
+customElements.define("commerce-main", CommerceMain.CustomElementConstructor);

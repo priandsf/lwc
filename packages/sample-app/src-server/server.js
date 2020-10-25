@@ -51,11 +51,11 @@ app.get('/api/products', (req, res) => {
 
 // SSR
 // https://salesforce.quip.com/UIlHA82pHsH0
-app.get('/home', (req, res) => {
-    renderRoute(req,res,'commerce-home')
+app.get('/demo', (req, res) => {
+    renderRoute(req,res,'demo-main','DemoMain')
 });
 app.get('/*', (req, res) => {
-    renderRoute(req,res,'demo-main')
+    renderRoute(req,res,'commerce-main','CommerceMain')
 });
 
 function initialize(server) {
@@ -79,7 +79,7 @@ module.exports.start = () => {
 };
 
 
-function renderRoute(req, res, tagName) {
+function renderRoute(req, res, tagName, exportName) {
     if (req.query.ssr !== undefined) {
         const context = {
             baseUrl: `http://localhost:${port}`
@@ -87,7 +87,7 @@ function renderRoute(req, res, tagName) {
         renderSsr({
             req,
             module: '../dist/lwc-components-server.js',
-            exportName: 'Main',
+            exportName,
             tagName,
             context
         }).then( ({html,styles,store}) => {

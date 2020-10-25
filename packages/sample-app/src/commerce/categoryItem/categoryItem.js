@@ -10,6 +10,6 @@ export default class LeftNav extends LightningElement {
     }
 
     get link() {
-        return composeUrl('/home',{category:this.category});
+        return composeUrl('/',{category:this.category});
     }
 }
