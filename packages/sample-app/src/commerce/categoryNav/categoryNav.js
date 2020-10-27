@@ -5,18 +5,12 @@ export default class LeftNav extends LightningElement {
 
     categories;
 
-    constructor () {
-        super();
-        this.onStateChangeBind = (categories) => { 
-            this.categories = categories;
-        }
-    }
-
     connectedCallback() {
-        categoriesStore.subscribe(this.onStateChangeBind);
+        this.subscription = categoriesStore.subscribe((categories) => { 
+            this.categories = categories;
+        })
     }
     disconnectedCallback() {
-        categoriesStore.unsubscribe(this.onStateChangeBind);
+        this.subscription.unsubscribe();
     }    
-
 }

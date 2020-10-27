@@ -135,7 +135,7 @@ function renderTemplate(args) {
             ${args.styles ? args.styles.map((style) => `<style type="text/css">${style}</style>`).join('\n') : ''}    
         </head>
         <body>
-            ${args.storeData ? `<script>window['__B2C_INITIAL_STATE__']=${JSON.stringify(args.storeData)}</script>` : ''}
+            ${args.storeData ? `<script>window['__B2C_INITIAL_STATE__']=Object.assign(window['__B2C_INITIAL_STATE__']||{},${JSON.stringify(args.storeData)})</script>` : ''}
             ${
                 args.fragment ?  `${args.fragment}` : `<${args.tagName}></${args.tagName}>`
             }
@@ -145,4 +145,3 @@ function renderTemplate(args) {
         </html>    
     `
 }
-

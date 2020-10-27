@@ -10,16 +10,15 @@ export default class ProductList extends LightningElement {
 
     constructor() {
         super();
-        this.category = getQueryParameter("category");
-        this.onStateChangeBind = (products) => { 
-            this.products = products;
-        }
     }
     connectedCallback() {
-        productsStore.subscribe(this.onStateChangeBind,this.category);
+        this.category = getQueryParameter("category");
+        this.subscription = productsStore.subscribe(this.category,(products) => { 
+            this.products = products;
+        })
     }
     disconnectedCallback() {
-        productsStore.unsubscribe(this.onStateChangeBind);
+        this.subscription.unsubscribe();
     }    
 
     get hasProducts() {

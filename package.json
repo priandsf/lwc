@@ -8,7 +8,7 @@
   },
   "scripts": {
     "start": "node ./packages/sample-app/index.js",
-    "publish-heroku": "git push heroku ssr-commerce:master",
+    "publish-heroku": "git push heroku ssr:master",
 
     "prepare": "yarn build",
     "clean": "lerna run clean && lerna clean --yes && rm -rf node_modules",

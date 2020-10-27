@@ -1,4 +1,4 @@
-import { getSsrContext, isSsr } from "./ssr";
+import { isSsr, getSsrContext } from "./ssr";
 
 const INITIAL_STATE = '__B2C_INITIAL_STATE__';
 
@@ -7,16 +7,15 @@ const INITIAL_STATE = '__B2C_INITIAL_STATE__';
 // This method is used by the wire adapter to detect if a key changed
 //
 export function keyAsString(key) {
-    if(key===undefined || key===null) {
-        return '';
+    if(typeof key === 'string') {
+        return key;
     }
-    if(Array.isArray(key)) {
-        return key.join('|');
+    if(!key) {
+        return '';
     }
     return String(key);
 }
 
-const SSR = isSsr();
 
 //
 // Initialize the global state manager for the client
@@ -24,12 +23,24 @@ const SSR = isSsr();
 // later will be ignored. We might revisit that if needed
 //
 let GLOBALSTATE_CLIENT;
-if(!SSR) {
+if(!isSsr()) {
     if(typeof window[INITIAL_STATE] !== 'undefined') {
         GLOBALSTATE_CLIENT = window[INITIAL_STATE];
         delete window[INITIAL_STATE];
     } else {
         GLOBALSTATE_CLIENT = {};
+    }
+}
+
+
+class _Subscription {
+    constructor(store,key,listener) {
+        this._store = store;
+        this._listener = listener;
+        this._key = key;
+    }
+    unsubscribe() {
+        this._store._unsubscribe(this._key,this._listener);
     }
 }
 
@@ -77,7 +88,7 @@ export class Store {
         this.options = options || {};
         this.name = name;
 
-        if(!SSR) {
+        if(!isSsr()) {
             const globalState = GLOBALSTATE_CLIENT;
             if(typeof globalState[name]==='undefined') {
                 globalState[name] = {};
@@ -99,7 +110,7 @@ export class Store {
         return globalState[this.name];
     }
 
-    _getObject(container,key,load) {
+    _get(container,key,load) {
         const k = keyAsString(key);
         let e = container[k];
         if(e===undefined) {
@@ -112,12 +123,12 @@ export class Store {
             };
         }
         if(load && !e.loaded) {
-            this._loadObject(key,e);
+            this._load(key,e);
         }
         return e;
     }
 
-    _loadObject(key,e,loader) {
+    _load(key,e,loader) {
         if(!loader) loader = this.options.loader;
         if(!e.loading && loader) {
             e.loading = loader(key)
@@ -137,8 +148,30 @@ export class Store {
                     this._notify(e);
                     return e;
                 } );
-            if(SSR && e.loading) {
+            if(isSsr() && e.loading) {
                 getSsrContext().loading.push(e.loading);
+            }
+        }
+    }
+
+    _unsubscribe(key,l) {
+        const container = this._storeContainer();
+        const k = keyAsString(key);
+        const e = container[k];
+        if(e) {
+            const index = e.subscribers.indexOf(l);
+            if(index>=0) {
+                e.subscribers.splice(index,1);
+            }
+            if(e.subscribers.length===0) {
+                if(typeof this.options.discard!=='undefined') {
+                    if(this.options.discard===false) {
+                        return;
+                    }
+                    // We could have a function that discards using a MRU, or whatever...
+                    // This can be extended in many ways
+                }
+                delete container[k];
             }
         }
     }
@@ -161,29 +194,29 @@ export class Store {
     // Public methods
     //
 
-    hasObject(key) {
+    has(key) {
         const k = keyAsString(key);
         return this._storeContainer()[k]!==undefined;
     }
-    getObject(key) {
-        return this._exportObject(this._getObject(this._storeContainer(),key,true));
+    get(key) {
+        return this._exportObject(this._get(this._storeContainer(),key,true));
     }
-    async getObjectAsync(key) {
-        const e = this._getObject(this._storeContainer(),key,true);
+    async getAsync(key) {
+        const e = this._get(this._storeContainer(),key,true);
         if(!e.loaded && e.loading) {
             await e.loading;
         }
         return this._exportObject(e);
     }
-    setObject(key,data,error) {
-        const e = this._getObject(this._storeContainer(),key,false);
+    set(key,data,error) {
+        const e = this._get(this._storeContainer(),key,false);
         // Should it throw an exception if the loading flag is set, and thus the assignment failed?
         if(!e.loading) {
             Object.assign( e, {data,error,loaded:true} );
             this._notify(e);
         }
     }
-    removeObject(key) {
+    remove(key) {
         const container = this._storeContainer();
         const k = keyAsString(key);
         const e = container[k];
@@ -191,40 +224,23 @@ export class Store {
             delete container[k];
         }
     }
-    loadObject(key,loader) {
-        const e = this._getObject(this._storeContainer(),key,false);
+    load(key,loader) {
+        const e = this._get(this._storeContainer(),key,false);
         if(!e.loading) {
-            this._loadObject(key,e,loader);
+            this._load(key,e,loader);
         }
         return e;
     }
 
-    subscribe(l,key) {
-        const e = this._getObject(this._storeContainer(),key,true);
+    subscribe(key,listener) {
+        const k = arguments.length==1 ? undefined : key;
+        const l = arguments.length==1 ? key : listener;
+        const e = this._get(this._storeContainer(),k,true);
         e.subscribers.push(l);
         if(l) l(e);
+        return new _Subscription(this,k,l);
     }
-    unsubscribe(l,key) {
-        const container = this._storeContainer();
-        const k = keyAsString(key);
-        const e = container[k];
-        if(e) {
-            const index = e.subscribers.indexOf(l);
-            if(index>=0) {
-                e.subscribers.splice(index,1);
-            }
-            if(e.subscribers.length===0) {
-                if(typeof this.options.discard!=='undefined') {
-                    if(this.options.discard===false) {
-                        return;
-                    }
-                    // We could have a function that discards using a MRU, or whatever...
-                    // This can be extended in many ways
-                }
-                delete container[k];
-            }
-        }
-    }
+
     notify(key) {
         const e = this._storeContainer()[keyAsString(key)];
         if(e) {
@@ -233,46 +249,6 @@ export class Store {
     }
 }
 
-/**
- * Utility class that observes a store with a particular key.
- * If the key can be changed.
- */
-class StoreObserver {
-    constructor(store,listener) {
-        this.store = store;
-        this.listener = listener;
-    }
-    install() {
-        this.onValueChange = (value) => {
-            if(this.listener) {
-                this.listener(value);
-            }
-        };
-        this.store.subscribe(this.onValueChange,this.key);
-    }
-    uninstall() {
-        if(this.onValueChange) {
-            this.store.unsubscribe(this.onValueChange);
-            delete this.onValueChange;
-        }
-    }
-    update(key) {
-        if(this.onValueChange !== undefined) {
-            if(keyAsString(key)!==keyAsString(this.key)) {
-                this.uninstall();
-                this.key = key;
-                this.install();
-             }
-        } else {
-            this.key = key;
-        }
-    }
-}
-
 export function createStore(name,loader) {
     return new Store(name,loader);
-}
-
-export function observeStore(store,listener) {
-    return new StoreObserver(store,listener);
 }

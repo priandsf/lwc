@@ -2,12 +2,14 @@ const fetch = require('node-fetch');
 const { renderComponent } = require('@lwc/engine-server');
 const { performance } = require('perf_hooks');
 
+const SSR = '__B2C_SSR__'
 const SSRCONTEXT= '__B2C_SSRCONTEXT__'
 
 // Globally patch fetch on the SSR environment to make it available to the code
 if (!global.fetch) {
     global.fetch = fetch;
 }
+global[SSR] = true;
 
 function initContext(ssrContext) {
     global[SSRCONTEXT] = ssrContext;

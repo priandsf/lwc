@@ -11866,7 +11866,7 @@ tmpl$4.stylesheetTokens = {
   shadowAttribute: "commerce-header_header"
 };
 
-const SSR = typeof process !== 'undefined' && typeof process.versions.node !== 'undefined';
+const SSR = typeof global !== 'undefined' && global['__B2C_SSR__'] === true;
 function isSsr() {
   return SSR;
 }
@@ -11998,7 +11998,7 @@ tmpl$6.stylesheetTokens = {
   shadowAttribute: "commerce-categoryItem_categoryItem"
 };
 
-class LeftNav extends BaseLightningElement {
+class CategoryNav extends BaseLightningElement {
   constructor() {
     super();
     this.category = void 0;
@@ -12012,7 +12012,7 @@ class LeftNav extends BaseLightningElement {
 
 }
 
-registerDecorators(LeftNav, {
+registerDecorators(CategoryNav, {
   publicProps: {
     category: {
       config: 0
@@ -12020,7 +12020,7 @@ registerDecorators(LeftNav, {
   }
 });
 
-var _commerceCategoryItem = registerComponent(LeftNav, {
+var _commerceCategoryItem = registerComponent(CategoryNav, {
   tmpl: _tmpl$6
 });
 
@@ -12064,17 +12064,16 @@ const INITIAL_STATE = '__B2C_INITIAL_STATE__'; //
 //
 
 function keyAsString(key) {
-  if (key === undefined || key === null) {
+  if (typeof key === 'string') {
+    return key;
+  }
+
+  if (!key) {
     return '';
   }
 
-  if (Array.isArray(key)) {
-    return key.join('|');
-  }
-
   return String(key);
-}
-const SSR$1 = isSsr(); //
+} //
 // Initialize the global state manager for the client
 // We assume that the store is only be initialized once this way, e.g. fragments coming
 // later will be ignored. We might revisit that if needed
@@ -12082,13 +12081,26 @@ const SSR$1 = isSsr(); //
 
 let GLOBALSTATE_CLIENT;
 
-if (!SSR$1) {
+if (!isSsr()) {
   if (typeof window[INITIAL_STATE] !== 'undefined') {
     GLOBALSTATE_CLIENT = window[INITIAL_STATE];
     delete window[INITIAL_STATE];
   } else {
     GLOBALSTATE_CLIENT = {};
   }
+}
+
+class _Subscription {
+  constructor(store, key, listener) {
+    this._store = store;
+    this._listener = listener;
+    this._key = key;
+  }
+
+  unsubscribe() {
+    this._store._unsubscribe(this._key, this._listener);
+  }
+
 }
 /**
  * Simple in memory store.
@@ -12134,7 +12146,7 @@ class Store {
     this.options = options || {};
     this.name = name;
 
-    if (!SSR$1) {
+    if (!isSsr()) {
       const globalState = GLOBALSTATE_CLIENT;
 
       if (typeof globalState[name] === 'undefined') {
@@ -12161,7 +12173,7 @@ class Store {
     return globalState[this.name];
   }
 
-  _getObject(container, key, load) {
+  _get(container, key, load) {
     const k = keyAsString(key);
     let e = container[k];
 
@@ -12176,13 +12188,13 @@ class Store {
     }
 
     if (load && !e.loaded) {
-      this._loadObject(key, e);
+      this._load(key, e);
     }
 
     return e;
   }
 
-  _loadObject(key, e, loader) {
+  _load(key, e, loader) {
     if (!loader) loader = this.options.loader;
 
     if (!e.loading && loader) {
@@ -12206,8 +12218,35 @@ class Store {
         return e;
       });
 
-      if (SSR$1 && e.loading) {
+      if (isSsr() && e.loading) {
         getSsrContext().loading.push(e.loading);
+      }
+    }
+  }
+
+  _unsubscribe(key, l) {
+    const container = this._storeContainer();
+
+    const k = keyAsString(key);
+    const e = container[k];
+
+    if (e) {
+      const index = e.subscribers.indexOf(l);
+
+      if (index >= 0) {
+        e.subscribers.splice(index, 1);
+      }
+
+      if (e.subscribers.length === 0) {
+        if (typeof this.options.discard !== 'undefined') {
+          if (this.options.discard === false) {
+            return;
+          } // We could have a function that discards using a MRU, or whatever...
+          // This can be extended in many ways
+
+        }
+
+        delete container[k];
       }
     }
   }
@@ -12238,17 +12277,17 @@ class Store {
   //
 
 
-  hasObject(key) {
+  has(key) {
     const k = keyAsString(key);
     return this._storeContainer()[k] !== undefined;
   }
 
-  getObject(key) {
-    return this._exportObject(this._getObject(this._storeContainer(), key, true));
+  get(key) {
+    return this._exportObject(this._get(this._storeContainer(), key, true));
   }
 
-  async getObjectAsync(key) {
-    const e = this._getObject(this._storeContainer(), key, true);
+  async getAsync(key) {
+    const e = this._get(this._storeContainer(), key, true);
 
     if (!e.loaded && e.loading) {
       await e.loading;
@@ -12257,8 +12296,8 @@ class Store {
     return this._exportObject(e);
   }
 
-  setObject(key, data, error) {
-    const e = this._getObject(this._storeContainer(), key, false); // Should it throw an exception if the loading flag is set, and thus the assignment failed?
+  set(key, data, error) {
+    const e = this._get(this._storeContainer(), key, false); // Should it throw an exception if the loading flag is set, and thus the assignment failed?
 
 
     if (!e.loading) {
@@ -12272,7 +12311,7 @@ class Store {
     }
   }
 
-  removeObject(key) {
+  remove(key) {
     const container = this._storeContainer();
 
     const k = keyAsString(key);
@@ -12283,48 +12322,25 @@ class Store {
     }
   }
 
-  loadObject(key, loader) {
-    const e = this._getObject(this._storeContainer(), key, false);
+  load(key, loader) {
+    const e = this._get(this._storeContainer(), key, false);
 
     if (!e.loading) {
-      this._loadObject(key, e, loader);
+      this._load(key, e, loader);
     }
 
     return e;
   }
 
-  subscribe(l, key) {
-    const e = this._getObject(this._storeContainer(), key, true);
+  subscribe(key, listener) {
+    const k = arguments.length == 1 ? undefined : key;
+    const l = arguments.length == 1 ? key : listener;
+
+    const e = this._get(this._storeContainer(), k, true);
 
     e.subscribers.push(l);
     if (l) l(e);
-  }
-
-  unsubscribe(l, key) {
-    const container = this._storeContainer();
-
-    const k = keyAsString(key);
-    const e = container[k];
-
-    if (e) {
-      const index = e.subscribers.indexOf(l);
-
-      if (index >= 0) {
-        e.subscribers.splice(index, 1);
-      }
-
-      if (e.subscribers.length === 0) {
-        if (typeof this.options.discard !== 'undefined') {
-          if (this.options.discard === false) {
-            return;
-          } // We could have a function that discards using a MRU, or whatever...
-          // This can be extended in many ways
-
-        }
-
-        delete container[k];
-      }
-    }
+    return new _Subscription(this, k, l);
   }
 
   notify(key) {
@@ -12336,7 +12352,6 @@ class Store {
   }
 
 }
-
 function createStore(name, loader) {
   return new Store(name, loader);
 }
@@ -12365,31 +12380,29 @@ async function getProductsByCategory(category) {
   return products;
 }
 
-class LeftNav$1 extends BaseLightningElement {
-  constructor() {
-    super();
+class LeftNav extends BaseLightningElement {
+  constructor(...args) {
+    super(...args);
     this.categories = void 0;
-
-    this.onStateChangeBind = categories => {
-      this.categories = categories;
-    };
   }
 
   connectedCallback() {
-    categoriesStore.subscribe(this.onStateChangeBind);
+    this.subscription = categoriesStore.subscribe(categories => {
+      this.categories = categories;
+    });
   }
 
   disconnectedCallback() {
-    categoriesStore.unsubscribe(this.onStateChangeBind);
+    this.subscription.unsubscribe();
   }
 
 }
 
-registerDecorators(LeftNav$1, {
+registerDecorators(LeftNav, {
   fields: ["categories"]
 });
 
-var _commerceCategoryNav = registerComponent(LeftNav$1, {
+var _commerceCategoryNav = registerComponent(LeftNav, {
   tmpl: _tmpl$7
 });
 
@@ -12581,19 +12594,17 @@ class ProductList extends BaseLightningElement {
     super();
     this.category = void 0;
     this.products = void 0;
-    this.category = getQueryParameter("category");
-
-    this.onStateChangeBind = products => {
-      this.products = products;
-    };
   }
 
   connectedCallback() {
-    productsStore.subscribe(this.onStateChangeBind, this.category);
+    this.category = getQueryParameter("category");
+    this.subscription = productsStore.subscribe(this.category, products => {
+      this.products = products;
+    });
   }
 
   disconnectedCallback() {
-    productsStore.unsubscribe(this.onStateChangeBind);
+    this.subscription.unsubscribe();
   }
 
   get hasProducts() {

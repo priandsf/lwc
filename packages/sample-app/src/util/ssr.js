@@ -1,5 +1,5 @@
-const SSR = (typeof process !== 'undefined') && (typeof process.versions.node !== 'undefined');
-export function isSsr() { 
+const SSR = typeof global!=='undefined' && global['__B2C_SSR__']===true;
+export function isSsr() {
     return SSR;
 }
 

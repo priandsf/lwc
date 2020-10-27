@@ -1,5 +1,6 @@
 import { keyAsString } from './store';
 
+
 /**
  * Generic @wire adapter that works with a store.
  *
@@ -32,14 +33,14 @@ export class StoreAdapter {
         this.initialKey = this.key = key;
         this.dataCallback = dataCallback;
         this.connected = false;
-        this.sendUpdate = this.sendUpdate.bind(this);
         this.subscribedStore = undefined;
         this.subscribedKey = undefined;
     }
 
     _unsubscribe() {
-        if(this.subscribedStore) {
-            this.subscribedStore.unsubscribe(this.sendUpdate,this.subscribedKey);
+        if(this.subscription) {
+            this.subscription.unsubscribe();
+            this.subscription = undefined;
             this.subscribedStore = undefined;
             this.subscribedKey = undefined;
         }
@@ -51,7 +52,7 @@ export class StoreAdapter {
             if(this.store) {
                 this.subscribedStore = this.store;
                 this.subscribedKey = this.key;
-                this.subscribedStore.subscribe(this.sendUpdate,this.subscribedKey);
+                this.subscription = this.subscribedStore.subscribe(this.subscribedKey,this.dataCallback);
             }
         }
     }
@@ -73,12 +74,5 @@ export class StoreAdapter {
     disconnect() {
         this._unsubscribe();
         this.connected = false;
-    }
-
-    // This default adapter only sends results when it has data
-    sendUpdate(e) {
-        if(this.connected && this.config) {
-            this.dataCallback(e);
-        }
     }
 }
