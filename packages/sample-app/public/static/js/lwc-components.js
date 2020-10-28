@@ -11808,19 +11808,14 @@ function tmpl$5($api, $cmp, $slotset, $ctx) {
     c: api_custom_element
   } = $api;
   return [api_custom_element("slot-container", _slotContainer, {
-    key: 3
+    key: 2
   }, [api_element("span", {
     attrs: {
       "slot": "one"
     },
     key: 0
   }, [api_text("1- My Slot ONE")]), api_element("span", {
-    attrs: {
-      "slot": "two"
-    },
     key: 1
-  }, [api_text("2- A SECOND Slot")]), api_element("span", {
-    key: 2
   }, [api_text("M - Here is the MAIN SLOT")])])];
 }
 
