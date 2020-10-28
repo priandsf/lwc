@@ -11763,6 +11763,83 @@ var DemoMain = registerComponent(Main, {
 function tmpl$4($api, $cmp, $slotset, $ctx) {
   const {
     t: api_text,
+    s: api_slot,
+    h: api_element
+  } = $api;
+  return [api_element("div", {
+    key: 1
+  }, [api_text("This is slot one: "), api_slot("one", {
+    attrs: {
+      "name": "one"
+    },
+    key: 0
+  }, [api_text("#1")], $slotset)]), api_element("div", {
+    key: 3
+  }, [api_text("This is main: "), api_slot("", {
+    key: 2
+  }, [api_text("main")], $slotset)]), api_element("div", {
+    key: 5
+  }, [api_text("This is slot two: "), api_slot("two", {
+    attrs: {
+      "name": "two"
+    },
+    key: 4
+  }, [api_text("#2")], $slotset)])];
+}
+
+var _tmpl$4 = registerTemplate(tmpl$4);
+tmpl$4.slots = ["one", "", "two"];
+tmpl$4.stylesheets = [];
+tmpl$4.stylesheetTokens = {
+  hostAttribute: "slot-container_container-host",
+  shadowAttribute: "slot-container_container"
+};
+
+class MainLayout extends BaseLightningElement {}
+
+var _slotContainer = registerComponent(MainLayout, {
+  tmpl: _tmpl$4
+});
+
+function tmpl$5($api, $cmp, $slotset, $ctx) {
+  const {
+    t: api_text,
+    h: api_element,
+    c: api_custom_element
+  } = $api;
+  return [api_custom_element("slot-container", _slotContainer, {
+    key: 3
+  }, [api_element("span", {
+    attrs: {
+      "slot": "one"
+    },
+    key: 0
+  }, [api_text("1- My Slot ONE")]), api_element("span", {
+    attrs: {
+      "slot": "two"
+    },
+    key: 1
+  }, [api_text("2- A SECOND Slot")]), api_element("span", {
+    key: 2
+  }, [api_text("M - Here is the MAIN SLOT")])])];
+}
+
+var _tmpl$5 = registerTemplate(tmpl$5);
+tmpl$5.stylesheets = [];
+tmpl$5.stylesheetTokens = {
+  hostAttribute: "slot-main_main-host",
+  shadowAttribute: "slot-main_main"
+};
+
+class MainLayout$1 extends BaseLightningElement {}
+
+var SlotMain = registerComponent(MainLayout$1, {
+  tmpl: _tmpl$5
+});
+
+function tmpl$6($api, $cmp, $slotset, $ctx) {
+  const {
+    t: api_text,
     h: api_element,
     gid: api_scoped_id
   } = $api;
@@ -11859,9 +11936,9 @@ function tmpl$4($api, $cmp, $slotset, $ctx) {
   }, [api_text("Tech Demo")])])])])])])];
 }
 
-var _tmpl$4 = registerTemplate(tmpl$4);
-tmpl$4.stylesheets = [];
-tmpl$4.stylesheetTokens = {
+var _tmpl$6 = registerTemplate(tmpl$6);
+tmpl$6.stylesheets = [];
+tmpl$6.stylesheetTokens = {
   hostAttribute: "commerce-header_header-host",
   shadowAttribute: "commerce-header_header"
 };
@@ -11938,10 +12015,10 @@ class Header extends BaseLightningElement {
 }
 
 var _commerceHeader = registerComponent(Header, {
-  tmpl: _tmpl$4
+  tmpl: _tmpl$6
 });
 
-function tmpl$5($api, $cmp, $slotset, $ctx) {
+function tmpl$7($api, $cmp, $slotset, $ctx) {
   const {
     c: api_custom_element,
     h: api_element,
@@ -11961,10 +12038,10 @@ function tmpl$5($api, $cmp, $slotset, $ctx) {
   }, [], $slotset)])];
 }
 
-var _tmpl$5 = registerTemplate(tmpl$5);
-tmpl$5.slots = [""];
-tmpl$5.stylesheets = [];
-tmpl$5.stylesheetTokens = {
+var _tmpl$7 = registerTemplate(tmpl$7);
+tmpl$7.slots = [""];
+tmpl$7.stylesheets = [];
+tmpl$7.stylesheetTokens = {
   hostAttribute: "commerce-page_page-host",
   shadowAttribute: "commerce-page_page"
 };
@@ -11972,10 +12049,10 @@ tmpl$5.stylesheetTokens = {
 class Page extends BaseLightningElement {}
 
 var _commercePage = registerComponent(Page, {
-  tmpl: _tmpl$5
+  tmpl: _tmpl$7
 });
 
-function tmpl$6($api, $cmp, $slotset, $ctx) {
+function tmpl$8($api, $cmp, $slotset, $ctx) {
   const {
     d: api_dynamic,
     h: api_element
@@ -11991,9 +12068,9 @@ function tmpl$6($api, $cmp, $slotset, $ctx) {
   }, [api_dynamic($cmp.category)])];
 }
 
-var _tmpl$6 = registerTemplate(tmpl$6);
-tmpl$6.stylesheets = [];
-tmpl$6.stylesheetTokens = {
+var _tmpl$8 = registerTemplate(tmpl$8);
+tmpl$8.stylesheets = [];
+tmpl$8.stylesheetTokens = {
   hostAttribute: "commerce-categoryItem_categoryItem-host",
   shadowAttribute: "commerce-categoryItem_categoryItem"
 };
@@ -12021,10 +12098,10 @@ registerDecorators(CategoryNav, {
 });
 
 var _commerceCategoryItem = registerComponent(CategoryNav, {
-  tmpl: _tmpl$6
+  tmpl: _tmpl$8
 });
 
-function tmpl$7($api, $cmp, $slotset, $ctx) {
+function tmpl$9($api, $cmp, $slotset, $ctx) {
   const {
     t: api_text,
     h: api_element,
@@ -12052,9 +12129,9 @@ function tmpl$7($api, $cmp, $slotset, $ctx) {
   }) : [])];
 }
 
-var _tmpl$7 = registerTemplate(tmpl$7);
-tmpl$7.stylesheets = [];
-tmpl$7.stylesheetTokens = {
+var _tmpl$9 = registerTemplate(tmpl$9);
+tmpl$9.stylesheets = [];
+tmpl$9.stylesheetTokens = {
   hostAttribute: "commerce-categoryNav_categoryNav-host",
   shadowAttribute: "commerce-categoryNav_categoryNav"
 };
@@ -12403,10 +12480,10 @@ registerDecorators(LeftNav, {
 });
 
 var _commerceCategoryNav = registerComponent(LeftNav, {
-  tmpl: _tmpl$7
+  tmpl: _tmpl$9
 });
 
-function tmpl$8($api, $cmp, $slotset, $ctx) {
+function tmpl$a($api, $cmp, $slotset, $ctx) {
   const {
     h: api_element,
     d: api_dynamic,
@@ -12476,9 +12553,9 @@ function tmpl$8($api, $cmp, $slotset, $ctx) {
   }, [api_dynamic($cmp.product.ProductCategory)])])])];
 }
 
-var _tmpl$8 = registerTemplate(tmpl$8);
-tmpl$8.stylesheets = [];
-tmpl$8.stylesheetTokens = {
+var _tmpl$a = registerTemplate(tmpl$a);
+tmpl$a.stylesheets = [];
+tmpl$a.stylesheetTokens = {
   hostAttribute: "commerce-productcard_productcard-host",
   shadowAttribute: "commerce-productcard_productcard"
 };
@@ -12509,10 +12586,10 @@ registerDecorators(ProductCard, {
 });
 
 var _commerceProductcard = registerComponent(ProductCard, {
-  tmpl: _tmpl$8
+  tmpl: _tmpl$a
 });
 
-function tmpl$9($api, $cmp, $slotset, $ctx) {
+function tmpl$b($api, $cmp, $slotset, $ctx) {
   const {
     t: api_text,
     h: api_element,
@@ -12582,9 +12659,9 @@ function tmpl$9($api, $cmp, $slotset, $ctx) {
   }, [api_text("No product is available, please change the selection")]) : null : null]) : null];
 }
 
-var _tmpl$9 = registerTemplate(tmpl$9);
-tmpl$9.stylesheets = [];
-tmpl$9.stylesheetTokens = {
+var _tmpl$b = registerTemplate(tmpl$b);
+tmpl$b.stylesheets = [];
+tmpl$b.stylesheetTokens = {
   hostAttribute: "commerce-productlist_productlist-host",
   shadowAttribute: "commerce-productlist_productlist"
 };
@@ -12622,10 +12699,10 @@ registerDecorators(ProductList, {
 });
 
 var _commerceProductlist = registerComponent(ProductList, {
-  tmpl: _tmpl$9
+  tmpl: _tmpl$b
 });
 
-function tmpl$a($api, $cmp, $slotset, $ctx) {
+function tmpl$c($api, $cmp, $slotset, $ctx) {
   const {
     c: api_custom_element,
     h: api_element
@@ -12659,9 +12736,9 @@ function tmpl$a($api, $cmp, $slotset, $ctx) {
   }, [])])])])])];
 }
 
-var _tmpl$a = registerTemplate(tmpl$a);
-tmpl$a.stylesheets = [];
-tmpl$a.stylesheetTokens = {
+var _tmpl$c = registerTemplate(tmpl$c);
+tmpl$c.stylesheets = [];
+tmpl$c.stylesheetTokens = {
   hostAttribute: "commerce-main_main-host",
   shadowAttribute: "commerce-main_main"
 };
@@ -12669,7 +12746,7 @@ tmpl$a.stylesheetTokens = {
 class Main$1 extends BaseLightningElement {}
 
 var CommerceMain = registerComponent(Main$1, {
-  tmpl: _tmpl$a
+  tmpl: _tmpl$c
 });
 
 /*
@@ -12679,4 +12756,5 @@ var CommerceMain = registerComponent(Main$1, {
     For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
 */
 customElements.define("demo-main", DemoMain.CustomElementConstructor);
+customElements.define("slot-main", SlotMain.CustomElementConstructor);
 customElements.define("commerce-main", CommerceMain.CustomElementConstructor);

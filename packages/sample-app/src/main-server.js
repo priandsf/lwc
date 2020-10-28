@@ -6,3 +6,4 @@
 */
 export { default as CommerceMain } from 'commerce/main';
 export { default as DemoMain } from 'demo/main';
+export { default as SlotMain } from 'slot/main';

@@ -54,6 +54,9 @@ app.get('/api/products', (req, res) => {
 app.get('/demo', (req, res) => {
     renderRoute(req,res,'demo-main','DemoMain')
 });
+app.get('/slot', (req, res) => {
+    renderRoute(req,res,'slot-main','SlotMain')
+});
 app.get('/*', (req, res) => {
     renderRoute(req,res,'commerce-main','CommerceMain')
 });
