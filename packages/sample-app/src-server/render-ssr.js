@@ -16,16 +16,8 @@ function initContext(ssrContext) {
 }
 
 function clearContext() {
-    const context = global[SSRCONTEXT];
-    const {states} = context;
-    Object.values(states).forEach( state => {
-        Object.values(state).forEach( entry => {
-            entry.subscribers = [];
-        })
-    })
     delete global[SSRCONTEXT];
 }
-
 
 const MAX_ITERATIONS = 8;
 
@@ -65,13 +57,12 @@ async function renderSsr({
             }
 
             const r = renderComponent(tagName, ctor, props, {syntheticShadow:true, renderStruct: true})
-            const result = {
-                html: r.html,
-                styles: r.styles,
-                store: ssrContext.states
-            }
-
             if(ssrContext.loading.length==0) {
+                const result = {
+                    html: r.html,
+                    styles: r.styles,
+                    store: ssrContext.states
+                }
                 const endTime = performance.now();
                 console.log(`SSR rendering completed, iteration #${i}, time=${Math.floor(endTime-startTime)}ms`)
                 return result;

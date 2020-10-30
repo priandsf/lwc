@@ -1,4 +1,4 @@
-import { createStore } from '../../util/store';
+import { createStore } from '../util/store';
 import { connGetCategories, connGetProductsByCategory } from './productConnector'
 
 export const categoriesStore = createStore('CategoriesStore',{loader:getCategories});

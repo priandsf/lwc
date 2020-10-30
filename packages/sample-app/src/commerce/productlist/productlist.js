@@ -1,5 +1,5 @@
 import { LightningElement } from 'lwc'
-import { getQueryParameter } from '../../util/url';
+import { getQueryParameter } from '../util/url';
 import { productsStore } from '../api/productApis'
 
 

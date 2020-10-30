@@ -1,4 +1,4 @@
-import { getBaseUrl } from "../../util/url";
+import { getBaseUrl } from "../util/url";
 
 export async function connGetCategories() {
     const r = await fetch(getBaseUrl()+'/api/categories');

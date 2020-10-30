@@ -12131,46 +12131,186 @@ tmpl$9.stylesheetTokens = {
   shadowAttribute: "commerce-categoryNav_categoryNav"
 };
 
-const INITIAL_STATE = '__B2C_INITIAL_STATE__'; //
-// This method is used by the wire adapter to detect if a key changed
-//
+var _tmpl$a = void 0;
 
-function keyAsString(key) {
-  if (typeof key === 'string') {
-    return key;
+class Subscription {
+  /**
+   * Unsubscribes from the associated observable.
+   */
+  unsubscribe() {
+    // If we have a handler, invoke it.
+    if (this._unsubscribeHandler !== undefined) {
+      // Snag a reference to the handler, then delete the instance property so that we only execute it once.
+      const handler = this._unsubscribeHandler;
+      delete this._unsubscribeHandler;
+      handler();
+    }
+  }
+  /**
+   * Initializes a new Subscription with the specified unsubscribe handler.
+   *
+   * @param {Function} [unsubscribeHandler]
+   *  A handler that is executed when then subscription is ended.
+   *
+   */
+
+
+  constructor(unsubscribeHandler) {
+    this._unsubscribeHandler = void 0;
+    this._unsubscribeHandler = unsubscribeHandler;
   }
 
-  if (!key) {
-    return '';
-  }
-
-  return String(key);
-} //
-// Initialize the global state manager for the client
-// We assume that the store is only be initialized once this way, e.g. fragments coming
-// later will be ignored. We might revisit that if needed
-//
-
-let GLOBALSTATE_CLIENT;
-
-if (!isSsr()) {
-  if (typeof window[INITIAL_STATE] !== 'undefined') {
-    GLOBALSTATE_CLIENT = window[INITIAL_STATE];
-    delete window[INITIAL_STATE];
-  } else {
-    GLOBALSTATE_CLIENT = {};
-  }
 }
 
-class _Subscription {
-  constructor(store, key, listener) {
-    this._store = store;
-    this._listener = listener;
-    this._key = key;
+registerDecorators(Subscription, {
+  fields: ["_unsubscribeHandler"]
+});
+/**
+ * A subscription to an observable notification stream.
+ */
+
+
+var Subscription$1 = registerComponent(Subscription, {
+  tmpl: _tmpl$a
+});
+
+/**
+ * A simple observable subject.
+ */
+
+class Subject {
+  constructor() {
+    this._nextHandlers = new Set();
   }
 
-  unsubscribe() {
-    this._store._unsubscribe(this._key, this._listener);
+  /**
+   * Emits the next value to all subscribed handlers.
+   *
+   * @param {object} [nextValue]
+   *  The optional value to provide to subscribers.
+   */
+  next(nextValue) {
+    this._nextHandlers.forEach(nextHandler => nextHandler(nextValue));
+  }
+  /**
+   * Subscribes to notifications from this subject.
+   *
+   * @param {function} nextHandler
+   *  A handler for the notification.
+   *
+   * @returns {Subscription}
+   *      A subscription that may be used to unsubscribe from the notifications.
+   */
+
+
+  subscribe(nextHandler) {
+    this._nextHandlers.add(nextHandler);
+
+    return new Subscription$1(() => this._delete(nextHandler));
+  }
+
+  _delete(nextHandler) {
+    this._nextHandlers.delete(nextHandler);
+  }
+
+}
+
+registerDecorators(Subject, {
+  fields: ["_nextHandlers"]
+});
+
+var Subject$1 = registerComponent(Subject, {
+  tmpl: _tmpl$a
+});
+
+/**
+ * A simple observable behavior subject.
+ */
+
+class BehaviorSubject extends Subject$1 {
+  constructor(value) {
+    super();
+    this._value = value;
+  }
+
+  get value() {
+    return this._value;
+  }
+
+  getValue() {
+    return this._value;
+  }
+  /**
+   * Emits the next value to all subscribed handlers.
+   * The value is stored to be emitted to late subscribers
+   *
+   * @param {object} [nextValue]
+   *  The optional value to provide to subscribers.
+   */
+
+
+  next(nextValue) {
+    this._value = nextValue;
+    return super.next(nextValue);
+  }
+  /**
+   * Subscribes to notifications from this subject.
+   * The handler is immediately notified with the current value.
+   *
+   * @param {function} nextHandler
+   *  A handler for the notification.
+   *
+   * @returns {Subscription}
+   *      A subscription that may be used to unsubscribe from the notifications.
+   */
+
+
+  subscribe(nextHandler) {
+    const subscription = super.subscribe(nextHandler);
+    nextHandler(this._value);
+    return subscription;
+  }
+
+}
+
+var BehaviorSubject$1 = registerComponent(BehaviorSubject, {
+  tmpl: _tmpl$a
+});
+
+const INITIAL_STATE = '__B2C_INITIAL_STATE__';
+const SSR$1 = isSsr();
+
+class StoreSubject extends BehaviorSubject$1 {
+  constructor(store, key, value) {
+    super(value);
+    this.key = key || '';
+    this.store = store; // We have to store the SSR context when the subject is created, as it will be unavailable when the request is completed
+    // Thus it won't be available dynamically when a Promise is resolved
+
+    if (SSR$1) {
+      this.ssrContext = getSsrContext();
+    }
+  }
+
+  next(nextValue) {
+    // In case of SSR, we make sure that the value is stored in the global ssr context
+    // So the server renderer can retrieve it afterwards
+    if (this.ssrContext) {
+      const states = this.ssrContext.states;
+      const state = states[this.store.name] || (states[this.store.name] = {});
+      state[this.key] = nextValue;
+    }
+
+    super.next(nextValue);
+  }
+
+  _delete(handler) {
+    super._delete(handler); // No more handler, we remove the subject
+
+
+    if (this._nextHandlers.size == 0) {
+      this.store._subscriberRemoved(this.key);
+    }
   }
 
 }
@@ -12216,211 +12356,199 @@ class _Subscription {
 class Store {
   constructor(name, options) {
     this.options = options || {};
-    this.name = name;
+    this.name = name; // Preload the store on the client when SSR was activated
 
-    if (!isSsr()) {
-      const globalState = GLOBALSTATE_CLIENT;
+    if (!SSR$1) {
+      this._container = {};
 
-      if (typeof globalState[name] === 'undefined') {
-        globalState[name] = {};
+      if (typeof window !== 'undefined' && typeof window[INITIAL_STATE] !== 'undefined') {
+        const initialState = window[INITIAL_STATE][name];
+
+        if (initialState) {
+          for (const [key, value] of Object.entries(initialState)) {
+            this._container[key || ''] = new StoreSubject(this, key, value);
+          }
+
+          delete window[INITIAL_STATE][name];
+        }
       }
-
-      this._container = globalState[name];
-    } else {
-      this._container = undefined;
     }
   }
 
-  _storeContainer() {
-    if (this._container) {
+  get container() {
+    // Client side container
+    if (!SSR$1) {
       return this._container;
-    }
+    } // Server side container
+    // It must be stored in the SSR context as
 
-    const globalState = getSsrContext().states;
 
-    if (typeof globalState[this.name] === 'undefined') {
-      globalState[this.name] = {};
-    }
-
-    return globalState[this.name];
+    const ssrContext = getSsrContext();
+    const subjects = ssrContext._subjects || (ssrContext._subjects = {});
+    return subjects[this.name] || (subjects[this.name] = {});
   }
 
-  _get(container, key, load) {
-    const k = keyAsString(key);
-    let e = container[k];
+  _get(key, load) {
+    let sub = this.container[key || ''];
 
-    if (e === undefined) {
-      e = container[k] = {
+    if (sub === undefined) {
+      sub = new StoreSubject(this, key, {
         data: undefined,
         error: undefined,
         loaded: false,
-        loading: undefined,
-        subscribers: []
-      };
+        loading: undefined
+      });
+      this.container[key || ''] = sub;
     }
 
-    if (load && !e.loaded) {
-      this._load(key, e);
+    if (load && !sub.value.loaded) {
+      this._load(sub);
     }
 
-    return e;
+    return sub;
   }
 
-  _load(key, e, loader) {
+  _load(sub, loader) {
     if (!loader) loader = this.options.loader;
+    const value = sub.value;
 
-    if (!e.loading && loader) {
-      e.loading = loader(key).then(value => {
-        e.data = value;
-        e.error = undefined;
-        e.loaded = true;
-        e.loading = undefined;
-
-        this._notify(e);
-
-        return e;
+    if (!value.loading && loader) {
+      const loading = loader(sub.key).then(value => {
+        const v = {
+          data: value,
+          error: undefined,
+          loaded: true,
+          loading: undefined
+        };
+        sub.next(v);
+        return v;
       }).catch(error => {
-        e.data = undefined;
-        e.error = error.message;
-        e.loaded = true;
-        e.loading = undefined;
-
-        this._notify(e);
-
-        return e;
+        const v = {
+          data: undefined,
+          error: error.message,
+          loaded: true,
+          loading: undefined
+        };
+        sub.next(v);
+        return v;
       });
 
-      if (isSsr() && e.loading) {
-        getSsrContext().loading.push(e.loading);
-      }
-    }
-  }
+      if (SSR$1) {
+        // With SSR, we don't notify the loading stage as this is not necessary
+        // We simply store the value so it gets to the store.
+        value.loading = loading;
 
-  _unsubscribe(key, l) {
-    const container = this._storeContainer();
-
-    const k = keyAsString(key);
-    const e = container[k];
-
-    if (e) {
-      const index = e.subscribers.indexOf(l);
-
-      if (index >= 0) {
-        e.subscribers.splice(index, 1);
-      }
-
-      if (e.subscribers.length === 0) {
-        if (typeof this.options.discard !== 'undefined') {
-          if (this.options.discard === false) {
-            return;
-          } // We could have a function that discards using a MRU, or whatever...
-          // This can be extended in many ways
-
+        if (loading) {
+          getSsrContext().loading.push(loading);
         }
-
-        delete container[k];
+      } else {
+        sub.next({
+          data: value.data,
+          error: value.error,
+          loaded: value.loaded,
+          loading
+        });
       }
     }
   }
 
-  _notify(e) {
-    if (e) {
-      e.subscribers.forEach(l => {
-        if (l) l(this._exportObject(e));
-      });
+  _subscriberRemoved(key) {
+    // We could have a function that discards using a MRU, or whatever...
+    // This can be extended in many ways
+    if (typeof this.options.discard !== 'undefined') {
+      if (this.options.discard === false) {
+        return;
+      }
     }
-  }
 
-  _exportObject(container) {
-    const {
-      data,
-      error,
-      loading,
-      loaded
-    } = container;
-    return {
-      data,
-      error,
-      loading,
-      loaded
-    };
+    delete this.container[key || ''];
   } //
   // Public methods
   //
 
 
+  getSubject(key) {
+    return this._get(key, true);
+  }
+
   has(key) {
-    const k = keyAsString(key);
-    return this._storeContainer()[k] !== undefined;
+    return this.container.hasOwnProperty(key || '');
   }
 
   get(key) {
-    return this._exportObject(this._get(this._storeContainer(), key, true));
+    return this.getSubject(key).value;
   }
 
   async getAsync(key) {
-    const e = this._get(this._storeContainer(), key, true);
+    const sub = this.getSubject(key);
+    const value = sub.value;
 
-    if (!e.loaded && e.loading) {
-      await e.loading;
+    if (!value.loaded && value.loading) {
+      await value.loading;
     }
 
-    return this._exportObject(e);
+    return value;
   }
 
-  set(key, data, error) {
-    const e = this._get(this._storeContainer(), key, false); // Should it throw an exception if the loading flag is set, and thus the assignment failed?
+  set(key, data) {
+    const k = arguments.length == 1 ? undefined : key;
+    const d = arguments.length == 1 ? key : data;
+
+    const sub = this._get(k, false); // Should it throw an exception if the loading flag is set, and thus the assignment failed?
 
 
-    if (!e.loading) {
-      Object.assign(e, {
-        data,
-        error,
-        loaded: true
+    if (!sub.value.loading) {
+      sub.next({
+        data: d,
+        error: undefined,
+        loaded: true,
+        loading: undefined
       });
+    }
+  }
 
-      this._notify(e);
+  setError(key, error) {
+    const k = arguments.length == 1 ? undefined : key;
+    const e = arguments.length == 1 ? key : error;
+
+    const sub = this._get(k, false); // Should it throw an exception if the loading flag is set, and thus the assignment failed?
+
+
+    if (!sub.value.loading) {
+      sub.next({
+        data: undefined,
+        error: e,
+        loaded: true,
+        loading: undefined
+      });
     }
   }
 
   remove(key) {
-    const container = this._storeContainer();
+    const sub = this.container[key || '']; // Only if there is no subscribers
 
-    const k = keyAsString(key);
-    const e = container[k];
-
-    if (e && e.subscribers.length === 0) {
-      delete container[k];
+    if (sub && sub._nextHandlers.size === 0) {
+      delete this.container[key || ''];
     }
   }
 
   load(key, loader) {
-    const e = this._get(this._storeContainer(), key, false);
+    const k = arguments.length == 1 ? undefined : key;
+    const l = arguments.length == 1 ? key : loader;
 
-    if (!e.loading) {
-      this._load(key, e, loader);
+    const sub = this._get(k, false);
+
+    if (!sub.value.loading) {
+      this._load(sub, l);
     }
 
-    return e;
+    return sub.value;
   }
 
   subscribe(key, listener) {
     const k = arguments.length == 1 ? undefined : key;
     const l = arguments.length == 1 ? key : listener;
-
-    const e = this._get(this._storeContainer(), k, true);
-
-    e.subscribers.push(l);
-    if (l) l(e);
-    return new _Subscription(this, k, l);
-  }
-
-  notify(key) {
-    const e = this._storeContainer()[keyAsString(key)];
-
-    if (e) {
-      this._notify(e);
-    }
+    return this.getSubject(k).subscribe(l);
   }
 
 }
@@ -12548,7 +12676,7 @@ function tmpl$a($api, $cmp, $slotset, $ctx) {
   }, [api_dynamic($cmp.product.ProductCategory)])])])];
 }
 
-var _tmpl$a = registerTemplate(tmpl$a);
+var _tmpl$b = registerTemplate(tmpl$a);
 tmpl$a.stylesheets = [];
 tmpl$a.stylesheetTokens = {
   hostAttribute: "commerce-productcard_productcard-host",
@@ -12581,7 +12709,7 @@ registerDecorators(ProductCard, {
 });
 
 var _commerceProductcard = registerComponent(ProductCard, {
-  tmpl: _tmpl$a
+  tmpl: _tmpl$b
 });
 
 function tmpl$b($api, $cmp, $slotset, $ctx) {
@@ -12654,7 +12782,7 @@ function tmpl$b($api, $cmp, $slotset, $ctx) {
   }, [api_text("No product is available, please change the selection")]) : null : null]) : null];
 }
 
-var _tmpl$b = registerTemplate(tmpl$b);
+var _tmpl$c = registerTemplate(tmpl$b);
 tmpl$b.stylesheets = [];
 tmpl$b.stylesheetTokens = {
   hostAttribute: "commerce-productlist_productlist-host",
@@ -12694,7 +12822,7 @@ registerDecorators(ProductList, {
 });
 
 var _commerceProductlist = registerComponent(ProductList, {
-  tmpl: _tmpl$b
+  tmpl: _tmpl$c
 });
 
 function tmpl$c($api, $cmp, $slotset, $ctx) {
@@ -12731,7 +12859,7 @@ function tmpl$c($api, $cmp, $slotset, $ctx) {
   }, [])])])])])];
 }
 
-var _tmpl$c = registerTemplate(tmpl$c);
+var _tmpl$d = registerTemplate(tmpl$c);
 tmpl$c.stylesheets = [];
 tmpl$c.stylesheetTokens = {
   hostAttribute: "commerce-main_main-host",
@@ -12741,7 +12869,7 @@ tmpl$c.stylesheetTokens = {
 class Main$1 extends BaseLightningElement {}
 
 var CommerceMain = registerComponent(Main$1, {
-  tmpl: _tmpl$c
+  tmpl: _tmpl$d
 });
 
 /*

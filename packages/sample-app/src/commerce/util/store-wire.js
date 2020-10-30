@@ -1,6 +1,3 @@
-import { keyAsString } from './store';
-
-
 /**
  * Generic @wire adapter that works with a store.
  *
@@ -47,7 +44,7 @@ export class StoreAdapter {
     }
 
     _subscribe() {
-        if(this.subscribedStore!==this.store || keyAsString(this.subscribedKey)!==keyAsString(this.key)) {
+        if(this.subscribedStore!==this.store || (this.subscribedKey||'')!==(this.key||'')) {
             this._unsubscribe();
             if(this.store) {
                 this.subscribedStore = this.store;

@@ -1,4 +1,5 @@
 const SSR = typeof global!=='undefined' && global['__B2C_SSR__']===true;
+
 export function isSsr() {
     return SSR;
 }

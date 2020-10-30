@@ -1,5 +1,5 @@
 import { LightningElement, api } from 'lwc'
-import { composeUrl } from '../../util/url';
+import { composeUrl } from '../util/url';
 
 export default class CategoryNav extends LightningElement {
 
