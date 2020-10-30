@@ -21,6 +21,7 @@ const globalStylesheetsParentElement: Element = document.head || document.body |
 let getCustomElement, defineCustomElement, HTMLElementConstructor;
 
 
+// REVIEW
 // Coming from SSR
 // Read the existing styles from the document
 // Note that this adds some bootstrap code time
@@ -127,12 +128,14 @@ export const renderer: Renderer<Node, Element> = {
     },
 
     attachShadow(element: Element, options: ShadowRootInit): ShadowRoot {
+        // REVIEW
         // Poorman client side hydration
         // We simply remove the existing content so it will be recreated
         // To identify the ssr root, we could also set a ssr-root attribute
         if(element.shadowRoot) {
             // There was a shadow root - clear up its content
             removeAllChildNodes(element.shadowRoot);
+            return element.shadowRoot;
         }
         // Ok, there is not yet a shodow root
         // We remove the content only when in synthetic shadow, else the light dom contains the slots

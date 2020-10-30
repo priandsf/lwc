@@ -27,6 +27,7 @@ const FakeRootElement: HostElement = {
     eventListeners: {},
 };
 
+// REVIEW
 // Could expose a different method here
 export function renderComponent(
     tagName: string,
