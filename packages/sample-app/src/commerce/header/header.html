@@ -8,12 +8,19 @@
 
             <div class="collapse navbar-collapse" id="navbarResponsive">
                 <ul class="navbar-nav ml-auto">
-                    <li class="nav-item">
-                        <a if:false={ssr} class="nav-link" href="/?ssr">SSR</a>
-                        <a if:true={ssr} class="nav-link" href="/">NO SSR</a>
+                    <li class="nav-item active">
+                        <a if:false={ssr} class="nav-link" href={SSR}>SSR</a>
+                        <a if:true={ssr} class="nav-link" href={NOSSR}>NO SSR</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a if:false={shadow} class="nav-link" href={SHADOW}>NATIVE SHADOW</a>
+                        <a if:true={shadow} class="nav-link" href={NOSHADOW}>SYNTH SHADOW</a>
                     </li>
                     <li class="nav-item active">
                         <a class="nav-link" href="/demo">Tech Demo</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="/slots">Slots</a>
                     </li>
                 </ul>
             </div>

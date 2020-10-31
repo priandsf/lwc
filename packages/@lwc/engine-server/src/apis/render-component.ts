@@ -12,7 +12,7 @@ import {
 } from '@lwc/engine-core';
 import { isString, isFunction, isObject, isNull } from '@lwc/shared';
 
-import { renderer, globalStylesheets } from '../renderer';
+import { SsrRenderer } from '../renderer';
 import { serializeElement } from '../serializer';
 import { HostElement, HostNodeType } from '../types';
 
@@ -33,7 +33,7 @@ export function renderComponent(
     tagName: string,
     Ctor: typeof LightningElement,
     props: { [name: string]: any } = {},
-    options: { syntheticShadow?: boolean, renderStruct?: boolean } = {},
+    options: { syntheticShadow?: boolean } = {},
 ): string | {html: string, styles: string[]} {
     if (!isString(tagName)) {
         throw new TypeError(
@@ -59,8 +59,7 @@ export function renderComponent(
         );
     }
 
-    // PM: should find a more elegant way 
-    renderer.syntheticShadow = !!options.syntheticShadow;
+    const renderer = new SsrRenderer(options)
     const element = renderer.createElement(tagName);
 
     const def = getComponentInternalDef(Ctor);
@@ -82,12 +81,11 @@ export function renderComponent(
 
     const html = serializeElement(element,options);
 
-    if(options.renderStruct) {
-        const styles = Array.from(globalStylesheets);
-        return {
-            html,
-            styles
-        }
+    const styles = Array.from(renderer.globalStylesheets);
+    return {
+        html,
+        styles
     }
+
     return html;
 }

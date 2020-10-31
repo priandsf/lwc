@@ -83,6 +83,8 @@ module.exports.start = () => {
 
 
 function renderRoute(req, res, tagName, exportName) {
+    const shadow = req.query.shadow !== undefined;
+    const shadowSuffix = shadow ? '' : '-synth';
     if (req.query.ssr !== undefined) {
         const context = {
             baseUrl: `http://localhost:${port}`
@@ -92,14 +94,14 @@ function renderRoute(req, res, tagName, exportName) {
             module: '../dist/lwc-components-server.js',
             exportName,
             tagName,
+            synth: !shadow,
             context
         }).then( ({html,styles,store}) => {
-            //console.log(`${fragment}`)
             res.send(
                 renderTemplate({
                     title: 'SSR for Commerce',
                     storeData: store,
-                    scripts: ['static/js/declarative-shadow-poorlyfill.js','static/js/lwc-components.js'],
+                    scripts: ['static/js/declarative-shadow-poorlyfill.js',`static/js/lwc-components${shadowSuffix}.js`],
                     tagName,
                     styles,
                     fragment: html,
@@ -110,7 +112,7 @@ function renderRoute(req, res, tagName, exportName) {
         res.send(
             renderTemplate({
                 title: 'Pure Client',
-                scripts: ['static/js/lwc-components.js'],
+                scripts: [`static/js/lwc-components${shadowSuffix}.js`],
                 tagName,
             }),
         );
@@ -135,7 +137,7 @@ function renderTemplate(args) {
             </style>
             <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" crossorigin="anonymous">
             <link rel="stylesheet" href="/static/css/global.css">
-            ${args.styles ? args.styles.map((style) => `<style type="text/css">${style}</style>`).join('\n') : ''}    
+            ${args.styles ? args.styles.map((style) => `<style type="text/css" data-lwc-ssr>${style}</style>`).join('\n') : ''}    
         </head>
         <body>
             ${

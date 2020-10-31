@@ -31,6 +31,7 @@ async function renderSsr({
     module,
     exportName,
     tagName,
+    synth,
     context,
 }) {
     let props = {};
@@ -56,7 +57,7 @@ async function renderSsr({
                 props = await ctor.getServerInitialProps(context);
             }
 
-            const r = renderComponent(tagName, ctor, props, {syntheticShadow:true, renderStruct: true})
+            const r = renderComponent(tagName, ctor, props, {syntheticShadow:synth, renderStruct: true})
             if(ssrContext.loading.length==0) {
                 const result = {
                     html: r.html,

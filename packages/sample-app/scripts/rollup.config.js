@@ -1,9 +1,5 @@
 'use strict';
 
-// Options
-const SYNTHETICSHADOW = false; //true;   // Force the use of synthetic shadow
-
-
 const replace = require('@rollup/plugin-replace');
 const lwc = require('@lwc/rollup-plugin');
 const { terser } = require('rollup-plugin-terser');
@@ -34,7 +30,20 @@ module.exports =  [{
     },
 
     plugins: [
-        SYNTHETICSHADOW && syntheticShadow(),
+        lwc(),
+        replace({ 'process.env.NODE_ENV': JSON.stringify(env) }),
+        isProduction && terser()
+    ]
+}, {
+    input: 'src/main-synth.js',
+    
+    output: {
+        format: 'esm',
+        file: 'public/static/js/lwc-components-synth.js'
+    },
+
+    plugins: [
+        //syntheticShadow(),
         lwc(),
         replace({ 'process.env.NODE_ENV': JSON.stringify(env) }),
         isProduction && terser()
@@ -50,9 +59,9 @@ module.exports =  [{
 
     plugins: [
         lwcServerResolver,
-        SYNTHETICSHADOW && syntheticShadow(),
         lwc(),
         replace({ 'process.env.NODE_ENV': JSON.stringify(env) }),
         isProduction && terser()
     ]
-}]
+}
+]

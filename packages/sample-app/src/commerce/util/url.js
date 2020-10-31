@@ -39,6 +39,10 @@ export function composeUrl(path, params = {}) {
     if(ssr) {
         params['ssr'] = undefined;
     }
+    const shadow = hasQueryParameter('shadow');
+    if(shadow) {
+        params['shadow'] = undefined;
+    }
     let qs = queryString(params)
     if (qs) {
         url += '?' + qs;
