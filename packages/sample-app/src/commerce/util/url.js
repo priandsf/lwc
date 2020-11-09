@@ -2,7 +2,7 @@
  * Some url utilities.
  */
 
-import { getSsrContext } from "./ssr";
+import { getSsrContext } from "b2c_lite_commerce/store";
 
 export function hasQueryParameter(key) {
     if(getSsrContext() ) {

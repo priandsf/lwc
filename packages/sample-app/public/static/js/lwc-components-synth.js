@@ -11771,17 +11771,641 @@ tmpl$3.stylesheetTokens = {
   shadowAttribute: "demo-main_main"
 };
 
-const SSR = typeof global !== 'undefined' && global['__B2C_SSR__'] === true;
-function isSsr() {
-  return SSR;
-}
+const SSRFLAG = '__B2C_SSR__';
 const SSRCONTEXT = '__B2C_SSRCONTEXT__';
+function isSsr() {
+  return typeof global !== 'undefined' && global[SSRFLAG] === true;
+}
 function getSsrContext() {
-  if (SSR) {
+  if (isSsr()) {
     return global[SSRCONTEXT];
   }
 
   return undefined;
+}
+
+var _tmpl$4 = void 0;
+
+class Subscription {
+  /**
+   * Unsubscribes from the associated observable.
+   */
+  unsubscribe() {
+    // If we have a handler, invoke it.
+    if (this._unsubscribeHandler !== undefined) {
+      // Snag a reference to the handler, then delete the instance property so that we only execute it once.
+      const handler = this._unsubscribeHandler;
+      delete this._unsubscribeHandler;
+      handler();
+    }
+  }
+  /**
+   * Initializes a new Subscription with the specified unsubscribe handler.
+   *
+   * @param {Function} [unsubscribeHandler]
+   *  A handler that is executed when then subscription is ended.
+   *
+   */
+
+
+  constructor(unsubscribeHandler) {
+    this._unsubscribeHandler = void 0;
+    this._unsubscribeHandler = unsubscribeHandler;
+  }
+
+}
+
+registerDecorators(Subscription, {
+  fields: ["_unsubscribeHandler"]
+});
+/**
+ * A subscription to an observable notification stream.
+ */
+
+
+var Subscription$1 = registerComponent(Subscription, {
+  tmpl: _tmpl$4
+});
+
+/**
+ * A simple observable subject.
+ */
+
+class Subject {
+  constructor() {
+    this._nextHandlers = new Set();
+  }
+
+  /**
+   * Emits the next value to all subscribed handlers.
+   *
+   * @param {object} [nextValue]
+   *  The optional value to provide to subscribers.
+   */
+  next(nextValue) {
+    this._nextHandlers.forEach(nextHandler => nextHandler(nextValue));
+  }
+  /**
+   * Subscribes to notifications from this subject.
+   *
+   * @param {function} nextHandler
+   *  A handler for the notification.
+   *
+   * @returns {Subscription}
+   *      A subscription that may be used to unsubscribe from the notifications.
+   */
+
+
+  subscribe(nextHandler) {
+    this._nextHandlers.add(nextHandler);
+
+    return new Subscription$1(() => {
+      this._nextHandlers.delete(nextHandler);
+    });
+  }
+
+  _unsubscribed(nextHandler) {}
+
+}
+
+registerDecorators(Subject, {
+  fields: ["_nextHandlers"]
+});
+
+var Subject$1 = registerComponent(Subject, {
+  tmpl: _tmpl$4
+});
+
+/**
+ * A simple observable behavior subject.
+ */
+
+class BehaviorSubject extends Subject$1 {
+  constructor(value) {
+    super();
+    this._value = value;
+  }
+
+  get value() {
+    return this._value;
+  }
+
+  getValue() {
+    return this._value;
+  }
+  /**
+   * Emits the next value to all subscribed handlers.
+   * The value is stored to be emitted to late subscribers
+   *
+   * @param {object} [nextValue]
+   *  The optional value to provide to subscribers.
+   */
+
+
+  next(nextValue) {
+    this._value = nextValue;
+    return super.next(nextValue);
+  }
+  /**
+   * Subscribes to notifications from this subject.
+   * The handler is immediately notified with the current value.
+   *
+   * @param {function} nextHandler
+   *  A handler for the notification.
+   *
+   * @returns {Subscription}
+   *      A subscription that may be used to unsubscribe from the notifications.
+   */
+
+
+  subscribe(nextHandler) {
+    const subscription = super.subscribe(nextHandler);
+    nextHandler(this._value);
+    return subscription;
+  }
+
+}
+
+var BehaviorSubject$1 = registerComponent(BehaviorSubject, {
+  tmpl: _tmpl$4
+});
+
+function keyAsString(key) {
+  if (key === undefined || key === null) {
+    return '';
+  }
+
+  if (typeof key === 'string' || key instanceof String) {
+    return key;
+  }
+
+  if (Array.isArray(key)) {
+    return key.reduce((a, v) => {
+      return a + (a ? '&' : '') + encodeURIComponent(v);
+    }, '');
+  }
+
+  if (typeof key === 'object') {
+    return Object.keys(key).sort().reduce((a, v) => {
+      return a + (a ? '&' : '') + encodeURIComponent(v) + '=' + encodeURIComponent(key[v]);
+    }, '');
+  }
+
+  return key.toString(); // Last resort...
+}
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+const INITIAL_STATE = '__B2C_INITIAL_STATE__';
+/**
+ * Internal subject class
+ */
+
+class StoreSubject extends BehaviorSubject$1 {
+  constructor(store, keyString, value) {
+    super(value);
+    this.store = store;
+    this.keyString = keyString;
+    this.subscribers = 0; // We have to store the SSR context when the subject is created, as it will be unavailable when the request is completed
+    // Thus it won't be available dynamically when a Promise is resolved
+
+    if (isSsr()) {
+      this.ssrContext = getSsrContext();
+    }
+  }
+
+  next(nextValue) {
+    // In case of SSR, we make sure that the value is stored in the global ssr context
+    // So the server renderer can retrieve it afterwards
+    if (this.ssrContext) {
+      const states = this.ssrContext.states;
+      const state = states[this.store.name] || (states[this.store.name] = {});
+      state[this.keyString] = nextValue;
+    }
+
+    super.next(nextValue);
+  }
+
+  subscribe(handler) {
+    const subscription = super.subscribe(handler);
+
+    if (++this.subscribers === 1) {
+      this.store._addSubject(this);
+    }
+
+    return {
+      unsubscribe: () => {
+        subscription.unsubscribe(); // If no more handlers, we remove the subject
+
+        if (--this.subscribers === 0) {
+          this.store._removeSubject(this);
+        }
+      }
+    };
+  }
+
+}
+/**
+ * Simple in memory store.
+ *
+ * This is a centralized client side state manager that stores data and notify subscribers on changes.
+ * An instance of a store is generally dedicated to one type of data management, like a cart of a set of products.
+ *
+ * A store can hold a single JS object or a set of objects referemced by a key. For example, a typical commerce
+ * application will have one cart object, and multiple products referenced by their id. A single object is
+ * in fact an object with a undefined, null or empty string key.
+ *
+ * The store uses a lazy loading mechanism, which attempts to load the data on its first access. To do this,
+ * it uses a 'loader' that is invoked when the data should be loaded. This function returns a Promise that
+ * resolves when the data, or a load error, is available.
+ *
+ * An object is created in the store as soon as it is accessed for the first time. It always contains the
+ * following properties:
+ *   - data
+ *     The actually object data, like a product. It can be null if the data hasn't been loaded yet, or if
+ *     there was an error when loading the object.
+ *   - error
+ *     An error object if the store failed to load the object. It can be null if the data hasn't been loaded yet,
+ *     or if the object loaded properly.
+ *   - loaded
+ *     Set when an attempt to load the object was completed, which resulted in some data or an error.
+ *   - loading
+ *     Contains a promise if the data is being loaded. Most applications will simply check if the value
+ *     is not null/undefined to display a loading icon. The promise is provided to support advanced use cases
+ *     like Server Side Rendering
+ *
+ * Each object in the store can have subscribers that will be notified when the object is updated. When an
+ * object has no longer subscribers, it is removed from the store. To keep it alive, one can create a fake
+ * subscriber to keep a reference active.
+ * When the an object is changed, because the data was loaded, or changed programmatically, all the subscribers
+ * are notified. Also, when a subscriber sunscribes to an object that is already in the store, then it
+ * receives an initial notification.
+ *
+ */
+
+
+class Store {
+  constructor(name, options) {
+    this.options = options || {};
+    this.name = name;
+    this.subjects = []; // Preload the store on the client when SSR was activated
+
+    if (!isSsr()) {
+      this._container = {};
+
+      if (typeof window !== 'undefined' && typeof window[INITIAL_STATE] !== 'undefined') {
+        const initialState = window[INITIAL_STATE][name];
+
+        if (initialState) {
+          for (const [keyString, value] of Object.entries(initialState)) {
+            this._container[keyString] = value;
+            this.subjects[keyString] = new StoreSubject(this, keyString, value);
+          }
+
+          delete window[INITIAL_STATE][name];
+        }
+      }
+    }
+  }
+
+  _addSubject(subject) {
+    this.subjects.push(subject);
+  }
+
+  _removeSubject(subject) {
+    // First remove the subject from the list of subjects
+    const idx = this.subjects.findIndex(s => subject === s);
+
+    if (idx >= 0) {
+      this.subjects.splice(idx, 1);
+    } // Discard the value in the store if there is no more observable
+    // We could have a function that discards using a MRU, or whatever...
+    // This can be extended in many ways
+
+
+    if (this.options.discard) {
+      const keyString = subject.keyString;
+      const count = this.subjects.reduce((a, s) => a + (s.keyString === keyString), 0);
+
+      if (count === 0) {
+        delete this.container[keyString];
+      }
+    }
+  }
+
+  get container() {
+    // Client side container
+    if (!isSsr()) {
+      return this._container;
+    } // Server side container
+    // It must be stored in the SSR context as
+
+
+    const states = getSsrContext().states;
+    return states[this.name] || (states[this.name] = {});
+  }
+
+  _get(key, keyString, load) {
+    const container = this.container;
+
+    if (!container[keyString]) {
+      container[keyString] = {
+        data: undefined,
+        error: undefined,
+        loaded: false,
+        loading: undefined
+      };
+    }
+
+    if (load && !container[keyString].loaded && !container[keyString].loading) {
+      this._load(key, keyString);
+    }
+
+    return container[keyString];
+  }
+
+  _load(key, keyString, loader) {
+    // We get the container here so it is available to the promises even though the context changed
+    const container = this.container;
+    loader = loader || this.options.loader;
+
+    if (loader) {
+      this._cancelRequest(container[keyString]);
+
+      try {
+        const result = loader(key);
+
+        if (result.then) {
+          const loading = result.then(data => {
+            // Verify that the promise is the expected one
+            // It happens when multiple load requests are sent at the same time
+            // The latest will win
+            if (container[keyString].loading === loading) {
+              const v = container[keyString] = {
+                data: data,
+                error: undefined,
+                loaded: true,
+                loading: undefined
+              };
+
+              this._notify(key, keyString, v);
+            }
+
+            return container[keyString];
+          }).catch(ex => {
+            const error = this._errorFromException(ex);
+
+            if (container[keyString].loading === loading) {
+              const v = container[keyString] = {
+                data: undefined,
+                error: error,
+                loaded: true,
+                loading: undefined
+              };
+
+              this._notify(key, keyString, v);
+            }
+
+            return container[keyString];
+          });
+
+          if (isSsr()) {
+            // With SSR, we don't notify the loading state as this is not necessary
+            // We simply store the value so it gets to the store.
+            container[keyString].loading = loading;
+
+            if (loading) {
+              getSsrContext().loading.push(loading);
+            }
+          } else {
+            const v = container[keyString] = _objectSpread(_objectSpread({}, container[keyString]), {}, {
+              loading
+            });
+
+            this._notify(key, keyString, v);
+          }
+        } else {
+          const v = container[keyString] = {
+            data: result,
+            error: undefined,
+            loaded: true,
+            loading: undefined
+          };
+
+          this._notify(key, keyString, v);
+        }
+      } catch (ex) {
+        const error = this._errorFromException(ex);
+
+        const v = container[keyString] = {
+          data: undefined,
+          error: error,
+          loaded: true,
+          loading: undefined
+        };
+
+        this._notify(key, keyString, v);
+      }
+    }
+
+    return container[keyString];
+  }
+
+  _errorFromException(ex) {
+    return ex.toString();
+  }
+
+  _cancelRequest(value) {
+    if (value && value.loading) {
+      // For now, only clear it - do more later with AbortablePromises
+      value.loading = undefined;
+    }
+  }
+
+  _notify(key, keyString, value) {
+    this.subjects.filter(subject => subject.keyString === keyString).forEach(sub => {
+      sub.next(value);
+    });
+  } //
+  // Public methods
+  //
+
+  /**
+   * Checks if the store has an entry for a key.
+   *
+   * @param {*} key
+   */
+
+
+  has(key) {
+    const keyString = keyAsString(key);
+    return Object.prototype.hasOwnProperty.call(this.container, keyString);
+  }
+  /**
+   * Get a value by key.
+   *
+   * @param {object} key
+   */
+
+
+  get(key) {
+    return this._get(key, keyAsString(key), true);
+  }
+  /**
+   * Shortcut to get the data by key.
+   *
+   * @param {object} key
+   */
+
+
+  getData(key) {
+    return this.get(key).data;
+  }
+  /**
+   * Shortcut to get the error by key.
+   *
+   * @param {object} key
+   */
+
+
+  getError(key) {
+    return this.get(key).error;
+  }
+  /**
+   * Returns the data after waiting for its load.
+   *
+   * @param {object} key
+   */
+
+
+  async getAsync(key) {
+    const keyString = keyAsString(key);
+
+    const value = this._get(key, keyString, true);
+
+    if (!value.loaded && value.loading) {
+      await value.loading;
+    }
+
+    return this.container[keyString];
+  }
+  /**
+   * Set the data for a key.
+   *
+   * The key is optional.
+   * @param {*} key
+   * @param {*} data
+   */
+
+
+  setData(key, data) {
+    const _key = arguments.length === 1 ? undefined : key;
+
+    const _data = arguments.length === 1 ? key : data;
+
+    const keyString = keyAsString(_key);
+    const v = this.container[keyString] = {
+      data: _data,
+      error: undefined,
+      loaded: true,
+      loading: undefined
+    };
+
+    this._notify(key, keyString, v);
+  }
+  /**
+   * Set the error for a key.
+   *
+   * The key is optional.
+   * @param {*} key
+   * @param {*} data
+   */
+
+
+  setError(key, error) {
+    const _key = arguments.length === 1 ? undefined : key;
+
+    const _error = arguments.length === 1 ? key : error;
+
+    const keyString = keyAsString(_key);
+    const v = this.container[keyString] = {
+      data: undefined,
+      error: _error,
+      loaded: true,
+      loading: undefined
+    };
+
+    this._notify(key, keyString, v);
+  }
+  /**
+   * Remove an entry by key.
+   *
+   * @param {*} key
+   * @param {*} data
+   */
+
+
+  remove(key) {
+    const keyString = keyAsString(key);
+
+    this._cancelRequest(this.container[keyString]);
+
+    delete this.container[keyString];
+    const v = {
+      data: undefined,
+      error: undefined
+    };
+
+    this._notify(key, keyString, v);
+  }
+  /**
+   * Load an entry by key.
+   *
+   * The loading state is set during the loading process and the observers are notified
+   *
+   * The key is optional.
+   * @param {*} key
+   * @param {*} data
+   */
+
+
+  load(key, loader) {
+    const _key = arguments.length === 1 ? undefined : key;
+
+    const _listener = arguments.length === 1 ? key : loader;
+
+    const keyString = keyAsString(_key);
+
+    this._get(_key, keyString, false);
+
+    return this._load(_key, keyString, _listener);
+  }
+  /**
+   * Get an observable to get the notifications for a given key.
+   *
+   * @param {*} key
+   */
+
+
+  getObservable(key) {
+    const keyString = keyAsString(key);
+
+    const value = this._get(key, keyString, true);
+
+    return new StoreSubject(this, keyString, value);
+  }
+  /**
+   * Cancel an on-going request if there is one.
+   */
+
+
+  cancelRequest(key) {
+    this._cancelRequest(this.container[keyAsString(key)]);
+  }
+
 }
 
 /**
@@ -11916,7 +12540,7 @@ function tmpl$4($api, $cmp, $slotset, $ctx) {
   }, [api_text("#2")], $slotset)])];
 }
 
-var _tmpl$4 = registerTemplate(tmpl$4);
+var _tmpl$5 = registerTemplate(tmpl$4);
 tmpl$4.slots = ["one", "", "two"];
 tmpl$4.stylesheets = [];
 tmpl$4.stylesheetTokens = {
@@ -11927,7 +12551,7 @@ tmpl$4.stylesheetTokens = {
 class MainLayout extends BaseLightningElement {}
 
 var _slotContainer = registerComponent(MainLayout, {
-  tmpl: _tmpl$4
+  tmpl: _tmpl$5
 });
 
 function tmpl$5($api, $cmp, $slotset, $ctx) {
@@ -11948,7 +12572,7 @@ function tmpl$5($api, $cmp, $slotset, $ctx) {
   }, [api_text("M - Here is the MAIN SLOT")])])];
 }
 
-var _tmpl$5 = registerTemplate(tmpl$5);
+var _tmpl$6 = registerTemplate(tmpl$5);
 tmpl$5.stylesheets = [];
 tmpl$5.stylesheetTokens = {
   hostAttribute: "slot-main_main-host",
@@ -11958,7 +12582,7 @@ tmpl$5.stylesheetTokens = {
 class MainLayout$1 extends BaseLightningElement {}
 
 var SlotMain = registerComponent(MainLayout$1, {
-  tmpl: _tmpl$5
+  tmpl: _tmpl$6
 });
 
 function tmpl$6($api, $cmp, $slotset, $ctx) {
@@ -12098,7 +12722,7 @@ function tmpl$6($api, $cmp, $slotset, $ctx) {
   }, [api_text("Slots")])])])])])])];
 }
 
-var _tmpl$6 = registerTemplate(tmpl$6);
+var _tmpl$7 = registerTemplate(tmpl$6);
 tmpl$6.stylesheets = [];
 tmpl$6.stylesheetTokens = {
   hostAttribute: "commerce-header_header-host",
@@ -12140,7 +12764,7 @@ class Header extends BaseLightningElement {
 }
 
 var _commerceHeader = registerComponent(Header, {
-  tmpl: _tmpl$6
+  tmpl: _tmpl$7
 });
 
 function tmpl$7($api, $cmp, $slotset, $ctx) {
@@ -12163,7 +12787,7 @@ function tmpl$7($api, $cmp, $slotset, $ctx) {
   }, [], $slotset)])];
 }
 
-var _tmpl$7 = registerTemplate(tmpl$7);
+var _tmpl$8 = registerTemplate(tmpl$7);
 tmpl$7.slots = [""];
 tmpl$7.stylesheets = [];
 tmpl$7.stylesheetTokens = {
@@ -12174,7 +12798,7 @@ tmpl$7.stylesheetTokens = {
 class Page extends BaseLightningElement {}
 
 var _commercePage = registerComponent(Page, {
-  tmpl: _tmpl$7
+  tmpl: _tmpl$8
 });
 
 function tmpl$8($api, $cmp, $slotset, $ctx) {
@@ -12193,7 +12817,7 @@ function tmpl$8($api, $cmp, $slotset, $ctx) {
   }, [api_dynamic($cmp.category)])];
 }
 
-var _tmpl$8 = registerTemplate(tmpl$8);
+var _tmpl$9 = registerTemplate(tmpl$8);
 tmpl$8.stylesheets = [];
 tmpl$8.stylesheetTokens = {
   hostAttribute: "commerce-categoryItem_categoryItem-host",
@@ -12223,7 +12847,7 @@ registerDecorators(CategoryNav, {
 });
 
 var _commerceCategoryItem = registerComponent(CategoryNav, {
-  tmpl: _tmpl$8
+  tmpl: _tmpl$9
 });
 
 function tmpl$9($api, $cmp, $slotset, $ctx) {
@@ -12254,437 +12878,12 @@ function tmpl$9($api, $cmp, $slotset, $ctx) {
   }) : [])];
 }
 
-var _tmpl$9 = registerTemplate(tmpl$9);
+var _tmpl$a = registerTemplate(tmpl$9);
 tmpl$9.stylesheets = [];
 tmpl$9.stylesheetTokens = {
   hostAttribute: "commerce-categoryNav_categoryNav-host",
   shadowAttribute: "commerce-categoryNav_categoryNav"
 };
-
-var _tmpl$a = void 0;
-
-class Subscription {
-  /**
-   * Unsubscribes from the associated observable.
-   */
-  unsubscribe() {
-    // If we have a handler, invoke it.
-    if (this._unsubscribeHandler !== undefined) {
-      // Snag a reference to the handler, then delete the instance property so that we only execute it once.
-      const handler = this._unsubscribeHandler;
-      delete this._unsubscribeHandler;
-      handler();
-    }
-  }
-  /**
-   * Initializes a new Subscription with the specified unsubscribe handler.
-   *
-   * @param {Function} [unsubscribeHandler]
-   *  A handler that is executed when then subscription is ended.
-   *
-   */
-
-
-  constructor(unsubscribeHandler) {
-    this._unsubscribeHandler = void 0;
-    this._unsubscribeHandler = unsubscribeHandler;
-  }
-
-}
-
-registerDecorators(Subscription, {
-  fields: ["_unsubscribeHandler"]
-});
-/**
- * A subscription to an observable notification stream.
- */
-
-
-var Subscription$1 = registerComponent(Subscription, {
-  tmpl: _tmpl$a
-});
-
-/**
- * A simple observable subject.
- */
-
-class Subject {
-  constructor() {
-    this._nextHandlers = new Set();
-  }
-
-  /**
-   * Emits the next value to all subscribed handlers.
-   *
-   * @param {object} [nextValue]
-   *  The optional value to provide to subscribers.
-   */
-  next(nextValue) {
-    this._nextHandlers.forEach(nextHandler => nextHandler(nextValue));
-  }
-  /**
-   * Subscribes to notifications from this subject.
-   *
-   * @param {function} nextHandler
-   *  A handler for the notification.
-   *
-   * @returns {Subscription}
-   *      A subscription that may be used to unsubscribe from the notifications.
-   */
-
-
-  subscribe(nextHandler) {
-    this._nextHandlers.add(nextHandler);
-
-    return new Subscription$1(() => this._delete(nextHandler));
-  }
-
-  _delete(nextHandler) {
-    this._nextHandlers.delete(nextHandler);
-  }
-
-}
-
-registerDecorators(Subject, {
-  fields: ["_nextHandlers"]
-});
-
-var Subject$1 = registerComponent(Subject, {
-  tmpl: _tmpl$a
-});
-
-/**
- * A simple observable behavior subject.
- */
-
-class BehaviorSubject extends Subject$1 {
-  constructor(value) {
-    super();
-    this._value = value;
-  }
-
-  get value() {
-    return this._value;
-  }
-
-  getValue() {
-    return this._value;
-  }
-  /**
-   * Emits the next value to all subscribed handlers.
-   * The value is stored to be emitted to late subscribers
-   *
-   * @param {object} [nextValue]
-   *  The optional value to provide to subscribers.
-   */
-
-
-  next(nextValue) {
-    this._value = nextValue;
-    return super.next(nextValue);
-  }
-  /**
-   * Subscribes to notifications from this subject.
-   * The handler is immediately notified with the current value.
-   *
-   * @param {function} nextHandler
-   *  A handler for the notification.
-   *
-   * @returns {Subscription}
-   *      A subscription that may be used to unsubscribe from the notifications.
-   */
-
-
-  subscribe(nextHandler) {
-    const subscription = super.subscribe(nextHandler);
-    nextHandler(this._value);
-    return subscription;
-  }
-
-}
-
-var BehaviorSubject$1 = registerComponent(BehaviorSubject, {
-  tmpl: _tmpl$a
-});
-
-const INITIAL_STATE = '__B2C_INITIAL_STATE__';
-const SSR$1 = isSsr();
-
-class StoreSubject extends BehaviorSubject$1 {
-  constructor(store, key, value) {
-    super(value);
-    this.key = key || '';
-    this.store = store; // We have to store the SSR context when the subject is created, as it will be unavailable when the request is completed
-    // Thus it won't be available dynamically when a Promise is resolved
-
-    if (SSR$1) {
-      this.ssrContext = getSsrContext();
-    }
-  }
-
-  next(nextValue) {
-    // In case of SSR, we make sure that the value is stored in the global ssr context
-    // So the server renderer can retrieve it afterwards
-    if (this.ssrContext) {
-      const states = this.ssrContext.states;
-      const state = states[this.store.name] || (states[this.store.name] = {});
-      state[this.key] = nextValue;
-    }
-
-    super.next(nextValue);
-  }
-
-  _delete(handler) {
-    super._delete(handler); // No more handler, we remove the subject
-
-
-    if (this._nextHandlers.size == 0) {
-      this.store._subscriberRemoved(this.key);
-    }
-  }
-
-}
-/**
- * Simple in memory store.
- *
- * This is a centralized client side state manager that stores data and notify subscribers on changes.
- * An instance of a store is generally dedicated to one type of data management, like a cart of a set of products.
- *
- * A store can hold a single JS object or a set of objects referemced by a key. For example, a typical commerce
- * application will have one cart object, and multiple products referenced by their id. A single object is
- * in fact an object with a undefined, null or empty string key.
- *
- * The store uses a lazy loading mechanism, which attempts to load the data on its first access. To do this,
- * it uses a 'loader' that is invoked when the data should be loaded. This function returns a Promise that
- * resolves when the data, or a load error, is available.
- *
- * An object is created in the store as soon as it is accessed for the first time. It always contains the
- * following properties:
- *   - data
- *     The actually object data, like a product. It can be null if the data hasn't been loaded yet, or if
- *     there was an error when loading the object.
- *   - error
- *     An error object if the store failed to load the object. It can be null if the data hasn't been loaded yet,
- *     or if the object loaded properly.
- *   - loaded
- *     Set when an attempt to load the object was completed, which resulted in some data or an error.
- *   - loading
- *     Contains a promise if the data is being loaded. Most applications will simply check if the value
- *     is not null/undefined to display a loading icon. The promise is provided to support advanced use cases
- *     like Server Side Rendering
- *
- * Each object in the store can have subscribers that will be notified when the object is updated. When an
- * object has no longer subscribers, it is removed from the store. To keep it alive, one can create a fake
- * subscriber to keep a reference active.
- * When the an object is changed, because the data was loaded, or changed programmatically, all the subscribers
- * are notified. Also, when a subscriber sunscribes to an object that is already in the store, then it
- * receives an initial notification.
- *
- */
-
-
-class Store {
-  constructor(name, options) {
-    this.options = options || {};
-    this.name = name; // Preload the store on the client when SSR was activated
-
-    if (!SSR$1) {
-      this._container = {};
-
-      if (typeof window !== 'undefined' && typeof window[INITIAL_STATE] !== 'undefined') {
-        const initialState = window[INITIAL_STATE][name];
-
-        if (initialState) {
-          for (const [key, value] of Object.entries(initialState)) {
-            this._container[key || ''] = new StoreSubject(this, key, value);
-          }
-
-          delete window[INITIAL_STATE][name];
-        }
-      }
-    }
-  }
-
-  get container() {
-    // Client side container
-    if (!SSR$1) {
-      return this._container;
-    } // Server side container
-    // It must be stored in the SSR context as
-
-
-    const ssrContext = getSsrContext();
-    const subjects = ssrContext._subjects || (ssrContext._subjects = {});
-    return subjects[this.name] || (subjects[this.name] = {});
-  }
-
-  _get(key, load) {
-    let sub = this.container[key || ''];
-
-    if (sub === undefined) {
-      sub = new StoreSubject(this, key, {
-        data: undefined,
-        error: undefined,
-        loaded: false,
-        loading: undefined
-      });
-      this.container[key || ''] = sub;
-    }
-
-    if (load && !sub.value.loaded) {
-      this._load(sub);
-    }
-
-    return sub;
-  }
-
-  _load(sub, loader) {
-    if (!loader) loader = this.options.loader;
-    const value = sub.value;
-
-    if (!value.loading && loader) {
-      const loading = loader(sub.key).then(value => {
-        const v = {
-          data: value,
-          error: undefined,
-          loaded: true,
-          loading: undefined
-        };
-        sub.next(v);
-        return v;
-      }).catch(error => {
-        const v = {
-          data: undefined,
-          error: error.message,
-          loaded: true,
-          loading: undefined
-        };
-        sub.next(v);
-        return v;
-      });
-
-      if (SSR$1) {
-        // With SSR, we don't notify the loading stage as this is not necessary
-        // We simply store the value so it gets to the store.
-        value.loading = loading;
-
-        if (loading) {
-          getSsrContext().loading.push(loading);
-        }
-      } else {
-        sub.next({
-          data: value.data,
-          error: value.error,
-          loaded: value.loaded,
-          loading
-        });
-      }
-    }
-  }
-
-  _subscriberRemoved(key) {
-    // We could have a function that discards using a MRU, or whatever...
-    // This can be extended in many ways
-    if (typeof this.options.discard !== 'undefined') {
-      if (this.options.discard === false) {
-        return;
-      }
-    }
-
-    delete this.container[key || ''];
-  } //
-  // Public methods
-  //
-
-
-  getSubject(key) {
-    return this._get(key, true);
-  }
-
-  has(key) {
-    return this.container.hasOwnProperty(key || '');
-  }
-
-  get(key) {
-    return this.getSubject(key).value;
-  }
-
-  async getAsync(key) {
-    const sub = this.getSubject(key);
-    const value = sub.value;
-
-    if (!value.loaded && value.loading) {
-      await value.loading;
-    }
-
-    return value;
-  }
-
-  set(key, data) {
-    const k = arguments.length == 1 ? undefined : key;
-    const d = arguments.length == 1 ? key : data;
-
-    const sub = this._get(k, false); // Should it throw an exception if the loading flag is set, and thus the assignment failed?
-
-
-    if (!sub.value.loading) {
-      sub.next({
-        data: d,
-        error: undefined,
-        loaded: true,
-        loading: undefined
-      });
-    }
-  }
-
-  setError(key, error) {
-    const k = arguments.length == 1 ? undefined : key;
-    const e = arguments.length == 1 ? key : error;
-
-    const sub = this._get(k, false); // Should it throw an exception if the loading flag is set, and thus the assignment failed?
-
-
-    if (!sub.value.loading) {
-      sub.next({
-        data: undefined,
-        error: e,
-        loaded: true,
-        loading: undefined
-      });
-    }
-  }
-
-  remove(key) {
-    const sub = this.container[key || '']; // Only if there is no subscribers
-
-    if (sub && sub._nextHandlers.size === 0) {
-      delete this.container[key || ''];
-    }
-  }
-
-  load(key, loader) {
-    const k = arguments.length == 1 ? undefined : key;
-    const l = arguments.length == 1 ? key : loader;
-
-    const sub = this._get(k, false);
-
-    if (!sub.value.loading) {
-      this._load(sub, l);
-    }
-
-    return sub.value;
-  }
-
-  subscribe(key, listener) {
-    const k = arguments.length == 1 ? undefined : key;
-    const l = arguments.length == 1 ? key : listener;
-    return this.getSubject(k).subscribe(l);
-  }
-
-}
-function createStore(name, loader) {
-  return new Store(name, loader);
-}
 
 async function connGetCategories() {
   const r = await fetch(getBaseUrl() + '/api/categories');
@@ -12695,10 +12894,10 @@ async function connGetProductsByCategory(category) {
   return await r.json();
 }
 
-const categoriesStore = createStore('CategoriesStore', {
+const categoriesStore = new Store('CategoriesStore', {
   loader: getCategories
 });
-const productsStore = createStore('ProductsStore', {
+const productsStore = new Store('ProductsStore', {
   loader: getProductsByCategory
 });
 async function getCategories() {
@@ -12717,7 +12916,7 @@ class LeftNav extends BaseLightningElement {
   }
 
   connectedCallback() {
-    this.subscription = categoriesStore.subscribe(categories => {
+    this.subscription = categoriesStore.getObservable().subscribe(categories => {
       this.categories = categories;
     });
   }
@@ -12733,7 +12932,7 @@ registerDecorators(LeftNav, {
 });
 
 var _commerceCategoryNav = registerComponent(LeftNav, {
-  tmpl: _tmpl$9
+  tmpl: _tmpl$a
 });
 
 function tmpl$a($api, $cmp, $slotset, $ctx) {
@@ -12763,6 +12962,10 @@ function tmpl$a($api, $cmp, $slotset, $ctx) {
     classMap: {
       "card-img-top": true,
       "product-list-image": true
+    },
+    styleMap: {
+      "width": "256px",
+      "height": "256px"
     },
     attrs: {
       "src": $cmp.product.ProductImagePath1,
@@ -12928,7 +13131,7 @@ class ProductList extends BaseLightningElement {
 
   connectedCallback() {
     this.category = getQueryParameter("category");
-    this.subscription = productsStore.subscribe(this.category, products => {
+    this.subscription = productsStore.getObservable(this.category).subscribe(products => {
       this.products = products;
     });
   }

@@ -6,7 +6,7 @@ export default class LeftNav extends LightningElement {
     categories;
 
     connectedCallback() {
-        this.subscription = categoriesStore.subscribe((categories) => { 
+        this.subscription = categoriesStore.getObservable().subscribe((categories) => { 
             this.categories = categories;
         })
     }

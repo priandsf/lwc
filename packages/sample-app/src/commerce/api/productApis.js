@@ -1,8 +1,8 @@
-import { createStore } from '../util/store';
+import { Store } from 'b2c_lite_commerce/store';
 import { connGetCategories, connGetProductsByCategory } from './productConnector'
 
-export const categoriesStore = createStore('CategoriesStore',{loader:getCategories});
-export const productsStore = createStore('ProductsStore',{loader:getProductsByCategory});
+export const categoriesStore = new Store('CategoriesStore',{loader:getCategories});
+export const productsStore = new Store('ProductsStore',{loader:getProductsByCategory});
 
 export async function getCategories() {
     const categories = await connGetCategories();

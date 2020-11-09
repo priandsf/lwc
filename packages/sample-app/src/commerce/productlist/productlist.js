@@ -13,7 +13,7 @@ export default class ProductList extends LightningElement {
     }
     connectedCallback() {
         this.category = getQueryParameter("category");
-        this.subscription = productsStore.subscribe(this.category,(products) => { 
+        this.subscription = productsStore.getObservable(this.category).subscribe( (products) => { 
             this.products = products;
         })
     }

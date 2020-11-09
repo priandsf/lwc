@@ -28,10 +28,10 @@ export default class Subject {
     subscribe(nextHandler) {
         this._nextHandlers.add(nextHandler);
 
-        return new Subscription(() => this._delete(nextHandler));
+        return new Subscription( () => {
+            this._nextHandlers.delete(nextHandler);
+        });
     }
 
-    _delete(nextHandler) {
-        this._nextHandlers.delete(nextHandler);
-    }
+    _unsubscribed(nextHandler) {}
 }

@@ -1,6 +1,8 @@
 <template>
     <div class="card" style="height: 580px;">
-        <a href={productPage}><img class="card-img-top product-list-image" src={product.ProductImagePath1} alt=""></a>
+        <a href={productPage}>
+            <img class="card-img-top product-list-image" style="width: 256px; height: 256px;" src={product.ProductImagePath1} alt="">
+        </a>
         <div class="card-body">
             <h4 class="card-title">
                 <span>{product.Name}</span>

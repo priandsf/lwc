@@ -1,15 +1,17 @@
+import { keyAsString } from './store-key';
+
 /**
  * Generic @wire adapter that works with a store.
  *
  * Note: this is deprecated for Commerce as it does not work with Server Side Rendering
  *
  * Typical usage:
- *    const myStore  = createStore('MyStore',loadMyStore);
+ *    const myStore  = new Store('MyStore',loadMyStore);
  *    ...
  *    @wire(StoreAdapter,{store:myStore[,key: objectkey]}) myData;
  *
  * or:
- *    const myStore  = createStore('MyStore',loadMyStore);
+ *    const myStore  = new Store('MyStore',loadMyStore);
  *    class MyAdapter extends StoreAdapter {
  *      constructor(dataCallback) {
  *        super(dataCallback,myStore);
@@ -44,12 +46,12 @@ export class StoreAdapter {
     }
 
     _subscribe() {
-        if(this.subscribedStore!==this.store || (this.subscribedKey||'')!==(this.key||'')) {
+        if(this.subscribedStore!==this.store || keyAsString(this.subscribedKey)!==keyAsString(this.key)) {
             this._unsubscribe();
             if(this.store) {
                 this.subscribedStore = this.store;
                 this.subscribedKey = this.key;
-                this.subscription = this.subscribedStore.subscribe(this.subscribedKey,this.dataCallback);
+                this.subscription = this.subscribedStore.getObservable(this.subscribedKey).subscribe(this.dataCallback);
             }
         }
     }
