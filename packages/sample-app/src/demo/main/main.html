@@ -1,0 +1,29 @@
+<template>
+   
+   <div class="d-flex flex-column flex-md-row p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
+      <h5 class="my-0 mr-md-auto font-weight-normal">SSR DEMO</h5>
+
+      <a if:false={ssr} class="my-0 mr-md-auto p-2 text-dark" href={SSR}>SSR</a>
+      <a if:true={ssr} class="my-0 mr-md-auto p-2 text-dark" href={NOSSR}>NO SSR</a>
+      <a if:false={shadow} class="my-0 mr-md-auto p-2 text-dark" href={SHADOW}>NATIVE SHADOW</a>
+      <a if:true={shadow} class="my-0 mr-md-auto p-2 text-dark" href={NOSHADOW}>SYNTH SHADOW</a>
+
+
+      <a class="my-0 mr-md-auto p-2 text-dark" href="/">Commerce Demo</a>
+   </div>
+
+   <h1><Blockquote></Blockquote></h1>
+
+   <table>
+      <template for:each={rows} for:item="row">
+         <tr key={row}>
+            <template for:each={cols} for:item="col">
+               <td key={col}>
+                  <demo-block row={row} col={col}></demo-block>
+               </td>
+            </template>
+         </tr>
+      </template>
+   </table>
+
+</template>

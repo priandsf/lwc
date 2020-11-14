@@ -74,6 +74,7 @@
     "packages/lwc",
     "packages/integration-karma",
     "packages/integration-tests",
+    "packages/sample-app",
     "packages/perf-benchmarks"
   ],
   "engines": {

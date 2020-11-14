@@ -1,0 +1,20 @@
+<template>
+    <div class="card" style="height: 580px;">
+        <a href={productPage}>
+            <img class="card-img-top product-list-image" style="width: 256px; height: 256px;" src={product.ProductImagePath1} alt="">
+        </a>
+        <div class="card-body">
+            <h4 class="card-title">
+                <span>{product.Name}</span>
+            </h4>
+            <h5>${product.ListPrice}</h5>
+            <a if:true={product} href='#' onclick={infoClick}>More information...</a>
+            <p class="card-text">
+                {product.Description}
+            </p>
+        </div>
+        <div class="card-footer">
+            <span>{product.ProductCategory}</span>
+        </div>
+    </div>
+</template>
