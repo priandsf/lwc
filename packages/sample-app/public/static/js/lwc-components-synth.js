@@ -1071,66 +1071,6 @@ StaticHTMLCollection.prototype = create(HTMLCollection.prototype, {
     }
 
   },
-  forEach: {
-    writable: true,
-    enumerable: true,
-    configurable: true,
-
-    value(cb, thisArg) {
-      forEach.call(getHiddenField(this, Items$1), cb, thisArg);
-    }
-
-  },
-  entries: {
-    writable: true,
-    enumerable: true,
-    configurable: true,
-
-    value() {
-      return ArrayMap.call(getHiddenField(this, Items$1), (v, i) => [i, v]);
-    }
-
-  },
-  keys: {
-    writable: true,
-    enumerable: true,
-    configurable: true,
-
-    value() {
-      return ArrayMap.call(getHiddenField(this, Items$1), (v, i) => i);
-    }
-
-  },
-  values: {
-    writable: true,
-    enumerable: true,
-    configurable: true,
-
-    value() {
-      return getHiddenField(this, Items$1);
-    }
-
-  },
-  [Symbol.iterator]: {
-    writable: true,
-    configurable: true,
-
-    value() {
-      let nextIndex = 0;
-      return {
-        next: () => {
-          const items = getHiddenField(this, Items$1);
-          return nextIndex < items.length ? {
-            value: items[nextIndex++],
-            done: false
-          } : {
-            done: true
-          };
-        }
-      };
-    }
-
-  },
   [Symbol.toStringTag]: {
     configurable: true,
 
@@ -3859,6 +3799,10 @@ function enableKeyboardFocusNavigationRoutines() {
   letBrowserHandleFocus = false;
 }
 
+function isKeyboardFocusNavigationRoutineEnabled() {
+  return !letBrowserHandleFocus;
+}
+
 function skipHostHandler(event) {
   if (letBrowserHandleFocus) {
     return;
@@ -4069,7 +4013,11 @@ function blurPatched() {
 }
 
 function focusPatched() {
-  disableKeyboardFocusNavigationRoutines();
+  const originallyEnabled = isKeyboardFocusNavigationRoutineEnabled();
+
+  if (originallyEnabled) {
+    disableKeyboardFocusNavigationRoutines();
+  }
 
   if (isHostElement(this) && isDelegatingFocus(this)) {
     hostElementFocus.call(this);
@@ -4077,7 +4025,10 @@ function focusPatched() {
   }
 
   focus.apply(this, arguments);
-  enableKeyboardFocusNavigationRoutines();
+
+  if (originallyEnabled) {
+    enableKeyboardFocusNavigationRoutines();
+  }
 }
 
 defineProperties(HTMLElement.prototype, {
@@ -4303,7 +4254,7 @@ defineProperty(Element.prototype, '$domManual$', {
 
   configurable: true
 });
-/** version: 1.8.5 */
+/** version: 1.9.1 */
 
 /* proxy-compat-disable */
 
@@ -4610,7 +4561,7 @@ const HTML_ATTRIBUTES_TO_PROPERTY$2 = {
   for: 'htmlFor'
 };
 keys$2(HTML_ATTRIBUTES_TO_PROPERTY$2).forEach(attrName => {});
-/** version: 1.8.5 */
+/** version: 1.9.1 */
 
 /*
  * Copyright (c) 2018, salesforce.com, inc.
@@ -4987,7 +4938,7 @@ const HTML_ATTRIBUTES_TO_PROPERTY$1$1 = {
   for: 'htmlFor'
 };
 keys$1$1(HTML_ATTRIBUTES_TO_PROPERTY$1$1).forEach(attrName => {});
-/** version: 1.8.5 */
+/** version: 1.9.1 */
 
 /*
  * Copyright (c) 2018, salesforce.com, inc.
@@ -5959,13 +5910,19 @@ function updateDynamicChildren(parentElm, oldCh, newCh) {
 }
 
 function updateStaticChildren(parentElm, oldCh, newCh) {
-  const {
-    length
-  } = newCh;
+  const oldChLength = oldCh.length;
+  const newChLength = newCh.length;
 
-  if (oldCh.length === 0) {
+  if (oldChLength === 0) {
     // the old list is empty, we can directly insert anything new
-    addVnodes(parentElm, null, newCh, 0, length);
+    addVnodes(parentElm, null, newCh, 0, newChLength);
+    return;
+  }
+
+  if (newChLength === 0) {
+    // the old list is nonempty and the new list is empty so we can directly remove all old nodes
+    // this is the case in which the dynamic children of an if-directive should be removed
+    removeVnodes(parentElm, oldCh, 0, oldChLength);
     return;
   } // if the old list is not empty, the new list MUST have the same
   // amount of nodes, that's why we call this static children
@@ -5973,7 +5930,7 @@ function updateStaticChildren(parentElm, oldCh, newCh) {
 
   let referenceElm = null;
 
-  for (let i = length - 1; i >= 0; i -= 1) {
+  for (let i = newChLength - 1; i >= 0; i -= 1) {
     const vnode = newCh[i];
     const oldVNode = oldCh[i];
 
@@ -7825,7 +7782,7 @@ const HTML_ATTRIBUTES_TO_PROPERTY$1$1$1 = {
   for: 'htmlFor'
 };
 keys$1$1$1(HTML_ATTRIBUTES_TO_PROPERTY$1$1$1).forEach(attrName => {});
-/** version: 1.8.5 */
+/** version: 1.9.1 */
 
 /*
  * Copyright (c) 2018, salesforce.com, inc.
@@ -8403,6 +8360,160 @@ function isCircularModuleDependency(obj) {
   return isFunction$1(obj) && hasOwnProperty$1$1.call(obj, '__circular__');
 }
 /*
+ * Copyright (c) 2020, salesforce.com, inc.
+ * All rights reserved.
+ * SPDX-License-Identifier: MIT
+ * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/MIT
+ */
+
+
+const swappedTemplateMap = new WeakMap();
+const swappedComponentMap = new WeakMap();
+const swappedStyleMap = new WeakMap();
+const activeTemplates = new WeakMap();
+const activeComponents = new WeakMap();
+const activeStyles = new WeakMap();
+
+function flattenStylesheets(stylesheets) {
+  const list = [];
+
+  for (const stylesheet of stylesheets) {
+    if (!Array.isArray(stylesheet)) {
+      list.push(stylesheet);
+    } else {
+      list.push(...flattenStylesheets(stylesheet));
+    }
+  }
+
+  return list;
+}
+
+function getTemplateOrSwappedTemplate(tpl) {
+
+  const visited = new Set();
+
+  while (swappedTemplateMap.has(tpl) && !visited.has(tpl)) {
+    visited.add(tpl);
+    tpl = swappedTemplateMap.get(tpl);
+  }
+
+  return tpl;
+}
+
+function getComponentOrSwappedComponent(Ctor) {
+
+  const visited = new Set();
+
+  while (swappedComponentMap.has(Ctor) && !visited.has(Ctor)) {
+    visited.add(Ctor);
+    Ctor = swappedComponentMap.get(Ctor);
+  }
+
+  return Ctor;
+}
+
+function getStyleOrSwappedStyle(style) {
+
+  const visited = new Set();
+
+  while (swappedStyleMap.has(style) && !visited.has(style)) {
+    visited.add(style);
+    style = swappedStyleMap.get(style);
+  }
+
+  return style;
+}
+
+function setActiveVM(vm) {
+
+
+  const Ctor = vm.def.ctor;
+  let componentVMs = activeComponents.get(Ctor);
+
+  if (isUndefined$1$1(componentVMs)) {
+    componentVMs = new Set();
+    activeComponents.set(Ctor, componentVMs);
+  } // this will allow us to keep track of the hot components
+
+
+  componentVMs.add(vm); // tracking active template
+
+  const tpl = vm.cmpTemplate;
+
+  if (tpl) {
+    let templateVMs = activeTemplates.get(tpl);
+
+    if (isUndefined$1$1(templateVMs)) {
+      templateVMs = new Set();
+      activeTemplates.set(tpl, templateVMs);
+    } // this will allow us to keep track of the templates that are
+    // being used by a hot component
+
+
+    templateVMs.add(vm); // tracking active styles associated to template
+
+    const stylesheets = tpl.stylesheets;
+
+    if (!isUndefined$1$1(stylesheets)) {
+      flattenStylesheets(stylesheets).forEach(stylesheet => {
+        // this is necessary because we don't hold the list of styles
+        // in the vm, we only hold the selected (already swapped template)
+        // but the styles attached to the template might not be the actual
+        // active ones, but the swapped versions of those.
+        stylesheet = getStyleOrSwappedStyle(stylesheet);
+        let stylesheetVMs = activeStyles.get(stylesheet);
+
+        if (isUndefined$1$1(stylesheetVMs)) {
+          stylesheetVMs = new Set();
+          activeStyles.set(stylesheet, stylesheetVMs);
+        } // this will allow us to keep track of the stylesheet that are
+        // being used by a hot component
+
+
+        stylesheetVMs.add(vm);
+      });
+    }
+  }
+}
+
+function removeActiveVM(vm) {
+
+
+  const Ctor = vm.def.ctor;
+  let list = activeComponents.get(Ctor);
+
+  if (!isUndefined$1$1(list)) {
+    // deleting the vm from the set to avoid leaking memory
+    list.delete(vm);
+  } // removing inactive template
+
+
+  const tpl = vm.cmpTemplate;
+
+  if (tpl) {
+    list = activeTemplates.get(tpl);
+
+    if (!isUndefined$1$1(list)) {
+      // deleting the vm from the set to avoid leaking memory
+      list.delete(vm);
+    } // removing active styles associated to template
+
+
+    const styles = tpl.stylesheets;
+
+    if (!isUndefined$1$1(styles)) {
+      flattenStylesheets(styles).forEach(style => {
+        list = activeStyles.get(style);
+
+        if (!isUndefined$1$1(list)) {
+          // deleting the vm from the set to avoid leaking memory
+          list.delete(vm);
+        }
+      });
+    }
+  }
+}
+/*
  * Copyright (c) 2018, salesforce.com, inc.
  * All rights reserved.
  * SPDX-License-Identifier: MIT
@@ -8545,6 +8656,10 @@ function isComponentConstructor(ctor) {
 }
 
 function getComponentInternalDef(Ctor) {
+  {
+    Ctor = getComponentOrSwappedComponent(Ctor);
+  }
+
   let def = CtorToDefMap.get(Ctor);
 
   if (isUndefined$1$1(def)) {
@@ -9566,11 +9681,18 @@ function evaluateStylesheetsContent(stylesheets, hostSelector, shadowSelector, n
   const content = [];
 
   for (let i = 0; i < stylesheets.length; i++) {
-    const stylesheet = stylesheets[i];
+    let stylesheet = stylesheets[i];
 
     if (isArray$2(stylesheet)) {
       ArrayPush$1$1.apply(content, evaluateStylesheetsContent(stylesheet, hostSelector, shadowSelector, nativeShadow));
     } else {
+      {
+        // in dev-mode, we support hot swapping of stylesheet, which means that
+        // the component instance might be attempting to use an old version of
+        // the stylesheet, while internally, we have a replacement for it.
+        stylesheet = getStyleOrSwappedStyle(stylesheet);
+      }
+
       ArrayPush$1$1.call(content, stylesheet(hostSelector, shadowSelector, nativeShadow));
     }
   }
@@ -9782,7 +9904,11 @@ function validateSlots(vm, html) {
 
 function evaluateTemplate(vm, html) {
   {
-    assert$1$1.isTrue(isFunction$1(html), `evaluateTemplate() second argument must be an imported template instead of ${toString$1(html)}`);
+    assert$1$1.isTrue(isFunction$1(html), `evaluateTemplate() second argument must be an imported template instead of ${toString$1(html)}`); // in dev-mode, we support hot swapping of templates, which means that
+    // the component instance might be attempting to use an old version of
+    // the template, while internally, we have a replacement for it.
+
+    html = getTemplateOrSwappedTemplate(html);
   }
 
   const isUpdatingTemplateInception = isUpdatingTemplate;
@@ -9838,7 +9964,9 @@ function evaluateTemplate(vm, html) {
 
       if ("development" !== 'production') {
         // validating slots in every rendering since the allocated content might change over time
-        validateSlots(vm, html);
+        validateSlots(vm, html); // add the VM to the list of host VMs that can be re-rendered if html is swapped
+
+        setActiveVM(vm);
       } // right before producing the vnodes, we clear up all internal references
       // to custom elements from the template.
 
@@ -10252,6 +10380,7 @@ function resetComponentStateWhenRemoved(vm) {
 
 function removeVM(vm) {
   {
+    removeActiveVM(vm);
     assert$1$1.isTrue(vm.state === VMState.connected || vm.state === VMState.disconnected, `${vm} must have been connected.`);
   }
 
@@ -11040,7 +11169,7 @@ function disconnectWireAdapters(vm) {
     }
   }, noop$4);
 }
-/* version: 1.8.5 */
+/* version: 1.9.1 */
 
 /*
  * Copyright (c) 2018, salesforce.com, inc.
@@ -11452,7 +11581,7 @@ defineProperty$2(BaseLightningElement, 'CustomElementConstructor', {
 });
 freeze$2(BaseLightningElement);
 seal$2(BaseLightningElement.prototype);
-/* version: 1.8.5 */
+/* version: 1.9.1 */
 
 function stylesheet(hostSelector, shadowSelector, nativeShadow) {
   return ["h1", shadowSelector, " {font-size:22px;}\n.counterTitle", shadowSelector, " {font-size:18px;margin-bottom: 1em;}\n.counter", shadowSelector, " {color: blue;}\nbutton", shadowSelector, " {margin-right: 5px;margin-bottom: 10px;}\ntable", shadowSelector, " {font-size:14px;color:#333333;border-width: 1px;border-color: #666666;border-collapse: collapse;margin-left: 4em;}\ntable", shadowSelector, " th", shadowSelector, " {font-size:18px;border-width: 1px;padding: 8px;border-style: solid;border-color: #666666;background-color: #dedede;}\ntable", shadowSelector, " td", shadowSelector, " {border-width: 1px;padding: 2em;border-style: solid;border-color: #666666;background-color: #ffffff;}\n"].join('');

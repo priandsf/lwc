@@ -34,7 +34,7 @@ export function renderComponent(
     Ctor: typeof LightningElement,
     props: { [name: string]: any } = {},
     options: { syntheticShadow?: boolean } = {},
-): string | {html: string, styles: string[]} {
+): {html: string, styles: string[]} {
     if (!isString(tagName)) {
         throw new TypeError(
             `"renderComponent" expects a string as the first parameter but instead received ${tagName}.`
@@ -86,6 +86,4 @@ export function renderComponent(
         html,
         styles
     }
-
-    return html;
 }
