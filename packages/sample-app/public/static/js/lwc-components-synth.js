@@ -11187,7 +11187,7 @@ let getCustomElement, defineCustomElement, HTMLElementConstructor$1; // Read the
 // values and not the style content.
 
 (function readExistingStyles() {
-  const styles = globalStylesheetsParentElement.querySelectorAll('style[data-lwc-ssr]');
+  const styles = globalStylesheetsParentElement.querySelectorAll('style[lwc-scoped-style]');
 
   for (let i = 0; i < styles.length; i++) {
     const text = styles[i].textContent;

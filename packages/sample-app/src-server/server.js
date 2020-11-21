@@ -137,7 +137,7 @@ function renderTemplate(args) {
             </style>
             <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" crossorigin="anonymous">
             <link rel="stylesheet" href="/static/css/global.css">
-            ${args.styles ? args.styles.map((style) => `<style type="text/css" data-lwc-ssr>${style}</style>`).join('\n') : ''}    
+            ${args.styles ? args.styles.map((style) => `<style type="text/css" lwc-scoped-style>${style}</style>`).join('\n') : ''}    
         </head>
         <body>
             ${
