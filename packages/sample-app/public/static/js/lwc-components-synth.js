@@ -11186,7 +11186,7 @@ let getCustomElement, defineCustomElement, HTMLElementConstructor$1; // Read the
 // and passed to insertGlobalStylesheet, then set as the data-lwc-ssr value. This way, we would only compare simple attribute
 // values and not the style content.
 
-(function readExistingStyles() {
+function loadGlobalStylesheet() {
   const styles = globalStylesheetsParentElement.querySelectorAll('style[lwc-scoped-style]');
 
   for (let i = 0; i < styles.length; i++) {
@@ -11196,7 +11196,7 @@ let getCustomElement, defineCustomElement, HTMLElementConstructor$1; // Read the
       globalStylesheets[text] = true;
     }
   }
-})();
+}
 
 function isCustomElementRegistryAvailable() {
   if (typeof customElements === 'undefined') {
@@ -11274,6 +11274,11 @@ function removeAllChildNodes(parent) {
 
 
 const useSyntheticShadow = hasOwnProperty$2.call(Element.prototype, '$shadowToken$');
+
+if (useSyntheticShadow) {
+  loadGlobalStylesheet();
+}
+
 const renderer = {
   ssr: false,
   syntheticShadow: useSyntheticShadow,
